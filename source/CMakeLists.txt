@@ -91,6 +91,10 @@ add_executable(geoimgconv
 include_directories(${Boost_INCLUDE_DIRS})
 target_link_libraries(geoimgconv Boost::locale Boost::system Boost::chrono Boost::thread Boost::filesystem
 	Boost::date_time Boost::program_options Boost::dynamic_linking)
+#При необходимости добавим define, отключающий ругань буста на компиллятор.
+if(BOOST_SUPR_OUTDATED)
+	add_definitions(-DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
+endif()
 
 #ICU
 find_package(ICU COMPONENTS uc dt in io tu test REQUIRED)

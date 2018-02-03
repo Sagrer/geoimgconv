@@ -39,7 +39,8 @@ copy /Y Debug\*.dll Release\
 @echo Configuring...
 @echo.
 SET CMAKE_PREFIX_PATH=%DevLibsVs2017_x64%
-cmake -G "Visual Studio 15 2017 Win64" ../source
+@rem BOOST_SUPR_OUTDATED подавляет вывод мусора при сборке с бустом 1.66.0
+cmake -DBOOST_SUPR_OUTDATED=ON -G "Visual Studio 15 2017 Win64" ../source
 if NOT %ERRORLEVEL% == 0 (
   echo FAILED!!!
   pause
