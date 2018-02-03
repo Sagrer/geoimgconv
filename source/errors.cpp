@@ -26,17 +26,25 @@ const std::string CommonErrorsTexts[] = { "Нет ошибок",	//0
 			"Файл не существует",							//4
 			"Формат файла не поддерживается",				//5
 			"Файл не был загружен",							//6
-			"Неизвестный идентификатор в командной строке"	//7
+			"Неверный синтаксис опций командной строки",	//7
+			"Неизвестный идентификатор в командной строке"	//8
 };
 
-void ErrorInfo::SetError(const CommonErrors &errCode, const std::string &additionalText)
+void ErrorInfo::SetError(const CommonErrors &errCode, const std::string &text, const bool replaceText)
 //Записывает в объект код ошибки и соответствующее коду сообщение
 //из CommonErrorsTexts[], к которому добавляет содержимое второго
-//аргумента если он был указан.
+//аргумента если он был указан, либо всё сообщение берёт из второго
+//аргумента если истинен третий. Если text пуст - стандартный текст
+//сообщения берётся независимо от значения replaceText
 {
 	this->errorCode_ = errCode;
-	if (additionalText != "")
-		this->errorText_ = CommonErrorsTexts[errCode] + additionalText;
+	if (text != "")
+	{
+		if (replaceText)
+			this->errorText_ = text;
+		else
+			this->errorText_ = CommonErrorsTexts[errCode] + text;
+	}
 	else
 		this->errorText_ = CommonErrorsTexts[errCode];
 }

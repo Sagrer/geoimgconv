@@ -32,7 +32,8 @@ enum CommonErrors : int
 	CMNERR_FILE_NOT_EXISTS = 4,
 	CMNERR_UNSUPPORTED_FILE_FORMAT = 5,
 	CMNERR_FILE_NOT_LOADED = 6,
-	CMNERR_UNKNOWN_IDENTIF = 7
+	CMNERR_CMDLINE_PARSE_ERROR = 7,
+	CMNERR_UNKNOWN_IDENTIF = 8
 };
 
 extern const std::string CommonErrorsTexts[];
@@ -57,8 +58,10 @@ public:
 
 	//Записывает в объект код ошибки и соответствующее коду сообщение
 	//из CommonErrorsTexts[], к которому добавляет содержимое второго
-	//аргумента если он был указан.
-	void SetError(const CommonErrors &errCode, const std::string &additionalText = "");
+	//аргумента если он был указан, либо всё сообщение берёт из второго
+	//аргумента если истинен третий. Если text пуст - стандартный текст
+	//сообщения берётся независимо от значения replaceText
+	void SetError(const CommonErrors &errCode, const std::string &text = "", const bool replaceText = false);
 };
 
 }	//namespace geoimgconv
