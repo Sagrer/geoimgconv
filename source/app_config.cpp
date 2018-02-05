@@ -21,12 +21,14 @@
 #include <boost/filesystem.hpp>
 #include <sstream>
 
+using namespace std;
+
 namespace geoimgconv
 {
 
 //Константы со значениями полей по умолчанию.
-const std::string DEFAULT_INPUT_FILE_NAME = "input.tif";
-const std::string DEFAULT_OUTPUT_FILE_NAME = "output.tif";
+const string DEFAULT_INPUT_FILE_NAME = "input.tif";
+const string DEFAULT_OUTPUT_FILE_NAME = "output.tif";
 const size_t DEFAULT_MEDFILTER_APERTURE = 101;
 const double DEFAULT_MEDFILTER_THRESHOLD = 0.5;
 const MarginType DEFAULT_MEDFILTER_MARGIN_TYPE = MARGIN_MIRROR_FILLING;
@@ -179,74 +181,106 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 	this->currPath_ = STB.WstringToUtf8(boost::filesystem::current_path().wstring());
 
 	this->poVarMap_.clear();
-	//Вот эта жуть читает в poVarMap_ параметры командной строки в соответствии с
-	//инфой о параметрах из cmdLineParamsDesc_ и с учётом списка позиционных
-	//(неименованных) параметров, заданных в positionalDesc_.
-	po::store(po::command_line_parser(argc, argv).options(this->cmdLineParamsDesc_).
-		positional(this->positionalDesc_).run(), this->poVarMap_);
-	//notify в данном случае не нужно.
+	try
+	{
+		//Вот эта жуть читает в poVarMap_ параметры командной строки в соответствии с
+		//инфой о параметрах из cmdLineParamsDesc_ и с учётом списка позиционных
+		//(неименованных) параметров, заданных в positionalDesc_.
+		po::store(po::command_line_parser(argc, argv).options(this->cmdLineParamsDesc_).
+			positional(this->positionalDesc_).run(), this->poVarMap_);
+		//notify в данном случае не нужно.
+	}
+	catch (po::required_option &err)
+	{
+		//Отсутствует обязательная опция.
+		if (errObj) errObj->SetError(CMNERR_CMDLINE_PARSE_ERROR, ": отсутствует обязательная опция " +
+			err.get_option_name());
+		return false;
+	}
+	catch (po::error &err)
+	{
+		//Непонятно что случилось. Просто перехватим все ошибки, которые может выдать program_options
+		//т.к. это в любом случае будет что-то не то с синтаксисом в командной строке.
+		//Как ни странно, program_options в what() нередко даёт информации больше чем можно
+		//вытянуть по классу исключения, например для po::unknown_option там будет имя неизвестной
+		//опции, но узнать её из объекта исключения кроме как по what() нельзя :(.
+		if (errObj) errObj->SetError(CMNERR_CMDLINE_PARSE_ERROR, err.what(), true);
+		return false;
+		//Все остальные исключения считаем неожиданными, не обрабатываем и либо падаем с ними,
+		//либо их обработают где-то наверху стека вызовов.
+	};
+	
 	
 	//Я не стал пользоваться фичей автоматической загрузки значений по проставленным в
 	//cmdLineParamsDesc_ ссылкам т.к. всё равно нужно просматривать poVarMap_ на предмет
 	//того, какие именно параметры вообще были переданы в командной строке. Что сейчас и
 	//будет происходить:
-	if (this->poVarMap_.count("appmode"))
+	try
 	{
-		this->appModeCmd_ = AppModeStrToEnum(this->poVarMap_["appmode"].
-			as<std::string>());
-		if (this->appModeCmd_ != APPMODE_MEDIAN)
+		if (this->poVarMap_.count("appmode"))
 		{
-			//Неизвестный или пока не реализованный вариант.
-			if(errObj) errObj->SetError(CMNERR_UNKNOWN_IDENTIF,": " +
-				this->poVarMap_["appmode"].as<std::string>());
-			return false;
+			this->appModeCmd_ = AppModeStrToEnum(this->poVarMap_["appmode"].
+				as<std::string>());
+			if (this->appModeCmd_ != APPMODE_MEDIAN)
+			{
+				//Неизвестный или пока не реализованный вариант.
+				if (errObj) errObj->SetError(CMNERR_UNKNOWN_IDENTIF, ": " +
+					this->poVarMap_["appmode"].as<std::string>());
+				return false;
+			};
+			this->appModeCmdIsSet_ = true;
 		};
-		this->appModeCmdIsSet_ = true;
-	};
-	if (this->poVarMap_.count("help"))
-		this->helpAsked_ = true;
-	if (this->poVarMap_.count("version"))
-		this->versionAsked_ = true;
-	if ((this->helpAsked_) || (this->versionAsked_))
-		//Дальше обрабатывать нет смысла, прога ничего не будет делать кроме вывода
-		//собственно версии или справки.
-		return true;
-	if (this->poVarMap_.count("input"))
-	{
-		this->inputFileNameCmd_ = STB.SystemCharsetToUtf8(this->poVarMap_["input"].as<std::string>());
-		this->inputFileNameCmdIsSet_ = true;
-	};
-	if (this->poVarMap_.count("output"))
-	{
-		this->outputFileNameCmd_ = STB.SystemCharsetToUtf8(this->poVarMap_["output"].as<std::string>());
-		this->outputFileNameCmdIsSet_ = true;
-	};
-	if (this->poVarMap_.count("medfilter.aperture"))
-	{
-		this->medfilterApertureCmd_ = this->poVarMap_["medfilter.aperture"].as<int>();
-		this->medfilterApertureCmdIsSet_ = true;
-	};
-	if (this->poVarMap_.count("medfilter.threshold"))
-	{
-		this->medfilterThresholdCmd_ = this->poVarMap_["medfilter.threshold"].as<double>();
-		this->medfilterThresholdCmdIsSet_ = true;
-	};
-	if (this->poVarMap_.count("medfilter.margintype"))
-	{
-		this->medfilterMarginTypeCmd_ = MarginTypeStrToEnum(this->poVarMap_[
-			"medfilter.margintype"].as<std::string>());
-		if (this->medfilterMarginTypeCmd_ == MARGIN_UNKNOWN_FILLING)
+		if (this->poVarMap_.count("help"))
+			this->helpAsked_ = true;
+		if (this->poVarMap_.count("version"))
+			this->versionAsked_ = true;
+		if ((this->helpAsked_) || (this->versionAsked_))
+			//Дальше обрабатывать нет смысла, прога ничего не будет делать кроме вывода
+			//собственно версии или справки.
+			return true;
+		if (this->poVarMap_.count("input"))
 		{
-			//Неизвестный или пока не реализованный вариант.
-			if(errObj) errObj->SetError(CMNERR_UNKNOWN_IDENTIF,": " +
-				this->poVarMap_["medfilter.margintype"].as<std::string>());
-			return false;
+			this->inputFileNameCmd_ = STB.SystemCharsetToUtf8(this->poVarMap_["input"].as<std::string>());
+			this->inputFileNameCmdIsSet_ = true;
 		};
-		this->medfilterMarginTypeCmdIsSet_ = true;
+		if (this->poVarMap_.count("output"))
+		{
+			this->outputFileNameCmd_ = STB.SystemCharsetToUtf8(this->poVarMap_["output"].as<std::string>());
+			this->outputFileNameCmdIsSet_ = true;
+		};
+		if (this->poVarMap_.count("medfilter.aperture"))
+		{
+			this->medfilterApertureCmd_ = this->poVarMap_["medfilter.aperture"].as<int>();
+			this->medfilterApertureCmdIsSet_ = true;
+		};
+		if (this->poVarMap_.count("medfilter.threshold"))
+		{
+			this->medfilterThresholdCmd_ = this->poVarMap_["medfilter.threshold"].as<double>();
+			this->medfilterThresholdCmdIsSet_ = true;
+		};
+		if (this->poVarMap_.count("medfilter.margintype"))
+		{
+			this->medfilterMarginTypeCmd_ = MarginTypeStrToEnum(this->poVarMap_[
+				"medfilter.margintype"].as<std::string>());
+			if (this->medfilterMarginTypeCmd_ == MARGIN_UNKNOWN_FILLING)
+			{
+				//Неизвестный или пока не реализованный вариант.
+				if (errObj) errObj->SetError(CMNERR_UNKNOWN_IDENTIF, ": " +
+					this->poVarMap_["medfilter.margintype"].as<std::string>());
+				return false;
+			};
+			this->medfilterMarginTypeCmdIsSet_ = true;
+		};
+	}
+	catch (po::error &err)
+	{
+		//Ловим все исключения program_options - это однозначно будут проблемы с синтаксисом
+		//в командной строке.
+		if (errObj) errObj->SetError(CMNERR_CMDLINE_PARSE_ERROR, err.what(), true);
+		return false;
+		//Все остальные исключения считаем неожиданными и скорее всего падаем.
 	};
-		
-	//TODO: нужна обработка возможного здесь исключения!
-	//if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
+
 	return true;
 }
 

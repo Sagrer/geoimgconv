@@ -25,6 +25,7 @@ namespace geoimgconv
 
 enum CommonErrors : int
 {
+	//CMNERR_UNKNOWN_ERROR обязательно должна идти последней!
 	CMNERR_NO_ERROR = 0,
 	CMNERR_READ_ERROR = 1,
 	CMNERR_WRITE_ERROR = 2,
@@ -33,7 +34,8 @@ enum CommonErrors : int
 	CMNERR_UNSUPPORTED_FILE_FORMAT = 5,
 	CMNERR_FILE_NOT_LOADED = 6,
 	CMNERR_CMDLINE_PARSE_ERROR = 7,
-	CMNERR_UNKNOWN_IDENTIF = 8
+	CMNERR_UNKNOWN_IDENTIF = 8,
+	CMNERR_UNKNOWN_ERROR = 9
 };
 
 extern const std::string CommonErrorsTexts[];

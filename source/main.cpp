@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 	if (!confObj.ParseCommandLine(argc,argv,&errObj))
 	{
 		//Что-то пошло не так
-		cout << STB.Utf8ToConsoleCharset("Ошибка: "+errObj.getErrorText());
+		cout << STB.Utf8ToConsoleCharset("Ошибка: "+errObj.getErrorText()) << endl;
 		return 1;
 	}
 	

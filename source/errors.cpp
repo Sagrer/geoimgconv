@@ -27,7 +27,8 @@ const std::string CommonErrorsTexts[] = { "Нет ошибок",	//0
 			"Формат файла не поддерживается",				//5
 			"Файл не был загружен",							//6
 			"Неверный синтаксис опций командной строки",	//7
-			"Неизвестный идентификатор в командной строке"	//8
+			"Неизвестный идентификатор в командной строке",	//8
+			"Неизвестная ошибка"							//9
 };
 
 void ErrorInfo::SetError(const CommonErrors &errCode, const std::string &text, const bool replaceText)
