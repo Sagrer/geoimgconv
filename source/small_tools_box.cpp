@@ -32,7 +32,7 @@
 //Для определения количества памяти нужен платформозависимый код :(
 #ifdef _WIN32
 	#include <Windows.h>
-#elif defined(unix) || defined(__unix__) || defined(__unix)
+#elif (defined(unix) || defined(__unix__) || defined(__unix)) && !defined(__linux__)
 	#include <sys/types.h>
 	#include <unistd.h>		
 	#include <sys/param.h>
@@ -208,6 +208,9 @@ const unsigned long long SmallToolsBox::GetSystemMemoryFullSize() const
 			//Что-то пошло не так :(
 			result = 0;
 		};
+	#elif defined(__linux__)
+		//Тут нужно расковыривать содержимое /proc/meminfo
+		result = 0;
 	#elif (defined(unix) || defined(__unix__) || defined(__unix)) && (defined(_SC_PAGE_SIZE) && defined(_SC_PHYS_PAGES))
 		long pagesize = sysconf(_SC_PAGE_SIZE);
 		long pages = sysconf(_SC_PHYS_PAGES);
@@ -242,6 +245,9 @@ const unsigned long long SmallToolsBox::GetSystemMemoryFreeSize() const
 		//Что-то пошло не так :(
 		result = 0;
 	};
+	#elif defined(__linux__)
+		//Тут нужно расковыривать содержимое /proc/meminfo
+		result = 0;
 	#elif (defined(unix) || defined(__unix__) || defined(__unix)) && (defined(_SC_PAGE_SIZE) && defined(_SC_AVPHYS_PAGES))
 		long pagesize = sysconf(_SC_PAGE_SIZE);
 		long pages = sysconf(_SC_AVPHYS_PAGES);
