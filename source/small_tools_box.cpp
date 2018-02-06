@@ -27,6 +27,7 @@
 #include <sstream>
 #include <iomanip>
 #include <boost/filesystem.hpp>
+#include <boost/thread/thread.hpp>
 
 using namespace std;
 
@@ -164,6 +165,13 @@ void SmallToolsBox::Utf8ToUpper(const std::string &inputStr, std::string &output
 //Перевести в верхний регистр utf8-строку.
 {
 	outputStr = boost::locale::to_upper(inputStr, this->utf8Locale_);
+}
+
+const unsigned int SmallToolsBox::GetCpuCoresNumber() const
+//Возвращает число процессорных ядер или 0 если это количество получить не удалось.
+{
+	//Буст это умеет, нет смысла извращаться вручную.
+	return boost::thread::hardware_concurrency();
 }
 
 }	//namespace geoimgconv

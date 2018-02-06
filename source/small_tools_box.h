@@ -102,6 +102,9 @@ class SmallToolsBox
 
 		//Перевести в верхний регистр utf8-строку.
 		void Utf8ToUpper(const std::string &inputStr, std::string &outputStr) const;
+
+		//Возвращает число процессорных ядер или 0 если это количество получить не удалось.
+		const unsigned int GetCpuCoresNumber() const;
 };
 
 extern SmallToolsBox STB;
