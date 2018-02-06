@@ -195,8 +195,10 @@ int AppUIConsole::RunApp()
 	this->PrintToConsole("Это прототип. Не ждите от него многого.\n");
 	//this->PrintToConsole("Программа запущена по пути: "+ this->getAppPath() + "\n");
 	//this->PrintToConsole("Текущий рабочий путь: "+this->getCurrPath() + "\n");
-	this->PrintToConsole("Обнаружено ядер процессора:" +
-		lexical_cast<string>(STB.GetCpuCoresNumber()) + "\n\n");
+	this->PrintToConsole("\nОбнаружено ядер процессора:" +
+		lexical_cast<string>(STB.GetCpuCoresNumber()) + "\n");
+	this->PrintToConsole("Всего ОЗУ: " + lexical_cast<string>(STB.GetSystemMemoryFullSize()) + "\n");
+	this->PrintToConsole("Доступно ОЗУ: " + lexical_cast<string>(STB.GetSystemMemoryFreeSize()) + "\n");
 
 	//Выдать больше инфы если не было передано никаких опций командной строки.
 	if (this->confObj_->getArgc() == 1)

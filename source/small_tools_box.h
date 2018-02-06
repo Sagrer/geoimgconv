@@ -105,6 +105,12 @@ class SmallToolsBox
 
 		//Возвращает число процессорных ядер или 0 если это количество получить не удалось.
 		const unsigned int GetCpuCoresNumber() const;
+
+		//Возвращает общее количество оперативной памяти (без свопа) в системе или 0 при ошибке.
+		const unsigned long long GetSystemMemoryFullSize() const;
+
+		//Возвращает количество свободной оперативной памяти (без свопа) в системе или 0 при ошибке.
+		const unsigned long long GetSystemMemoryFreeSize() const;
 };
 
 extern SmallToolsBox STB;

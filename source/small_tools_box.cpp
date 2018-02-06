@@ -29,6 +29,22 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 
+//Для определения количества памяти нужен платформозависимый код :(
+#ifdef _WIN32
+	#include <Windows.h>
+#elif defined(unix) || defined(__unix__) || defined(__unix)
+	#include <sys/types.h>
+	#include <unistd.h>		
+	#include <sys/param.h>
+	#if (!defined(_SC_PAGE_SIZE) && defined(_SC_PAGESIZE))
+		#define _SC_PAGE_SIZE = _SC_PAGESIZE
+	#elif !defined(_SC_PAGE_SIZE)
+		#define _SC_PAGE_SIZE = 1024L
+	#endif
+#else
+	#error Unknown target OS. Can't preprocess memory detecting code :(
+#endif
+
 using namespace std;
 
 namespace geoimgconv
@@ -51,20 +67,20 @@ void SmallToolsBox::InitEncodings()
 //до обращения к функциям перекодировки.
 {
 	boost::locale::generator locGen;
-#ifdef _WIN32
-	//Пока что всё будет чисто русскоязычным (пока руки не дойдут до чего-нибудь
-	//типа gettext, поэтому жёстко проставим кодировки.
-	this->consoleEncoding_ = "cp866";
-	this->systemEncoding_ = "cp1251";
-	//Вообще там ниже через фасет locale::info можно как минимум получить код языка,
-	//но потом, всё потом. TODO типа.
-#else
-	//Линукс и всякое неизвестно-что.
-	setlocale(LC_ALL, "");	//Нужно только тут. Чтобы работало ncursesw. Для PDCurses - наоборот вредно.
-	locale currLocale = locGen("");
-	this->consoleEncoding_ = std::use_facet<boost::locale::info>(currLocale).encoding();
-	this->systemEncoding_ = consoleEncoding_;
-#endif
+	#ifdef _WIN32
+		//Пока что всё будет чисто русскоязычным (пока руки не дойдут до чего-нибудь
+		//типа gettext, поэтому жёстко проставим кодировки.
+		this->consoleEncoding_ = "cp866";
+		this->systemEncoding_ = "cp1251";
+		//Вообще там ниже через фасет locale::info можно как минимум получить код языка,
+		//но потом, всё потом. TODO типа.
+	#else
+		//Линукс и всякое неизвестно-что.
+		setlocale(LC_ALL, "");	//Нужно только тут. Чтобы работало ncursesw. Для PDCurses - наоборот вредно.
+		locale currLocale = locGen("");
+		this->consoleEncoding_ = std::use_facet<boost::locale::info>(currLocale).encoding();
+		this->systemEncoding_ = consoleEncoding_;
+	#endif
 
 	//Сгенерируем локаль для работы с utf8
 	this->utf8Locale_ = locGen("utf8");
@@ -172,6 +188,73 @@ const unsigned int SmallToolsBox::GetCpuCoresNumber() const
 {
 	//Буст это умеет, нет смысла извращаться вручную.
 	return boost::thread::hardware_concurrency();
+}
+
+const unsigned long long SmallToolsBox::GetSystemMemoryFullSize() const
+//Возвращает общее количество оперативной памяти (без свопа) в системе или 0 при ошибке.
+{
+	unsigned long long result;
+	#ifdef _WIN32
+		MEMORYSTATUSEX statex;
+		statex.dwLength = sizeof(statex);
+		if (GlobalMemoryStatusEx(&statex))
+		{
+			//Вытягиваем инфу
+			result = statex.ullTotalPhys;
+			if (result == -1) result = 0;
+		}
+		else
+		{
+			//Что-то пошло не так :(
+			result = 0;
+		};
+	#elif (defined(unix) || defined(__unix__) || defined(__unix)) && (defined(_SC_PAGE_SIZE) && defined(_SC_PHYS_PAGES))
+		long pagesize = sysconf(_SC_PAGE_SIZE);
+		long pages = sysconf(_SC_PHYS_PAGES);
+		if ((pagesize != -1) && (pages != -1))
+		{
+			result = pagesize * pages;
+		}
+		else
+			result = 0;
+	#else
+		#error Unknown target OS. Can't preprocess memory detecting code :(
+	#endif
+	return result;
+}
+
+
+const unsigned long long SmallToolsBox::GetSystemMemoryFreeSize() const
+//Возвращает количество свободной оперативной памяти (без свопа) в системе или 0 при ошибке.
+{
+	unsigned long long result;
+	#ifdef _WIN32
+	MEMORYSTATUSEX statex;
+	statex.dwLength = sizeof(statex);
+	if (GlobalMemoryStatusEx(&statex))
+	{
+		//Вытягиваем инфу
+		result = statex.ullAvailPhys;
+		if (result == -1) result = 0;
+	}
+	else
+	{
+		//Что-то пошло не так :(
+		result = 0;
+	};
+	#elif (defined(unix) || defined(__unix__) || defined(__unix)) && (defined(_SC_PAGE_SIZE) && defined(_SC_AVPHYS_PAGES))
+		long pagesize = sysconf(_SC_PAGE_SIZE);
+		long pages = sysconf(_SC_AVPHYS_PAGES);
+		if ((pagesize != -1) && (pages != -1))
+		{
+			result = pagesize * pages;
+		}
+		else
+			result = 0;
+	#else
+		#error Unknown target OS. Can't preprocess memory detecting code :(
+	#endif
+	return result;
 }
 
 }	//namespace geoimgconv
