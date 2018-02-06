@@ -245,7 +245,6 @@ const unsigned long long GetProcMeminfoField(const std::string &fieldName)
             }
         }
     }
-    //Идём по
 
     //Независимо от того нашли ли что-нибудь - вернём результат. Если не нашли будет 0.
     return result;
