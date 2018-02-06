@@ -32,17 +32,23 @@
 //Для определения количества памяти нужен платформозависимый код :(
 #ifdef _WIN32
 	#include <Windows.h>
-#elif (defined(unix) || defined(__unix__) || defined(__unix)) && !defined(__linux__)
+#elif defined(__linux__)
+    //Тут придётся парсить /proc/meminfo для чего нужны будут потоки и tokenizer
+    #include <boost/tokenizer.hpp>
+    #include <boost/lexical_cast.hpp>
+    #include <iostream>
+    #include <sstream>
+#elif defined(unix) || defined(__unix__) || defined(__unix)
 	#include <sys/types.h>
-	#include <unistd.h>		
+	#include <unistd.h>
 	#include <sys/param.h>
 	#if (!defined(_SC_PAGE_SIZE) && defined(_SC_PAGESIZE))
 		#define _SC_PAGE_SIZE = _SC_PAGESIZE
 	#elif !defined(_SC_PAGE_SIZE)
 		#define _SC_PAGE_SIZE = 1024L
 	#endif
-#else
-	#error Unknown target OS. Can't preprocess memory detecting code :(
+#elif !defined(__linux__)
+	#error Unknown target OS. Cant preprocess memory detecting code :(
 #endif
 
 using namespace std;
@@ -190,6 +196,62 @@ const unsigned int SmallToolsBox::GetCpuCoresNumber() const
 	return boost::thread::hardware_concurrency();
 }
 
+#ifdef __linux__
+const unsigned long long GetProcMeminfoField(const std::string &fieldName)
+//Парсим /proc/meminfo и вынимаем нужное нам значение. При ошибке вернём 0.
+{
+    using namespace boost;
+    unsigned long long result = 0;
+    //Открываем файл.
+    ifstream ifile("/proc/meminfo");
+    if (!ifile)
+    {
+        return 0;
+    }
+
+    //Вытягиваем всё в строку.
+    stringstream sstream;
+    sstream << ifile.rdbuf();
+    string fileContents(sstream.str());
+    ifile.close();
+
+    //Готовим токенайзеры.
+    char_separator<char> linesSep("\n"); //Делить файл на строки
+    char_separator<char> tokensSep(" \t:");  //Делить строки на поля
+    tokenizer<char_separator<char> > linesTok(fileContents, linesSep);
+
+    //Ковыряем содержимое.
+    for (tokenizer<char_separator<char> >::const_iterator i = linesTok.begin();
+        i !=linesTok.end();i++)
+    {
+        tokenizer<char_separator<char> >currLineTok(*i, tokensSep);
+        tokenizer<char_separator<char> >::const_iterator j = currLineTok.begin();
+        if (j!=currLineTok.end())
+        {
+            if(*j == fieldName)
+            {
+                //Совпадает имя поля.
+                j++;
+                if (j!=currLineTok.end())
+                {
+                    //Есть второе поле - это будет число, его и вернём умножив на размер килобайта.
+                    return lexical_cast<unsigned long long>(*j) * 1024;
+                }
+                else
+                {
+                    //Нет смысла дальше что-то искать
+                    return 0;
+                }
+            }
+        }
+    }
+    //Идём по
+
+    //Независимо от того нашли ли что-нибудь - вернём результат. Если не нашли будет 0.
+    return result;
+}
+#endif // __linux__
+
 const unsigned long long SmallToolsBox::GetSystemMemoryFullSize() const
 //Возвращает общее количество оперативной памяти (без свопа) в системе или 0 при ошибке.
 {
@@ -210,7 +272,7 @@ const unsigned long long SmallToolsBox::GetSystemMemoryFullSize() const
 		};
 	#elif defined(__linux__)
 		//Тут нужно расковыривать содержимое /proc/meminfo
-		result = 0;
+		result = GetProcMeminfoField("MemTotal");
 	#elif (defined(unix) || defined(__unix__) || defined(__unix)) && (defined(_SC_PAGE_SIZE) && defined(_SC_PHYS_PAGES))
 		long pagesize = sysconf(_SC_PAGE_SIZE);
 		long pages = sysconf(_SC_PHYS_PAGES);
@@ -221,7 +283,7 @@ const unsigned long long SmallToolsBox::GetSystemMemoryFullSize() const
 		else
 			result = 0;
 	#else
-		#error Unknown target OS. Can't preprocess memory detecting code :(
+		#error Unknown target OS. Cant preprocess memory detecting code :(
 	#endif
 	return result;
 }
@@ -247,7 +309,7 @@ const unsigned long long SmallToolsBox::GetSystemMemoryFreeSize() const
 	};
 	#elif defined(__linux__)
 		//Тут нужно расковыривать содержимое /proc/meminfo
-		result = 0;
+		result = GetProcMeminfoField("MemAvailable");
 	#elif (defined(unix) || defined(__unix__) || defined(__unix)) && (defined(_SC_PAGE_SIZE) && defined(_SC_AVPHYS_PAGES))
 		long pagesize = sysconf(_SC_PAGE_SIZE);
 		long pages = sysconf(_SC_AVPHYS_PAGES);
@@ -258,7 +320,7 @@ const unsigned long long SmallToolsBox::GetSystemMemoryFreeSize() const
 		else
 			result = 0;
 	#else
-		#error Unknown target OS. Can't preprocess memory detecting code :(
+		#error Unknown target OS. Cant preprocess memory detecting code :(
 	#endif
 	return result;
 }
