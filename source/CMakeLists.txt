@@ -29,6 +29,15 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
 #Проект.
 project(geoimgconv VERSION 0.0.1 LANGUAGES CXX C)
 
+##Для gcc особо указать отладочные флаги.
+#if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+#	SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
+#	SET(CMAKE_C_FLAGS_DEBUG "-O0 -g")
+#	#message("GCC debug flags were set!")
+#else()
+#	#message("GCC debug flags were not set!")
+#endif()
+
 #Ищем BOOST и добавляем путь линковки к нему - строго до add_executable.
 #Причина - линкер в VisualStudio упорно не видит lib-файлы, если путь к ним не был
 #указан явно в параметре линкера для дополнительных путей поиска, и ему совершенно
