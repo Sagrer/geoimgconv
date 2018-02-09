@@ -103,6 +103,9 @@ class SmallToolsBox
 		//Перевести в верхний регистр utf8-строку.
 		void Utf8ToUpper(const std::string &inputStr, std::string &outputStr) const;
 
+		//Преобразовать количество байт в удобную для юзера строку с мегабайтами-гигабайтами.
+		const std::string BytesNumToInfoSizeStr(const unsigned long long &bytesNum) const;
+
 		//Возвращает число процессорных ядер или 0 если это количество получить не удалось.
 		const unsigned int GetCpuCoresNumber() const;
 
@@ -111,6 +114,9 @@ class SmallToolsBox
 
 		//Возвращает количество свободной оперативной памяти (без свопа) в системе или 0 при ошибке.
 		const unsigned long long GetSystemMemoryFreeSize() const;
+
+		//Возвращает максимальное количество памяти, которое вообще может потребить данный процесс.
+		const unsigned long long GetMaxProcessMemorySize() const;
 };
 
 extern SmallToolsBox STB;

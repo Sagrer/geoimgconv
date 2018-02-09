@@ -28,20 +28,24 @@
 #include <iomanip>
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/lexical_cast.hpp>
 
 //Для определения количества памяти нужен платформозависимый код :(
 #ifdef _WIN32
 	#include <Windows.h>
 #elif defined(__linux__)
-    //Тут придётся парсить /proc/meminfo для чего нужны будут потоки и tokenizer
-    #include <boost/tokenizer.hpp>
-    #include <boost/lexical_cast.hpp>
-    #include <iostream>
-    #include <sstream>
+	//Тут придётся парсить /proc/meminfo для чего нужны будут потоки и tokenizer
+	#include <boost/tokenizer.hpp>
+	#include <iostream>
+	#include <sstream>
 #elif defined(unix) || defined(__unix__) || defined(__unix)
 	#include <sys/types.h>
 	#include <unistd.h>
 	#include <sys/param.h>
+	#include <sys/time.h>
+	#include <sys/resource.h>
+	//В разных операционках константа с размером страницы может называться по разному или
+	//может вообще отсутствовать. Приводим всё к единому знаменателю - _SC_PAGE_SIZE.
 	#if (!defined(_SC_PAGE_SIZE) && defined(_SC_PAGESIZE))
 		#define _SC_PAGE_SIZE = _SC_PAGESIZE
 	#elif !defined(_SC_PAGE_SIZE)
@@ -171,8 +175,8 @@ std::string SmallToolsBox::DoubleToString(const double &input,
 //Преобразует double в строку с указанным количеством знаков после запятой.
 {
 	std::ostringstream stringStream;
-    stringStream << std::fixed << std::setprecision(precision) << input;
-    return stringStream.str();
+	stringStream << std::fixed << std::setprecision(precision) << input;
+	return stringStream.str();
 }
 
 
@@ -189,6 +193,36 @@ void SmallToolsBox::Utf8ToUpper(const std::string &inputStr, std::string &output
 	outputStr = boost::locale::to_upper(inputStr, this->utf8Locale_);
 }
 
+const std::string SmallToolsBox::BytesNumToInfoSizeStr(const unsigned long long &bytesNum) const
+//Преобразовать количество байт в удобную для юзера строку с мегабайтами-гигабайтами.
+{
+	using namespace boost;
+	//Если число меньше килобайта - выводим байты, иначе если меньше мегабайта - выводим
+	//килобайты, и так далее до терабайтов.
+	//TODO: нужна будет какая-то i18n и l10n. Когда-нибудь. В отдалённом светлом будущем.
+
+	if (bytesNum < 1024)
+	{
+		return lexical_cast<string>(bytesNum) + " байт";
+	}
+	else if (bytesNum < 1048576)
+	{
+		return DoubleToString(long double(bytesNum)/1024.0, 2) + " кб";
+	}
+	else if (bytesNum < 1073741824)
+	{
+		return DoubleToString(long double(bytesNum) / 1048576.0, 2) + " мб";
+	}
+	else if (bytesNum < 1099511627776)
+	{
+		return DoubleToString(long double(bytesNum) / 1073741824.0, 2) + " гб";
+	}
+	else
+	{
+		return DoubleToString(long double(bytesNum) / 1099511627776.0, 2) + " тб";
+	}
+}
+
 const unsigned int SmallToolsBox::GetCpuCoresNumber() const
 //Возвращает число процессорных ядер или 0 если это количество получить не удалось.
 {
@@ -200,54 +234,54 @@ const unsigned int SmallToolsBox::GetCpuCoresNumber() const
 const unsigned long long GetProcMeminfoField(const std::string &fieldName)
 //Парсим /proc/meminfo и вынимаем нужное нам значение. При ошибке вернём 0.
 {
-    using namespace boost;
-    unsigned long long result = 0;
-    //Открываем файл.
-    ifstream ifile("/proc/meminfo");
-    if (!ifile)
-    {
-        return 0;
-    }
+	using namespace boost;
+	unsigned long long result = 0;
+	//Открываем файл.
+	ifstream ifile("/proc/meminfo");
+	if (!ifile)
+	{
+		return 0;
+	}
 
-    //Вытягиваем всё в строку.
-    stringstream sstream;
-    sstream << ifile.rdbuf();
-    string fileContents(sstream.str());
-    ifile.close();
+	//Вытягиваем всё в строку.
+	stringstream sstream;
+	sstream << ifile.rdbuf();
+	string fileContents(sstream.str());
+	ifile.close();
 
-    //Готовим токенайзеры.
-    char_separator<char> linesSep("\n"); //Делить файл на строки
-    char_separator<char> tokensSep(" \t:");  //Делить строки на поля
-    tokenizer<char_separator<char> > linesTok(fileContents, linesSep);
+	//Готовим токенайзеры.
+	char_separator<char> linesSep("\n"); //Делить файл на строки
+	char_separator<char> tokensSep(" \t:");  //Делить строки на поля
+	tokenizer<char_separator<char> > linesTok(fileContents, linesSep);
 
-    //Ковыряем содержимое.
-    for (tokenizer<char_separator<char> >::const_iterator i = linesTok.begin();
-        i !=linesTok.end();i++)
-    {
-        tokenizer<char_separator<char> >currLineTok(*i, tokensSep);
-        tokenizer<char_separator<char> >::const_iterator j = currLineTok.begin();
-        if (j!=currLineTok.end())
-        {
-            if(*j == fieldName)
-            {
-                //Совпадает имя поля.
-                j++;
-                if (j!=currLineTok.end())
-                {
-                    //Есть второе поле - это будет число, его и вернём умножив на размер килобайта.
-                    return lexical_cast<unsigned long long>(*j) * 1024;
-                }
-                else
-                {
-                    //Нет смысла дальше что-то искать
-                    return 0;
-                }
-            }
-        }
-    }
+	//Ковыряем содержимое.
+	for (tokenizer<char_separator<char> >::const_iterator i = linesTok.begin();
+		i !=linesTok.end();i++)
+	{
+		tokenizer<char_separator<char> >currLineTok(*i, tokensSep);
+		tokenizer<char_separator<char> >::const_iterator j = currLineTok.begin();
+		if (j!=currLineTok.end())
+		{
+			if(*j == fieldName)
+			{
+				//Совпадает имя поля.
+				j++;
+				if (j!=currLineTok.end())
+				{
+					//Есть второе поле - это будет число, его и вернём умножив на размер килобайта.
+					return lexical_cast<unsigned long long>(*j) * 1024;
+				}
+				else
+				{
+					//Нет смысла дальше что-то искать
+					return 0;
+				}
+			}
+		}
+	}
 
-    //Независимо от того нашли ли что-нибудь - вернём результат. Если не нашли будет 0.
-    return result;
+	//Независимо от того нашли ли что-нибудь - вернём результат. Если не нашли будет 0.
+	return result;
 }
 #endif // __linux__
 
@@ -293,19 +327,19 @@ const unsigned long long SmallToolsBox::GetSystemMemoryFreeSize() const
 {
 	unsigned long long result;
 	#ifdef _WIN32
-	MEMORYSTATUSEX statex;
-	statex.dwLength = sizeof(statex);
-	if (GlobalMemoryStatusEx(&statex))
-	{
-		//Вытягиваем инфу
-		result = statex.ullAvailPhys;
-		if (result == -1) result = 0;
-	}
-	else
-	{
-		//Что-то пошло не так :(
-		result = 0;
-	};
+		MEMORYSTATUSEX statex;
+		statex.dwLength = sizeof(statex);
+		if (GlobalMemoryStatusEx(&statex))
+		{
+			//Вытягиваем инфу
+			result = statex.ullAvailPhys;
+			if (result == -1) result = 0;
+		}
+		else
+		{
+			//Что-то пошло не так :(
+			result = 0;
+		};
 	#elif defined(__linux__)
 		//Тут нужно расковыривать содержимое /proc/meminfo
 		result = GetProcMeminfoField("MemAvailable");
@@ -321,6 +355,45 @@ const unsigned long long SmallToolsBox::GetSystemMemoryFreeSize() const
 	#else
 		#error Unknown target OS. Cant preprocess memory detecting code :(
 	#endif
+	return result;
+}
+
+const unsigned long long SmallToolsBox::GetMaxProcessMemorySize() const
+//Возвращает максимальное количество памяти, которое вообще может потребить данный процесс.
+{
+	unsigned long long result;
+	#ifdef _WIN32
+		MEMORYSTATUSEX statex;
+		statex.dwLength = sizeof(statex);
+		if (GlobalMemoryStatusEx(&statex))
+		{
+			//Вытягиваем инфу
+			result = statex.ullTotalVirtual;
+			if (result == -1) result = 0;
+		}
+		else
+		{
+			//Что-то пошло не так :(
+			result = 0;
+		};
+	#elif (defined(unix) || defined(__unix__) || defined(__unix))
+		//По идее getrlimit должен быть в любом unix  с поддержкой POSIX 2001
+		struct rlimit infoStruct;
+		if (!getrlimit(RLIMIT_AS, &infoStruct))
+		{
+			result = infoStruct.rlim_max;
+			if (result == -1)
+				result = 0;
+		}
+		else
+		{
+			//Что-то пошло не так.
+			result = 0;
+		}
+	#elif
+		#error Unknown target OS. Cant preprocess memory detecting code :(
+	#endif
+
 	return result;
 }
 

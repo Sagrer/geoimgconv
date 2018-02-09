@@ -197,8 +197,9 @@ int AppUIConsole::RunApp()
 	//this->PrintToConsole("Текущий рабочий путь: "+this->getCurrPath() + "\n");
 	this->PrintToConsole("\nОбнаружено ядер процессора:" +
 		lexical_cast<string>(STB.GetCpuCoresNumber()) + "\n");
-	this->PrintToConsole("Всего ОЗУ: " + lexical_cast<string>(STB.GetSystemMemoryFullSize()) + "\n");
-	this->PrintToConsole("Доступно ОЗУ: " + lexical_cast<string>(STB.GetSystemMemoryFreeSize()) + "\n");
+	this->PrintToConsole("Всего ОЗУ: " + STB.BytesNumToInfoSizeStr(STB.GetSystemMemoryFullSize()) + ".\n");
+	this->PrintToConsole("Доступно ОЗУ: " + STB.BytesNumToInfoSizeStr(STB.GetSystemMemoryFreeSize()) + ".\n");
+	this->PrintToConsole("Процесс может адресовать памяти: " + STB.BytesNumToInfoSizeStr(STB.GetMaxProcessMemorySize()) + ".\n\n");
 
 	//Выдать больше инфы если не было передано никаких опций командной строки.
 	if (this->confObj_->getArgc() == 1)
