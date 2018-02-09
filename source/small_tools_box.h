@@ -40,6 +40,15 @@
 namespace geoimgconv
 {
 
+struct SysResInfo
+//Структура для метода GetSysResInfo
+{
+	unsigned int cpuCoresNumber;	//Количество ядер процессора.
+	unsigned long long systemMemoryFullSize;	//Общее количество (без свопа) оперативной памяти.
+	unsigned long long systemMemoryFreeSize;	//Количество свободной (без свопа) оперативной памяти.
+	unsigned long long maxProcessMemorySize;	//Сколько памяти может адресовать данный процесс.
+};
+
 class SmallToolsBox
 {
 	private:
@@ -117,6 +126,10 @@ class SmallToolsBox
 
 		//Возвращает максимальное количество памяти, которое вообще может потребить данный процесс.
 		const unsigned long long GetMaxProcessMemorySize() const;
+
+		//Вернуть информацию о ресурсах системы - то же, что и несколько методов выше, но должно
+		//работать быстрее чем последовательный вызов всех этих методов.
+		void GetSysResInfo(SysResInfo &infoStruct) const;
 };
 
 extern SmallToolsBox STB;

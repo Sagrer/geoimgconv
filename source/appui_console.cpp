@@ -195,11 +195,18 @@ int AppUIConsole::RunApp()
 	this->PrintToConsole("Это прототип. Не ждите от него многого.\n");
 	//this->PrintToConsole("Программа запущена по пути: "+ this->getAppPath() + "\n");
 	//this->PrintToConsole("Текущий рабочий путь: "+this->getCurrPath() + "\n");
-	this->PrintToConsole("\nОбнаружено ядер процессора:" +
+	/*this->PrintToConsole("\nОбнаружено ядер процессора:" +
 		lexical_cast<string>(STB.GetCpuCoresNumber()) + "\n");
 	this->PrintToConsole("Всего ОЗУ: " + STB.BytesNumToInfoSizeStr(STB.GetSystemMemoryFullSize()) + ".\n");
 	this->PrintToConsole("Доступно ОЗУ: " + STB.BytesNumToInfoSizeStr(STB.GetSystemMemoryFreeSize()) + ".\n");
-	this->PrintToConsole("Процесс может адресовать памяти: " + STB.BytesNumToInfoSizeStr(STB.GetMaxProcessMemorySize()) + ".\n\n");
+	this->PrintToConsole("Процесс может адресовать памяти: " + STB.BytesNumToInfoSizeStr(STB.GetMaxProcessMemorySize()) + ".\n\n");*/
+	SysResInfo sysResInfo;
+	STB.GetSysResInfo(sysResInfo);
+	this->PrintToConsole("\nОбнаружено ядер процессора:" +
+		lexical_cast<string>(sysResInfo.cpuCoresNumber) + "\n");
+	this->PrintToConsole("Всего ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo.systemMemoryFullSize) + ".\n");
+	this->PrintToConsole("Доступно ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo.systemMemoryFreeSize) + ".\n");
+	this->PrintToConsole("Процесс может адресовать памяти: " + STB.BytesNumToInfoSizeStr(sysResInfo.maxProcessMemorySize) + ".\n\n");
 
 	//Выдать больше инфы если не было передано никаких опций командной строки.
 	if (this->confObj_->getArgc() == 1)

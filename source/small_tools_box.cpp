@@ -230,8 +230,11 @@ const std::string SmallToolsBox::BytesNumToInfoSizeStr(const unsigned long long 
 const unsigned int SmallToolsBox::GetCpuCoresNumber() const
 //Возвращает число процессорных ядер или 0 если это количество получить не удалось.
 {
-	//Буст это умеет, нет смысла извращаться вручную.
-	return boost::thread::hardware_concurrency();
+	//Количество ядер умеет узнавать Boost. C++11 тоже умеет, но духи гугла говорят
+	//что буст надёжнее и реже возвращает 0.
+	unsigned int result = boost::thread::hardware_concurrency();
+	if (!result) result = 1;	//0 ядер не бывает.
+	return result;
 }
 
 #ifdef __linux__
@@ -258,12 +261,16 @@ const unsigned long long GetProcMeminfoField(const std::string &fieldName)
 	char_separator<char> tokensSep(" \t:");  //Делить строки на поля
 	tokenizer<char_separator<char> > linesTok(fileContents, linesSep);
 
+	//Итераторы
+	tokenizer<char_separator<char> >::const_iterator i;
+	tokenizer<char_separator<char> >::const_iterator j;
+
 	//Ковыряем содержимое.
-	for (tokenizer<char_separator<char> >::const_iterator i = linesTok.begin();
+	for (i = linesTok.begin();
 		i !=linesTok.end();i++)
 	{
 		tokenizer<char_separator<char> >currLineTok(*i, tokensSep);
-		tokenizer<char_separator<char> >::const_iterator j = currLineTok.begin();
+		j = currLineTok.begin();
 		if (j!=currLineTok.end())
 		{
 			if(*j == fieldName)
@@ -279,6 +286,73 @@ const unsigned long long GetProcMeminfoField(const std::string &fieldName)
 				{
 					//Нет смысла дальше что-то искать
 					return 0;
+				}
+			}
+		}
+	}
+
+	//Независимо от того нашли ли что-нибудь - вернём результат. Если не нашли будет 0.
+	return result;
+}
+
+void FillSysInfoFromProcMeminfo(SysResInfo &infoStruct)
+//Парсим /proc/meminfo и вынимаем сразу все значения из тех, что можно записать в SysResInfo.
+{
+	using namespace boost;
+	char fieldsNum = 2;	//Счётчик прочитанных полей чтобы не продолжать парсить файл когда вся инфа
+						//уже будет прочитана.
+	unsigned long long *fieldPointer;	//Указатель на поле в которое будем записывать значение.
+	unsigned long long result = 0;
+	//Открываем файл.
+	ifstream ifile("/proc/meminfo");
+	if (!ifile)
+	{
+		return 0;
+	}
+
+	//Вытягиваем всё в строку.
+	stringstream sstream;
+	sstream << ifile.rdbuf();
+	string fileContents(sstream.str());
+	ifile.close();
+
+	//Готовим токенайзеры.
+	char_separator<char> linesSep("\n"); //Делить файл на строки
+	char_separator<char> tokensSep(" \t:");  //Делить строки на поля
+	tokenizer<char_separator<char> > linesTok(fileContents, linesSep);
+
+	//Итераторы
+	tokenizer<char_separator<char> >::const_iterator i;
+	tokenizer<char_separator<char> >::const_iterator j;
+
+	//Ковыряем содержимое.
+	for (i = linesTok.begin(); i != linesTok.end(); i++)
+	{
+		tokenizer<char_separator<char> >currLineTok(*i, tokensSep);
+		j = currLineTok.begin();
+		if (j != currLineTok.end())
+		{
+			//Вот это шаманство с указателем - чтобы строковое сравнение делать всего 1 раз и при этом
+			//не использовать никакого набора констант по которому можно было бы понять какое из полей
+			//было найдено. При совпадении строк мы сразу получим указатель на поле куда надо инфу
+			//записать.
+			fieldPointer = NULL;
+			if ((*j == "MemTotal"))
+				fieldPointer = &(infoStruct.systemMemoryFullSize)
+			else if ((*j == "MemAvailable"))
+				fieldPointer = &(infoStruct.systemMemoryFreeSize);
+			if (!fieldPointer)
+			{
+				//Было совпадение имя поля.
+				j++;
+				if (j != currLineTok.end())
+				{
+					//Есть второе поле - это будет число, его и запомним, умножив на размер килобайта.
+					*fieldPointer = lexical_cast<unsigned long long>(*j) * 1024;
+					//Если это было последнее поле - нет дальше смысла парсить файл.
+					fieldsNum--;
+					if (!fieldsNum)
+						return;
 				}
 			}
 		}
@@ -411,6 +485,87 @@ const unsigned long long SmallToolsBox::GetMaxProcessMemorySize() const
 	#endif
 
 	return result;
+}
+
+void SmallToolsBox::GetSysResInfo(SysResInfo &infoStruct) const
+//Вернуть информацию о ресурсах системы - то же, что и несколько методов выше, но должно
+//работать быстрее чем последовательный вызов всех этих методов.
+{
+	//Количество ядер умеет узнавать Boost. C++11 тоже умеет, но духи гугла говорят
+	//что буст надёжнее и реже возвращает 0.
+	infoStruct.cpuCoresNumber = boost::thread::hardware_concurrency();
+	if (!infoStruct.cpuCoresNumber) infoStruct.cpuCoresNumber = 1;	//0 ядер не бывает.
+
+	//Инфу о памяти буст получать не умеет, или не умел в версии 1.66. Всё как надо сделаем для
+	//вендов и линуха, для остальных юниксов код скорее на удачу - может и сработает.
+	infoStruct.systemMemoryFullSize = 0;	//Нули - признак ошибки, т.е. получить инфу для поля не удалось.
+	infoStruct.systemMemoryFreeSize = 0;
+	infoStruct.maxProcessMemorySize = 0;
+
+	#ifdef _WIN32
+		//Под вендами всё просто и единообразно - единственный вызов WinAPI даст всё в одной структуре.
+		MEMORYSTATUSEX statex;
+		statex.dwLength = sizeof(statex);
+		if (GlobalMemoryStatusEx(&statex))
+		{
+			//Общее количество оперативки:
+			if (statex.ullTotalPhys != -1) infoStruct.systemMemoryFullSize = statex.ullTotalPhys;
+			//Сколько оперативки свободно:
+			if (statex.ullAvailPhys != -1) infoStruct.systemMemoryFreeSize = statex.ullAvailPhys;
+			//Сколько может адресовать процесс:
+			if (statex.ullTotalVirtual != -1) infoStruct.maxProcessMemorySize = statex.ullTotalVirtual;
+		};
+	#elif (defined(unix) || defined(__unix__) || defined(__unix))
+		//Сколько может адресовать процесс:
+		//По идее getrlimit должен быть в любом unix  с поддержкой POSIX 2001
+		rlimit infoStruct;
+		if (!getrlimit(RLIMIT_DATA, &infoStruct))
+		{
+			infoStruct.maxProcessMemorySize = infoStruct.rlim_max;
+			//Если там -1 то это не ошибка а отсутствие лимита. Уменьшим значение
+			//чтобы где-нибудь его не сравнили с -1 и не посчитали за ошибку.
+			if (infoStruct.maxProcessMemorySize == -1)
+				infoStruct.maxProcessMemorySize--;
+		}
+
+		//Остальные параметры памяти по-разному получаются для linux-а и для остальных юниксов.
+		#ifdef __linux__
+			//Тут нужно расковыривать содержимое /proc/meminfo
+			FillSysInfoFromProcMeminfo(infoStruct);
+		#elif defined(_SC_PAGE_SIZE) && defined(_SC_AVPHYS_PAGES) && defined(_SC_PHYS_PAGES)
+			//Может быть и сработает.
+			long pagesize = sysconf(_SC_PAGE_SIZE);
+			if (pagesize != -1)
+			{
+				//Общее количество оперативки:
+				long pages = sysconf(_SC_PHYS_PAGES);
+				if ((pagesize != -1) && (pages != -1))
+				{
+					infoStruct.systemMemoryFullSize = pagesize * pages;
+				}
+				//Сколько оперативки свободно:
+				pages = sysconf(_SC_AVPHYS_PAGES);
+				if ((pagesize != -1) && (pages != -1))
+				{
+					infoStruct.systemMemoryFreeSize = pagesize * pages;
+				}
+			}			
+		#else
+			#error Unknown target OS. Cant preprocess memory detecting code :(
+		#endif
+	#else
+		#error Unknown target OS. Cant preprocess memory detecting code :(
+	#endif
+
+	//Если у нас i386 32-битная или 64-битная архитектура - можно попробовать жёстко
+	//задать maxProcessMemorySize (если до сих пор ничего найти не удалось).
+	#if BOOST_ARCH_X86_32
+	if (infoStruct.maxProcessMemorySize == 0)
+		infoStruct.maxProcessMemorySize = 2147483648;	//2 гигабайта. Больше система может и не уметь.
+	#elif BOOST_ARCH_X86_64
+	if (infoStruct.maxProcessMemorySize == 0)
+		infoStruct.maxProcessMemorySize = 8796093022208;	//8 терабайт. Больше система может и не уметь.
+	#endif
 }
 
 }	//namespace geoimgconv
