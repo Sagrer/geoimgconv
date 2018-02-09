@@ -29,7 +29,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/predef.h> 
+#include <boost/predef.h>
 
 //Для определения количества памяти нужен платформозависимый код :(
 #ifdef _WIN32
@@ -307,7 +307,7 @@ void FillSysInfoFromProcMeminfo(SysResInfo &infoStruct)
 	ifstream ifile("/proc/meminfo");
 	if (!ifile)
 	{
-		return 0;
+		return;
 	}
 
 	//Вытягиваем всё в строку.
@@ -338,10 +338,10 @@ void FillSysInfoFromProcMeminfo(SysResInfo &infoStruct)
 			//записать.
 			fieldPointer = NULL;
 			if ((*j == "MemTotal"))
-				fieldPointer = &(infoStruct.systemMemoryFullSize)
+				fieldPointer = &(infoStruct.systemMemoryFullSize);
 			else if ((*j == "MemAvailable"))
 				fieldPointer = &(infoStruct.systemMemoryFreeSize);
-			if (!fieldPointer)
+			if (fieldPointer)
 			{
 				//Было совпадение имя поля.
 				j++;
@@ -358,8 +358,7 @@ void FillSysInfoFromProcMeminfo(SysResInfo &infoStruct)
 		}
 	}
 
-	//Независимо от того нашли ли что-нибудь - вернём результат. Если не нашли будет 0.
-	return result;
+	return;
 }
 #endif // __linux__
 
@@ -518,10 +517,10 @@ void SmallToolsBox::GetSysResInfo(SysResInfo &infoStruct) const
 	#elif (defined(unix) || defined(__unix__) || defined(__unix))
 		//Сколько может адресовать процесс:
 		//По идее getrlimit должен быть в любом unix  с поддержкой POSIX 2001
-		rlimit infoStruct;
-		if (!getrlimit(RLIMIT_DATA, &infoStruct))
+		rlimit rlimitInfo;
+		if (!getrlimit(RLIMIT_DATA, &rlimitInfo))
 		{
-			infoStruct.maxProcessMemorySize = infoStruct.rlim_max;
+			infoStruct.maxProcessMemorySize = rlimitInfo.rlim_max;
 			//Если там -1 то это не ошибка а отсутствие лимита. Уменьшим значение
 			//чтобы где-нибудь его не сравнили с -1 и не посчитали за ошибку.
 			if (infoStruct.maxProcessMemorySize == -1)
@@ -549,7 +548,7 @@ void SmallToolsBox::GetSysResInfo(SysResInfo &infoStruct) const
 				{
 					infoStruct.systemMemoryFreeSize = pagesize * pages;
 				}
-			}			
+			}
 		#else
 			#error Unknown target OS. Cant preprocess memory detecting code :(
 		#endif
