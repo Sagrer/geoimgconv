@@ -33,11 +33,6 @@
 //Для определения количества памяти нужен платформозависимый код :(
 #ifdef _WIN32
 	#include <Windows.h>
-#elif defined(__linux__)
-	//Тут придётся парсить /proc/meminfo для чего нужны будут потоки и tokenizer
-	#include <boost/tokenizer.hpp>
-	#include <iostream>
-	#include <sstream>
 #elif defined(unix) || defined(__unix__) || defined(__unix)
 	#include <sys/types.h>
 	#include <unistd.h>
@@ -51,7 +46,15 @@
 	#elif !defined(_SC_PAGE_SIZE)
 		#define _SC_PAGE_SIZE = 1024L
 	#endif
-#elif !defined(__linux__)
+
+	//Для linux кое-что придётся делать иначе.
+	#if defined(__linux__)
+		//Тут придётся парсить /proc/meminfo для чего нужны будут потоки и tokenizer
+		#include <boost/tokenizer.hpp>
+		#include <iostream>
+		#include <sstream>
+	#endif
+#else
 	#error Unknown target OS. Cant preprocess memory detecting code :(
 #endif
 
@@ -207,19 +210,19 @@ const std::string SmallToolsBox::BytesNumToInfoSizeStr(const unsigned long long 
 	}
 	else if (bytesNum < 1048576)
 	{
-		return DoubleToString(long double(bytesNum)/1024.0, 2) + " кб";
+		return DoubleToString((long double)(bytesNum)/1024.0, 2) + " кб";
 	}
 	else if (bytesNum < 1073741824)
 	{
-		return DoubleToString(long double(bytesNum) / 1048576.0, 2) + " мб";
+		return DoubleToString((long double)(bytesNum) / 1048576.0, 2) + " мб";
 	}
 	else if (bytesNum < 1099511627776)
 	{
-		return DoubleToString(long double(bytesNum) / 1073741824.0, 2) + " гб";
+		return DoubleToString((long double)(bytesNum) / 1073741824.0, 2) + " гб";
 	}
 	else
 	{
-		return DoubleToString(long double(bytesNum) / 1099511627776.0, 2) + " тб";
+		return DoubleToString((long double)(bytesNum) / 1099511627776.0, 2) + " тб";
 	}
 }
 
@@ -378,12 +381,14 @@ const unsigned long long SmallToolsBox::GetMaxProcessMemorySize() const
 		};
 	#elif (defined(unix) || defined(__unix__) || defined(__unix))
 		//По идее getrlimit должен быть в любом unix  с поддержкой POSIX 2001
-		struct rlimit infoStruct;
-		if (!getrlimit(RLIMIT_AS, &infoStruct))
+		rlimit infoStruct;
+		if (!getrlimit(RLIMIT_DATA, &infoStruct))
 		{
 			result = infoStruct.rlim_max;
+			//Если там -1 то это не ошибка а отсутствие лимита. Уменьшим значение
+			//чтобы где-нибудь его не сравнили с -1 и не посчитали за ошибку.
 			if (result == -1)
-				result = 0;
+				result--;
 		}
 		else
 		{
