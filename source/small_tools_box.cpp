@@ -29,6 +29,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/predef.h> 
 
 //Для определения количества памяти нужен платформозависимый код :(
 #ifdef _WIN32
@@ -364,7 +365,7 @@ const unsigned long long SmallToolsBox::GetSystemMemoryFreeSize() const
 const unsigned long long SmallToolsBox::GetMaxProcessMemorySize() const
 //Возвращает максимальное количество памяти, которое вообще может потребить данный процесс.
 {
-	unsigned long long result;
+	unsigned long long result = 0;
 	#ifdef _WIN32
 		MEMORYSTATUSEX statex;
 		statex.dwLength = sizeof(statex);
@@ -397,6 +398,16 @@ const unsigned long long SmallToolsBox::GetMaxProcessMemorySize() const
 		}
 	#elif
 		#error Unknown target OS. Cant preprocess memory detecting code :(
+	#endif
+
+	//Если у нас i386 32-битная или 64-битная архитектура - можно попробовать жёстко
+	//задать максимальный лимит (если до сих пор ничего найти не удалось).
+	#if BOOST_ARCH_X86_32
+		if (result == 0)
+			result = 2147483648;	//2 гигабайта. Больше система может и не уметь.
+	#elif BOOST_ARCH_X86_64
+		if (result == 0)
+			result = 8796093022208;	//8 терабайт. Больше система может и не уметь.
 	#endif
 
 	return result;
