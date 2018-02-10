@@ -2,7 +2,7 @@
 //                                                       //
 //                  GeoImageConverter                    //
 //       Преобразователь изображений с геоданными        //
-//       Copyright © 2017 Александр (Sagrer) Гриднев     //
+//    Copyright © 2017-2018 Александр (Sagrer) Гриднев   //
 //              Распространяется на условиях             //
 //                 GNU GPL v3 или выше                   //
 //                  см. файл gpl.txt                     //
@@ -230,7 +230,7 @@ int AppUIConsole::RunApp()
 	filesystem::path outputFilePath = filesystem::absolute(STB.Utf8ToWstring(confObj_->getOutputFileName()), STB.Utf8ToWstring(getCurrPath()));
 	string inputFileName = STB.WstringToUtf8(inputFilePath.wstring());
 	string outputFileName = STB.WstringToUtf8(outputFilePath.wstring());
-	MedianFilterUniversal medFilter;
+	MedianFilter medFilter;
 	ErrorInfo errObj;
 	medFilter.setAperture(confObj_->getMedfilterAperture());
 	medFilter.setThreshold(confObj_->getMedfilterThreshold());

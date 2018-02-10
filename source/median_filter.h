@@ -4,7 +4,7 @@
 //                                                       //
 //                  GeoImageConverter                    //
 //       Преобразователь изображений с геоданными        //
-//       Copyright © 2017 Александр (Sagrer) Гриднев     //
+//    Copyright © 2017-2018 Александр (Sagrer) Гриднев   //
 //              Распространяется на условиях             //
 //                 GNU GPL v3 или выше                   //
 //                  см. файл gpl.txt                     //
@@ -25,47 +25,48 @@
 namespace geoimgconv
 {
 
-//Семейство классов для работы с медианным фильтром.
+//Семейство классов для работы с медианным фильтром. Тут 2 основных класса:
 
-//Базовый абстрактный класс.
-class MedianFilterBase
+//RealMedianFilterBase с наследниками - класс, который выполняет работу над
+//непосредственно изображением. Сюда вынесен код, специфичный для типа пиксела
+//- именно для этого оно и вынесено в отдельный класс, раньше было всё в общей куче.
+//Поскольку пикселы могут быть разными - базовый класс оборудован шаблонными
+//наследниками и полиморфизмом.
+
+//MedianFilter - изначально тут была вся эта система с шаблонными наследниками и
+//полиморфизмом, но теперь это просто обёртка, которая однако занимается предварительным
+//чтением картинки, определением её параметров и решает какой наследник RealMedianFilterBase
+//заюзать для реальной работы над изображением.
+
+class MedianFilter;	//Предварительно объявление т.к. в RealMedianFilterbase будет на него ссылка.
+
+//Базовый абстрактный класс для шаблонных классов.
+class RealMedianFilterBase
 {
 private:
-	//Поля
-	int aperture_;		//Окно фильтра (длина стороны квадрата в пикселах). Должно быть нечётным.
-	double threshold_;			//Порог фильтра. Если медиана отличается от значения пиксела меньше чем на порог - значение не будет изменено.
-	//bool useMultiThreading_;		//Включает многопоточную обработку. Пока не реализовано.
-	//unsigned int threadsNumber_;	//Количество потоков при многопоточной обработке. 0 - автоопределение. Пока не реализовано.
-	MarginType marginType_;		//Тип заполнения краевых пикселей.
+	//Нет смысла хранить тут поля типа aperture или threshold. Ибо этот класс нужен просто
+	//чтобы вынести сюда код, который должен генерироваться по шаблону для разных типов пиксела.
+	//Поэтому будем просто держать тут ссылку на основной объект класса и брать значения полей
+	//оттуда.
+	MedianFilter *ownerObj_;
+
+	//Запретим конструктор по умолчанию и копирующий конструктор.
+	RealMedianFilterBase() {};
+	RealMedianFilterBase(RealMedianFilterBase&) {};
 public:
-	//Доступ к полям.
+	//Доступ к ссылке на объект-хозяин
+	MedianFilter& getOwnerObj() const { return *ownerObj_; }
 
-	//aperture
-	int const& getAperture() const { return aperture_; }
-	void setAperture(const int &aperture) { aperture_ = aperture; }
-	//threshold
-	double const& getThreshold() const { return threshold_; }
-	void setThreshold(const double &threshold) { threshold_ = threshold; }
-	////useMultiThreading
-	//bool const& getUseMultiThreading() const { return useMultiThreading_; }
-	//void setUseMultiThreading(const bool &useMultiThreading) { useMultiThreading_ = useMultiThreading; }
-	////threadsNumber
-	//bool const& getThreadsNumber() const { return threadsNumber_; }
-	//void setThreadsNumber(const bool &threadsNumber) { threadsNumber_ = threadsNumber; }
-	//marginType
-	MarginType const& getMarginType() const { return marginType_; }
-	void setMarginType(const MarginType &marginType) { marginType_ = marginType; }
+	//Нельзя создать объект не дав ссылку на MedianFilter
+	RealMedianFilterBase(MedianFilter *ownerObj) : ownerObj_(ownerObj) {};
+	virtual ~RealMedianFilterBase() {};
 
-	//Конструкторы-деструкторы
-	MedianFilterBase();
-	~MedianFilterBase();
-
-	//Прочий функционал
+	//Абстрактные методы
 
 	//Читает изображение в матрицу так чтобы по краям оставалось место для создания граничных
 	//пикселей.
-	virtual bool LoadImage(const std::string &fileName, ErrorInfo *errObj = NULL, CallBackBase *callBackObj=NULL) = 0;
-		
+	virtual bool LoadImage(const std::string &fileName, ErrorInfo *errObj = NULL, CallBackBase *callBackObj = NULL) = 0;
+
 	//Сохраняет матрицу в изображение. За основу берётся ранее загруженная через LoadImage
 	//картинка - файл копируется под новым именем и затем в него вносятся изменённые пиксели.
 	///В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
@@ -74,7 +75,7 @@ public:
 	//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 	//выбранным алгоритмом.
 	virtual void FillMargins(CallBackBase *callBackObj = NULL) = 0;
-		
+
 	//Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
 	virtual void ApplyStupidFilter(CallBackBase *callBackObj = NULL) = 0;
 
@@ -82,35 +83,31 @@ public:
 	//Для отладки. Результат записывает в destMatrix_.
 	virtual void ApplyStubFilter(CallBackBase *callBackObj = NULL) = 0;
 
-	//Приводит апертуру к имеющему смысл значению.
-	void FixAperture();
-
 	//"Тупая" визуализация матрицы, отправляется прямо в cout.
 	virtual void SourcePrintStupidVisToCout() = 0;
-		
+
 	//Вывод исходной матрицы в csv-файл, который должны понимать всякие картографические
 	//программы. Это значит что каждый пиксел - это одна строка в файле.
 	//Это "тупой" вариант вывода - метаданные нормально не сохраняются.
 	virtual bool SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL) = 0;
-		
+
 	//Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 	virtual bool DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL) = 0;
 };
 
-
 //Шаблонный класс для произвольного типа ячейки. Базовая версия (для специализации наследников)
-template <typename CellType> class MedianFilterTemplBase : public MedianFilterBase
+template <typename CellType> class RealMedianFilterTemplBase : public RealMedianFilterBase
 {
 private:
 	//Приватные поля.
-	std::string sourceFileName_;
+	//std::string sourceFileName_;
 	AltMatrix<CellType> sourceMatrix_;	//Тут хранится самое ценное! То с чем работаем :).
 	AltMatrix<CellType> destMatrix_;		//А тут ещё более ценное - результат ).
 		
 	//Приватные типы
 		
 	//Указатель на метод-заполнитель пикселей
-	typedef void(MedianFilterTemplBase<CellType>::*TFillerMethod)(const int &x,
+	typedef void(RealMedianFilterTemplBase<CellType>::*TFillerMethod)(const int &x,
 		const int &y, const PixelDirection direction, const int &marginSize);
 		
 	//Приватные методы
@@ -149,10 +146,11 @@ private:
 		if (value1 >= value2) return value1-value2;
 		else return value2-value1;
 	};
+
 public:
-	//Конструкторы-деструкторы
-	MedianFilterTemplBase();
-	~MedianFilterTemplBase();
+	//Нельзя создать объект не дав ссылку на MedianFilter
+	RealMedianFilterTemplBase(MedianFilter *ownerObj) : RealMedianFilterBase(ownerObj) {};
+	//~RealMedianFilterTemplBase() {}; //Пустой. Хватит по умолчанию.
 
 	//Прочий функционал
 
@@ -190,12 +188,15 @@ public:
 
 //Шаблонный класс для произвольного типа ячейки. Пустой наследник (не специализированная
 //версия. Через этот класс работают все unsigned-версии CellType.
-template <typename CellType> class MedianFilter : public MedianFilterTemplBase<CellType>
+template <typename CellType> class RealMedianFilter : public RealMedianFilterTemplBase<CellType>
 {
+public:
+	//Нельзя создать объект не дав ссылку на MedianFilter
+	RealMedianFilter(MedianFilter *ownerObj) : RealMedianFilterTemplBase<CellType>(ownerObj) {};
 };
 
-//Специализация MedianFilter для double
-template <> class MedianFilter<double> : public MedianFilterTemplBase<double>
+//Специализация RealMedianFilter для double
+template <> class RealMedianFilter<double> : public RealMedianFilterTemplBase<double>
 {
 private:
 	//Вернёт положительную разницу между двумя значениями пикселя независимо от
@@ -204,10 +205,13 @@ private:
 	{
 		return std::abs(value1-value2);
 	};
+public:
+	//Нельзя создать объект не дав ссылку на MedianFilter
+	RealMedianFilter(MedianFilter *ownerObj) : RealMedianFilterTemplBase<double>(ownerObj) {};
 };
 
-//Специализация MedianFilter для float
-template <> class MedianFilter<float> : public MedianFilterTemplBase<float>
+//Специализация RealMedianFilter для float
+template <> class RealMedianFilter<float> : public RealMedianFilterTemplBase<float>
 {
 private:
 	//Вернёт положительную разницу между двумя значениями пикселя независимо от
@@ -216,10 +220,13 @@ private:
 	{
 		return std::abs(value1-value2);
 	};
+public:
+	//Нельзя создать объект не дав ссылку на MedianFilter
+	RealMedianFilter(MedianFilter *ownerObj) : RealMedianFilterTemplBase<float>(ownerObj) {};
 };
 
-//Специализация MedianFilter для boost::int8_t
-template <> class MedianFilter<boost::int8_t> : public MedianFilterTemplBase<boost::int8_t>
+//Специализация RealMedianFilter для boost::int8_t
+template <> class RealMedianFilter<boost::int8_t> : public RealMedianFilterTemplBase<boost::int8_t>
 {
 private:
 	//Вернёт положительную разницу между двумя значениями пикселя независимо от
@@ -228,10 +235,13 @@ private:
 	{
 		return std::abs(value1-value2);
 	};
+public:
+	//Нельзя создать объект не дав ссылку на MedianFilter
+	RealMedianFilter(MedianFilter *ownerObj) : RealMedianFilterTemplBase<boost::int8_t>(ownerObj) {};
 };
 
-//Специализация MedianFilter для boost::int16_t
-template <> class MedianFilter<boost::int16_t> : public MedianFilterTemplBase<boost::int16_t>
+//Специализация RealMedianFilter для boost::int16_t
+template <> class RealMedianFilter<boost::int16_t> : public RealMedianFilterTemplBase<boost::int16_t>
 {
 private:
 	//Вернёт положительную разницу между двумя значениями пикселя независимо от
@@ -240,10 +250,13 @@ private:
 	{
 		return std::abs(value1-value2);
 	};
+public:
+	//Нельзя создать объект не дав ссылку на MedianFilter
+	RealMedianFilter(MedianFilter *ownerObj) : RealMedianFilterTemplBase<boost::int16_t>(ownerObj) {};
 };
 
-//Специализация MedianFilter для boost::int32_t
-template <> class MedianFilter<boost::int32_t> : public MedianFilterTemplBase<boost::int32_t>
+//Специализация RealMedianFilter для boost::int32_t
+template <> class RealMedianFilter<boost::int32_t> : public RealMedianFilterTemplBase<boost::int32_t>
 {
 private:
 	//Вернёт положительную разницу между двумя значениями пикселя независимо от
@@ -252,17 +265,21 @@ private:
 	{
 		return std::abs(value1-value2);
 	};
+public:
+	//Нельзя создать объект не дав ссылку на MedianFilter
+	RealMedianFilter(MedianFilter *ownerObj) : RealMedianFilterTemplBase<boost::int32_t>(ownerObj) {};
 };
 
 //Алиасы для классов, работающих с реально использующимися в GeoTIFF типами пикселов.
-typedef MedianFilter<double> MedianFilterFloat64;
-typedef MedianFilter<float> MedianFilterFloat32;
-typedef MedianFilter<boost::int8_t> MedianFilterInt8;
-typedef MedianFilter<boost::uint8_t> MedianFilterUInt8;
-typedef MedianFilter<boost::int16_t> MedianFilterInt16;
-typedef MedianFilter<boost::uint16_t> MedianFilterUInt16;
-typedef MedianFilter<boost::int32_t> MedianFilterInt32;
-typedef MedianFilter<boost::uint32_t> MedianFilterUInt32;
+//Все они испольуются внутри median_filter.cpp а значит их код точно сгенерируется по шаблону.
+typedef RealMedianFilter<double> RealMedianFilterFloat64;
+typedef RealMedianFilter<float> RealMedianFilterFloat32;
+typedef RealMedianFilter<boost::int8_t> RealMedianFilterInt8;
+typedef RealMedianFilter<boost::uint8_t> RealMedianFilterUInt8;
+typedef RealMedianFilter<boost::int16_t> RealMedianFilterInt16;
+typedef RealMedianFilter<boost::uint16_t> RealMedianFilterUInt16;
+typedef RealMedianFilter<boost::int32_t> RealMedianFilterInt32;
+typedef RealMedianFilter<boost::uint32_t> RealMedianFilterUInt32;
 
 //Обязательно надо проверить и запретить дальнейшую компиляцию если double и float
 //означают не то что мы думаем. Типы из boost не используются т.к. простых дефайнов
@@ -273,62 +290,107 @@ typedef MedianFilter<boost::uint32_t> MedianFilterUInt32;
 BOOST_STATIC_ASSERT_MSG(sizeof(double) == 8, "double size is not 64 bit! You need to fix the code for you compillator!");
 BOOST_STATIC_ASSERT_MSG(sizeof(float) == 4, "float size is not 32 bit! You need to fix the code for you compillator!");
 
-//Универсальный класс-обёртка. В момент чтения файла определяет тип пикселов
-//и исходя из этого создаёт pFilterObj нужного типа. Потом просто пересылает
-//ему вызовы методов.
-class MedianFilterUniversal : public MedianFilterBase
-//TODO: добавить синхронизацию полей с реальным объектом при вызовах!!!
+//Обёртка с общей для всех типов пиксела функциональностью. Работать с фильтром надо именно через
+//этот класс! Не через RealMedianFilter*-ы!
+class MedianFilter
 {
 private:
-	//Приватные поля
-	bool imageIsLoaded;
-	PixelType dataType;
-	MedianFilterBase *pFilterObj;	//Сюда будет создаваться объект для нужного типа данных.
-
-	//Приватные методы.
-
-	//Обновить параметры вложенного объекта из параметров данного объекта.
-	//Можно вызывать только если точно известно что this->pFilterObj существует.
-	void UpdateSettings();
-public:
 	//Поля
-		
+	int aperture_;		//Окно фильтра (длина стороны квадрата в пикселах). Должно быть нечётным.
+	double threshold_;			//Порог фильтра. Если медиана отличается от значения пиксела меньше чем на порог - значение не будет изменено.
+	//bool useMultiThreading_;		//Включает многопоточную обработку. Пока не реализовано.
+	//unsigned int threadsNumber_;	//Количество потоков при многопоточной обработке. 0 - автоопределение. Пока не реализовано.
+	MarginType marginType_;		//Тип заполнения краевых пикселей.
+	bool useMemChunks_;		//Использовать ли режим обработки файла по кускам для экономии памяти.
+	unsigned long long maxDataSize_;	//Максимальное количество памяти, которое можно занять под обрабатываемую матрицу. 0 значит неограничено.
+	std::string sourceFileName_;	//Имя и путь файла с исходными данными.
+	std::string destFileName_;	//Имя и путь файла назначения.
+	int imageSizeX_;	//Ширина картинки (0 если картинка не подсоединялась)
+	int imageSizeY_;	//Высота картинки (0 если картинка не подсоединялась)
+	bool imageIsLoaded_;	//Загружена ли картинка целиком в матрицу
+	bool sourceIsAttached_;	//Настроен ли файл с источником.
+	bool destIsAttached_;	//Настроен ли файл с назначением
+	PixelType dataType_;	//Тип пикселя в картинке.
+	RealMedianFilterBase *pFilterObj;	//Сюда будет создаваться объект для нужного типа данных.
+public:
+	//Доступ к полям.
+
+	//aperture
+	int const& getAperture() const { return aperture_; }
+	void setAperture(const int &aperture) { aperture_ = aperture; }
+	//threshold
+	double const& getThreshold() const { return threshold_; }
+	void setThreshold(const double &threshold) { threshold_ = threshold; }
+	////useMultiThreading
+	//bool const& getUseMultiThreading() const { return useMultiThreading_; }
+	//void setUseMultiThreading(const bool &useMultiThreading) { useMultiThreading_ = useMultiThreading; }
+	////threadsNumber
+	//bool const& getThreadsNumber() const { return threadsNumber_; }
+	//void setThreadsNumber(const bool &threadsNumber) { threadsNumber_ = threadsNumber; }
+	//marginType
+	MarginType const& getMarginType() const { return marginType_; }
+	void setMarginType(const MarginType &marginType) { marginType_ = marginType; }
+	//useMemChunks
+	bool const& getUseMemChunks() const { return useMemChunks_; }
+	void setUseMemChunks(const bool &useMemChunks) { useMemChunks_ = useMemChunks; }
+	//maxDataSize
+	unsigned long long const& getMaxDataSize() const { return maxDataSize_; }
+	void setMaxDataSize(const unsigned long long maxDataSize) { maxDataSize_ = maxDataSize; }
+	//sourceFileName
+	std::string const& getSourceFileName() const { return sourceFileName_; }
+	//TODO setSourceFileName нужен только временно! Убрать после того как уберутся всякие LoadFile!
+	void setSourceFileName(const std::string &sourceFileName) { sourceFileName_ = sourceFileName; }
+	//destFileName
+	std::string const& getDestFileName() const { return destFileName_; }
+	//imageSizeX
+	int const& getImageSizeX() const { return imageSizeX_; }
+	void setImageSizeX(const int &imageSizeX) { imageSizeX_ = imageSizeX; }
+	//imageSizeY
+	int const& getImageSizeY() const { return imageSizeY_; }
+	void setImageSizeY(const int &imageSizeY) { imageSizeY_ = imageSizeY; }
+
 	//Конструкторы-деструкторы
-	MedianFilterUniversal();
-	~MedianFilterUniversal();
+	MedianFilter();
+	~MedianFilter();
 
 	//Прочий функционал
 
 	//Читает изображение в матрицу так чтобы по краям оставалось место для создания граничных
 	//пикселей.
-	bool LoadImage(const std::string &fileName, ErrorInfo *errObj = NULL, CallBackBase *callBackObj = NULL);
-		
+	virtual bool LoadImage(const std::string &fileName, ErrorInfo *errObj = NULL, CallBackBase *callBackObj = NULL);
+
+	//Подготовить картинку к обработке 
+	//virtual bool PrepareInputImage(const std::string &fileName, ErrorInfo *errObj = NULL);
+
 	//Сохраняет матрицу в изображение. За основу берётся ранее загруженная через LoadImage
 	//картинка - файл копируется под новым именем и затем в него вносятся изменённые пиксели.
 	///В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
-	bool SaveImage(const std::string &fileName, ErrorInfo *errObj = NULL);
+	virtual bool SaveImage(const std::string &fileName, ErrorInfo *errObj = NULL);
 
 	//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 	//выбранным алгоритмом.
-	void FillMargins(CallBackBase *callBackObj = NULL);
-		
+	virtual void FillMargins(CallBackBase *callBackObj = NULL);
+
 	//Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
-	void ApplyStupidFilter(CallBackBase *callBackObj = NULL);
+	virtual void ApplyStupidFilter(CallBackBase *callBackObj = NULL);
 
 	//Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
 	//Для отладки. Результат записывает в destMatrix_.
-	void ApplyStubFilter(CallBackBase *callBackObj = NULL);
+	virtual void ApplyStubFilter(CallBackBase *callBackObj = NULL);
+
+	//Приводит апертуру к имеющему смысл значению.
+	void FixAperture();
 
 	//"Тупая" визуализация матрицы, отправляется прямо в cout.
-	void SourcePrintStupidVisToCout();
-		
+	virtual void SourcePrintStupidVisToCout();
+
 	//Вывод исходной матрицы в csv-файл, который должны понимать всякие картографические
 	//программы. Это значит что каждый пиксел - это одна строка в файле.
 	//Это "тупой" вариант вывода - метаданные нормально не сохраняются.
-	bool SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
-		
+	virtual bool SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
+
 	//Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
-	bool DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
+	virtual bool DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
 };
 
 }	//namespace geoimgconv
