@@ -526,14 +526,22 @@ destIsAttached_(false), dataType_(PIXEL_UNKNOWN), pFilterObj(NULL)
 
 MedianFilter::~MedianFilter()
 {
-
+	//Возможно создавался объект реального фильтра. Надо удалить.
+	delete pFilterObj;
 }
 
-bool MedianFilter::LoadImage(const std::string &fileName, ErrorInfo *errObj,
-	CallBackBase *callBackObj)
-	//Читает изображение в матрицу так чтобы по краям оставалось место для создания граничных
-	//пикселей.
+bool MedianFilter::SelectInputFile(const std::string &fileName, ErrorInfo *errObj)
+//Выбрать исходный файл для дальнейшего чтения и обработки. Получает информацию о параметрах изображения,
+//запоминает её в полях объекта.
 {
+	//TODO: когда избавлюсь от Load и Save - тут должны будут создаваться объекты GDAL, существующие до
+	//завершения работы с файлом. Чтобы не создавать их постоянно в процессе по-кусочечной обработки
+	//картинки.
+
+	//TODO:вот эта проверка временная! Нужна только пока используется load и save!
+	if ((sourceIsAttached_) && (fileName == sourceFileName_))
+		return true;
+
 	//А был ли файл?
 	filesystem::path filePath = STB.Utf8ToWstring(fileName);
 	if (!filesystem::is_regular_file(filePath))
@@ -542,7 +550,7 @@ bool MedianFilter::LoadImage(const std::string &fileName, ErrorInfo *errObj,
 		return false;
 	}
 
-	//Открываем картинку, определяем тип данных.
+	//Открываем картинку, определяем тип и размер данных.
 	GDALDataset *inputDataset = (GDALDataset*)GDALOpen(fileName.c_str(), GA_ReadOnly);
 	if (!inputDataset)
 	{
@@ -560,6 +568,8 @@ bool MedianFilter::LoadImage(const std::string &fileName, ErrorInfo *errObj,
 	}
 	GDALRasterBand *inputRaster = inputDataset->GetRasterBand(1);
 	this->dataType_ = GDALToGIC_PixelType(inputRaster->GetRasterDataType());
+	imageSizeX_ = inputRaster->GetXSize();
+	imageSizeY_ = inputRaster->GetYSize();
 	if (this->dataType_ == PIXEL_UNKNOWN)
 	{
 		GDALClose(inputDataset);
@@ -584,6 +594,7 @@ bool MedianFilter::LoadImage(const std::string &fileName, ErrorInfo *errObj,
 	//не забыть пробросить.
 	GDALClose(inputDataset);
 	inputRaster = NULL;
+	delete pFilterObj;
 	switch (this->dataType_)
 	{
 		case PIXEL_INT8: this->pFilterObj = new RealMedianFilterInt8(this); break;
@@ -594,9 +605,43 @@ bool MedianFilter::LoadImage(const std::string &fileName, ErrorInfo *errObj,
 		case PIXEL_UINT32: this->pFilterObj = new RealMedianFilterUInt32(this); break;
 		case PIXEL_FLOAT32: this->pFilterObj = new RealMedianFilterFloat32(this); break;
 		case PIXEL_FLOAT64: this->pFilterObj = new RealMedianFilterFloat64(this); break;
+		default: pFilterObj = NULL;
 	}
+	if (pFilterObj)
+	{
+		sourceIsAttached_ = true;
+		sourceFileName_ = fileName;
+	}
+	else
+	{
+		if (errObj) errObj->SetError(CMNERR_UNKNOWN_ERROR, "MedianFilter::SelectInputFile() error creating pFilterObj!",true);
+		sourceIsAttached_ = false;
+		return false;
+	}
+	return true;
+}
+
+
+bool MedianFilter::SelectOutputFile(const std::string &fileName, const bool &forceRewrite, ErrorInfo *errObj)
+//Подготовить целевой файл к записи в него результата. Если forceRewrite==false - вернёт ошибку в виде
+//false и кода ошибки в errObj.
+{
+	//Заглушка.
+	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
+	return false;
+}
+
+bool MedianFilter::LoadImage(const std::string &fileName, ErrorInfo *errObj,
+	CallBackBase *callBackObj)
+	//Читает изображение в матрицу так чтобы по краям оставалось место для создания граничных
+	//пикселей.
+{
 	this->FixAperture();
-	this->imageIsLoaded_ = this->pFilterObj->LoadImage(fileName, errObj, callBackObj);
+	if (this->SelectInputFile(fileName, errObj))
+	{
+		this->imageIsLoaded_ = this->pFilterObj->LoadImage(fileName, errObj, callBackObj);
+	}
+	
 	return this->imageIsLoaded_;
 }
 
