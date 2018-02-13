@@ -248,7 +248,7 @@ const unsigned long long SmallToolsBox::InfoSizeToBytesNum(const std::string inp
 const bool SmallToolsBox::CheckUnsIntStr(const std::string &inputStr) const
 //Проверить содержится ли в строке целое беззнаковое число.
 {
-	if ((inputStr.length() > 0) && (isdigit(unsigned char(inputStr[0]))))
+	if ((inputStr.length() > 0) && (isdigit((unsigned char)(inputStr[0]))))
 	{
 		//^^^ - исключить что это целое число но со знаком.
 		istringstream strStream(inputStr);
@@ -257,7 +257,7 @@ const bool SmallToolsBox::CheckUnsIntStr(const std::string &inputStr) const
 		strStream >> noskipws >> testVar;
 		return strStream && strStream.eof();
 	}
-	else 
+	else
 		return false;
 }
 
