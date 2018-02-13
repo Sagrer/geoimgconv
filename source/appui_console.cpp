@@ -297,6 +297,40 @@ int AppUIConsole::RunApp()
 	return 0;
 }
 
+int AppUIConsole::RunTestMode()
+//Метод для запуска в тестовом режиме.
+{
+	//Тестируем методы проверки строк.
+	//float
+	PrintToConsole("123 is float: " + STB.BoolToString(STB.CheckFloatStr("123")) + "\n");
+	PrintToConsole("-123.0 is float: " + STB.BoolToString(STB.CheckFloatStr("-123.0")) + "\n");
+	PrintToConsole("-123,0 is float: " + STB.BoolToString(STB.CheckFloatStr("-123,0")) + "\n");
+	PrintToConsole("123.0 is float: " + STB.BoolToString(STB.CheckFloatStr("123.0")) + "\n");
+	PrintToConsole("123,0 is float: " + STB.BoolToString(STB.CheckFloatStr("123,0")) + "\n");
+	PrintToConsole("123.0 is float: " + STB.BoolToString(STB.CheckFloatStr("123.0")) + "\n");
+	PrintToConsole("абырвалг is float: " + STB.BoolToString(STB.CheckFloatStr("абырвалг")) + "\n");
+	PrintToConsole("\"\" is float: " + STB.BoolToString(STB.CheckFloatStr("")) + "\n");
+	//unsigned int
+	PrintToConsole("123.0 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("123.0")) + "\n");
+	PrintToConsole("-123.0 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("-123.0")) + "\n");
+	PrintToConsole("123 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("123")) + "\n");
+	PrintToConsole("-123 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("-123")) + "\n");
+	PrintToConsole("абырвалг is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("абырвалг")) + "\n");
+	PrintToConsole("\"\" is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("")) + "\n");
+	//signed int
+	PrintToConsole("123.0 is int: " + STB.BoolToString(STB.CheckSignedIntStr("123.0")) + "\n");
+	PrintToConsole("-123.0 is int: " + STB.BoolToString(STB.CheckSignedIntStr("-123.0")) + "\n");
+	PrintToConsole("123 is int: " + STB.BoolToString(STB.CheckSignedIntStr("123")) + "\n");
+	PrintToConsole("-123 is int: " + STB.BoolToString(STB.CheckSignedIntStr("-123")) + "\n");
+	PrintToConsole("абырвалг is int: " + STB.BoolToString(STB.CheckSignedIntStr("абырвалг")) + "\n");
+	PrintToConsole("\"\" is int: " + STB.BoolToString(STB.CheckSignedIntStr("")) + "\n");
+
+//	//Заглушка, работает когда ничего не тестируется.
+//	PrintToConsole("Вы кто такие? Я вас не звал! Никаких тестов в этой версии\n\
+//всё равно не выполняется ;).\n");
+	return 0;
+}
+
 //--------------------------------//
 //       Прочий функционал        //
 //--------------------------------//
@@ -304,7 +338,7 @@ int AppUIConsole::RunApp()
 void AppUIConsole::PrintToConsole(const std::string &str)
 //Вывести сообщение в обычную (не curses) консоль в правильной кодировке.
 {
-	std::cout << STB.Utf8ToConsoleCharset(str);
+	std::cout << STB.Utf8ToConsoleCharset(str) << std::flush;
 }
 
 void AppUIConsole::PrintHelp()

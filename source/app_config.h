@@ -4,7 +4,7 @@
 //                                                       //
 //                  GeoImageConverter                    //
 //       Преобразователь изображений с геоданными        //
-//       Copyright © 2017 Александр (Sagrer) Гриднев     //
+//    Copyright © 2017-2018 Александр (Sagrer) Гриднев   //
 //              Распространяется на условиях             //
 //                 GNU GPL v3 или выше                   //
 //                  см. файл gpl.txt                     //
@@ -81,6 +81,14 @@ private:
 	AppMode appModeCmd_;
 	bool appModeCfgIsSaving_;
 	bool appModeCmdIsSet_;
+
+	//Режим использования памяти.
+	MemoryMode memModeCfg_;
+	MemoryMode memModeCmd_;
+	unsigned long long memSizeCfg_;
+	unsigned long long memSizeCmd_;
+	bool memModeCfgIsSaving_;
+	bool memModeCmdIsSet_;
 	
 	//Остальные поля (не поля конфига).
 	bool helpAsked_;	//Была ли в командной строке запрошена справка.

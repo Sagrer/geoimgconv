@@ -2,7 +2,7 @@
 //                                                       //
 //                  GeoImageConverter                    //
 //       Преобразователь изображений с геоданными        //
-//       Copyright © 2017 Александр (Sagrer) Гриднев     //
+//    Copyright © 2017-2018 Александр (Sagrer) Гриднев   //
 //              Распространяется на условиях             //
 //                 GNU GPL v3 или выше                   //
 //                  см. файл gpl.txt                     //
@@ -44,8 +44,24 @@ int main(int argc, char** argv)
 		return 1;
 	}
 	
-	//Пока всего 1 вариант режима работы.
-	AppUIConsole theApp;
-	theApp.InitApp(confObj);
-	return theApp.RunApp();
+	//Пока реализовано лишь 2 режима работы.
+	if (confObj.getAppMode() == APPMODE_MEDIAN)
+	{
+		//Медианная фильтрация в консоли.
+		AppUIConsole theApp;
+		theApp.InitApp(confObj);
+		return theApp.RunApp();
+	}
+	else if (confObj.getAppMode() == APPMODE_DEVTEST)
+	{
+		//Тестовый режим. Для разработки. Опция командной строки для такого запуска
+		//скрытая, в справке не описана, юзер про неё знать не должен.
+		AppUIConsole theApp;
+		return theApp.RunTestMode();
+	}
+	else
+	{
+		cout << STB.Utf8ToConsoleCharset("Ошибка: программа запущена в неизвестном или не реализованном режиме.") << endl;
+		return 1;
+	}
 }

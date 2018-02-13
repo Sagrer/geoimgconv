@@ -4,7 +4,7 @@
 //                                                       //
 //                  GeoImageConverter                    //
 //       Преобразователь изображений с геоданными        //
-//       Copyright © 2017 Александр (Sagrer) Гриднев     //
+//    Copyright © 2017-2018 Александр (Sagrer) Гриднев   //
 //              Распространяется на условиях             //
 //                 GNU GPL v3 или выше                   //
 //                  см. файл gpl.txt                     //
@@ -106,6 +106,9 @@ class SmallToolsBox
 		//Преобразует double в строку с указанным количеством знаков после запятой.
 		std::string DoubleToString(const double &input, const unsigned int &precision) const;
 
+		//Преобразует bool в строку. Потоки или lexical_cast имхо лишнее.
+		std::string BoolToString(const bool &input) const;
+
 		//Перевести в нижний регистр utf8-строку.
 		void Utf8ToLower(const std::string &inputStr, std::string &outputStr) const;
 
@@ -114,6 +117,26 @@ class SmallToolsBox
 
 		//Преобразовать количество байт в удобную для юзера строку с мегабайтами-гигабайтами.
 		const std::string BytesNumToInfoSizeStr(const unsigned long long &bytesNum) const;
+
+		//Прочитать количество информации в байтах из строки. Формат не совпадает с форматом,
+		//выводимым методом выше. Здесь все символы кроме последнего должны быть беззнаковым
+		//целым числом, последний же символ может быть B или b - байты, K или k - килобайты,
+		//M или m - мегабайты, G или g - гигабайты, T или t - терабайты. Если символ не указан
+		//- применяется символ по умолчанию (второй аргумент).
+		const unsigned long long InfoSizeToBytesNum(const std::string inputStr, char defaultUnit = 'b') const;
+
+		//Проверить содержится ли в строке целое беззнаковое число.
+		const bool CheckUnsIntStr(const std::string &inputStr) const;
+
+		//Проверить содержится ли в строке целое со знаком.
+		const bool CheckSignedIntStr(const std::string &inputStr) const;
+
+		//Проверить содержится ли в строке число с плавающей запятой
+		const bool CheckFloatStr(const std::string &inputStr) const;
+
+		//Проверить содержится ли в строке размер чего-либо в байтах (формат тот же, что в
+		//методе InfoSizeToBytesNum()
+		const bool CheckInfoSizeStr(const std::string &inputStr) const;
 
 		//Возвращает число процессорных ядер или 0 если это количество получить не удалось.
 		const unsigned int GetCpuCoresNumber() const;

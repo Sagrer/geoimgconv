@@ -2,7 +2,7 @@
 //                                                       //
 //                  GeoImageConverter                    //
 //       Преобразователь изображений с геоданными        //
-//       Copyright © 2017 Александр (Sagrer) Гриднев     //
+//    Copyright © 2017-2018 Александр (Sagrer) Гриднев   //
 //              Распространяется на условиях             //
 //                 GNU GPL v3 или выше                   //
 //                  см. файл gpl.txt                     //
@@ -30,6 +30,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/predef.h>
+#include <cctype>
 
 //Для определения количества памяти нужен платформозависимый код :(
 #ifdef _WIN32
@@ -183,6 +184,12 @@ std::string SmallToolsBox::DoubleToString(const double &input,
 	return stringStream.str();
 }
 
+std::string SmallToolsBox::BoolToString(const bool &input) const
+//Преобразует bool в строку. Потоки или lexical_cast имхо лишнее.
+{
+	return input ? "true" : "false";
+}
+
 
 void SmallToolsBox::Utf8ToLower(const std::string &inputStr, std::string &outputStr) const
 //Перевести в нижний регистр utf8-строку.
@@ -225,6 +232,61 @@ const std::string SmallToolsBox::BytesNumToInfoSizeStr(const unsigned long long 
 	{
 		return DoubleToString((long double)(bytesNum) / 1099511627776.0, 2) + " тб";
 	}
+}
+
+const unsigned long long SmallToolsBox::InfoSizeToBytesNum(const std::string inputStr, char defaultUnit) const
+//Прочитать количество информации в байтах из строки. Формат не совпадает с форматом,
+//выводимым методом выше. Здесь все символы кроме последнего должны быть беззнаковым
+//целым числом, последний же символ может быть B или b - байты, K или k - килобайты,
+//M или m - мегабайты, G или g - гигабайты, T или t - терабайты. Если символ не указан
+//- применяется символ по умолчанию (второй аргумент, b если не указан).
+{
+	//Заглушка
+	return 0;
+}
+
+const bool SmallToolsBox::CheckUnsIntStr(const std::string &inputStr) const
+//Проверить содержится ли в строке целое беззнаковое число.
+{
+	if ((inputStr.length() > 0) && (isdigit(unsigned char(inputStr[0]))))
+	{
+		//^^^ - исключить что это целое число но со знаком.
+		istringstream strStream(inputStr);
+		unsigned long long testVar;
+		//noskipws нужен чтобы всякие пробелы не игнорировались
+		strStream >> noskipws >> testVar;
+		return strStream && strStream.eof();
+	}
+	else 
+		return false;
+}
+
+const bool SmallToolsBox::CheckSignedIntStr(const std::string &inputStr) const
+//Проверить содержится ли в строке целое со знаком.
+{
+	istringstream strStream(inputStr);
+	signed long long testVar;
+	//noskipws нужен чтобы всякие пробелы не игнорировались
+	strStream >> noskipws >> testVar;
+	return strStream && strStream.eof();
+}
+
+const bool SmallToolsBox::CheckFloatStr(const std::string &inputStr) const
+//Проверить содержится ли в строке число с плавающей запятой
+{
+	istringstream strStream(inputStr);
+	long double testVar;
+	//noskipws нужен чтобы всякие пробелы не игнорировались
+	strStream >> noskipws >> testVar;
+	return strStream && strStream.eof();
+}
+
+const bool SmallToolsBox::CheckInfoSizeStr(const std::string &inputStr) const
+//Проверить содержится ли в строке размер чего-либо в байтах (формат тот же, что в
+//методе InfoSizeToBytesNum()
+{
+	//Заглушка
+	return false;
 }
 
 const unsigned int SmallToolsBox::GetCpuCoresNumber() const

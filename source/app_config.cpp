@@ -2,7 +2,7 @@
 //                                                       //
 //                  GeoImageConverter                    //
 //       Преобразователь изображений с геоданными        //
-//       Copyright © 2017 Александр (Sagrer) Гриднев     //
+//    Copyright © 2017-2018 Александр (Sagrer) Гриднев   //
 //              Распространяется на условиях             //
 //                 GNU GPL v3 или выше                   //
 //                  см. файл gpl.txt                     //
@@ -94,6 +94,7 @@ void AppConfig::FillBasePO_()
 		("medfilter.threshold", po::value<double>(), "")
 		("medfilter.margintype", po::value<std::string>(), "")
 		("appmode", po::value<std::string>(), "")
+		("test","")	//Не документировать эту опцию в справку юзера! Только для разработки.
 	;
 	//Позиционные параметры (без имени). Опять извратный синтаксис.
 	//Это значит что первый безымянный параметр в количестве 1 штука
@@ -230,6 +231,13 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 			};
 			this->appModeCmdIsSet_ = true;
 		};
+		if (this->poVarMap_.count("test"))
+		{
+			//Скрытая опция для разработки. Программа запускается в отдельном
+			//тестовом режиме.
+			appModeCmd_ = APPMODE_DEVTEST;
+			appModeCmdIsSet_ = true;
+		}
 		if (this->poVarMap_.count("help"))
 			this->helpAsked_ = true;
 		if (this->poVarMap_.count("version"))
