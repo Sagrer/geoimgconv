@@ -234,15 +234,41 @@ const std::string SmallToolsBox::BytesNumToInfoSizeStr(const unsigned long long 
 	}
 }
 
-const unsigned long long SmallToolsBox::InfoSizeToBytesNum(const std::string inputStr, char defaultUnit) const
+const unsigned long long SmallToolsBox::InfoSizeToBytesNum(const std::string &inputStr, char defaultUnit) const
 //Прочитать количество информации в байтах из строки. Формат не совпадает с форматом,
 //выводимым методом выше. Здесь все символы кроме последнего должны быть беззнаковым
 //целым числом, последний же символ может быть B или b - байты, K или k - килобайты,
 //M или m - мегабайты, G или g - гигабайты, T или t - терабайты. Если символ не указан
 //- применяется символ по умолчанию (второй аргумент, b если не указан).
 {
-	//Заглушка
-	return 0;
+	unsigned long long result = 0;
+	char lastChar;
+	string numberStr;
+	if (CheckInfoSizeStr(inputStr))
+	{
+		//Преобразуем строку и при необходимости умножаем значение в зависимости
+		//от последнего символа.
+		lastChar = inputStr[inputStr.length() - 1];
+		if (isdigit(lastChar))
+		{
+			lastChar = defaultUnit;
+			numberStr = inputStr;
+		}
+		else
+			numberStr = inputStr.substr(0, inputStr.length() - 1);
+		lastChar = tolower(lastChar);
+		result = boost::lexical_cast<unsigned long long>(numberStr);
+		if (lastChar == 'k')
+			result *= 1024;
+		else if (lastChar == 'm')
+			result *= 1048576;
+		else if (lastChar == 'g')
+			result *= 1073741824;
+		else if (lastChar == 't')
+			result *= 1099511627776;
+	};
+	
+	return result;
 }
 
 const bool SmallToolsBox::CheckUnsIntStr(const std::string &inputStr) const
@@ -298,9 +324,9 @@ const bool SmallToolsBox::CheckInfoSizeStr(const std::string &inputStr) const
 		return false;
 	
 	//Надо проверить последний символ.
-	if ((lastChar != 'b') && (lastChar != 'B') && (lastChar != 'k') && (lastChar != 'K') &&
-		(lastChar != 'm') && (lastChar != 'M') && (lastChar != 'g') && (lastChar != 'G') &&
-		(lastChar != 't') && (lastChar != 'T'))
+	lastChar = tolower(lastChar);
+	if ((lastChar != 'b') && (lastChar != 'k') && (lastChar != 'm') && (lastChar != 'g') &&
+		(lastChar != 't'))
 		return false;
 	else return true;
 }

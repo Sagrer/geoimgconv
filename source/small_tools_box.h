@@ -123,7 +123,7 @@ class SmallToolsBox
 		//целым числом, последний же символ может быть B или b - байты, K или k - килобайты,
 		//M или m - мегабайты, G или g - гигабайты, T или t - терабайты. Если символ не указан
 		//- применяется символ по умолчанию (второй аргумент).
-		const unsigned long long InfoSizeToBytesNum(const std::string inputStr, char defaultUnit = 'b') const;
+		const unsigned long long InfoSizeToBytesNum(const std::string &inputStr, char defaultUnit = 'b') const;
 
 		//Проверить содержится ли в строке целое беззнаковое число.
 		const bool CheckUnsIntStr(const std::string &inputStr) const;

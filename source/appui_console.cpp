@@ -300,50 +300,70 @@ int AppUIConsole::RunApp()
 int AppUIConsole::RunTestMode()
 //Метод для запуска в тестовом режиме.
 {
-	//Тестируем методы проверки строк.
-	//float
-	PrintToConsole("123 is float: " + STB.BoolToString(STB.CheckFloatStr("123")) + "\n");
-	PrintToConsole("-123.0 is float: " + STB.BoolToString(STB.CheckFloatStr("-123.0")) + "\n");
-	PrintToConsole("+123.0 is float: " + STB.BoolToString(STB.CheckFloatStr("+123.0")) + "\n");
-	PrintToConsole("*123.0 is float: " + STB.BoolToString(STB.CheckFloatStr("*123.0")) + "\n");
-	PrintToConsole("-123,0 is float: " + STB.BoolToString(STB.CheckFloatStr("-123,0")) + "\n");
-	PrintToConsole("123.0 is float: " + STB.BoolToString(STB.CheckFloatStr("123.0")) + "\n");
-	PrintToConsole("123,0 is float: " + STB.BoolToString(STB.CheckFloatStr("123,0")) + "\n");
-	PrintToConsole("123.0 is float: " + STB.BoolToString(STB.CheckFloatStr("123.0")) + "\n");
-	PrintToConsole("абырвалг is float: " + STB.BoolToString(STB.CheckFloatStr("абырвалг")) + "\n");
-	PrintToConsole("\"\" is float: " + STB.BoolToString(STB.CheckFloatStr("")) + "\n");
-	//unsigned int
-	PrintToConsole("123.0 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("123.0")) + "\n");
-	PrintToConsole("-123.0 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("-123.0")) + "\n");
-	PrintToConsole("123 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("123")) + "\n");
-	PrintToConsole("-123 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("-123")) + "\n");
-	PrintToConsole("+123 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("+123")) + "\n");
-	PrintToConsole("*123 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("*123")) + "\n");
-	PrintToConsole("абырвалг is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("абырвалг")) + "\n");
-	PrintToConsole("\"\" is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("")) + "\n");
-	//signed int
-	PrintToConsole("123.0 is int: " + STB.BoolToString(STB.CheckSignedIntStr("123.0")) + "\n");
-	PrintToConsole("-123.0 is int: " + STB.BoolToString(STB.CheckSignedIntStr("-123.0")) + "\n");
-	PrintToConsole("123 is int: " + STB.BoolToString(STB.CheckSignedIntStr("123")) + "\n");
-	PrintToConsole("-123 is int: " + STB.BoolToString(STB.CheckSignedIntStr("-123")) + "\n");
-	PrintToConsole("+123 is int: " + STB.BoolToString(STB.CheckSignedIntStr("-123")) + "\n");
-	PrintToConsole("*123 is int: " + STB.BoolToString(STB.CheckSignedIntStr("*123")) + "\n");
-	PrintToConsole("абырвалг is int: " + STB.BoolToString(STB.CheckSignedIntStr("абырвалг")) + "\n");
-	PrintToConsole("\"\" is int: " + STB.BoolToString(STB.CheckSignedIntStr("")) + "\n");
-	//InfoSizeStr
-	PrintToConsole("123 is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("123")) + "\n");
-	PrintToConsole("-123 is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("-123")) + "\n");
-	PrintToConsole("123b is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("123b")) + "\n");
-	PrintToConsole("-123b is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("-123b")) + "\n");
-	PrintToConsole("+123b is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("+123b")) + "\n");
-	PrintToConsole("123c is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("123c")) + "\n");
-	PrintToConsole("123M is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("123M")) + "\n");
-	PrintToConsole("123G is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("123G")) + "\n");
-	PrintToConsole("123t is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("123t")) + "\n");
+	////Тестируем методы проверки строк.
+	////float
+	//PrintToConsole("123 is float: " + STB.BoolToString(STB.CheckFloatStr("123")) + "\n");
+	//PrintToConsole("-123.0 is float: " + STB.BoolToString(STB.CheckFloatStr("-123.0")) + "\n");
+	//PrintToConsole("+123.0 is float: " + STB.BoolToString(STB.CheckFloatStr("+123.0")) + "\n");
+	//PrintToConsole("*123.0 is float: " + STB.BoolToString(STB.CheckFloatStr("*123.0")) + "\n");
+	//PrintToConsole("-123,0 is float: " + STB.BoolToString(STB.CheckFloatStr("-123,0")) + "\n");
+	//PrintToConsole("123.0 is float: " + STB.BoolToString(STB.CheckFloatStr("123.0")) + "\n");
+	//PrintToConsole("123,0 is float: " + STB.BoolToString(STB.CheckFloatStr("123,0")) + "\n");
+	//PrintToConsole("123.0 is float: " + STB.BoolToString(STB.CheckFloatStr("123.0")) + "\n");
+	//PrintToConsole("абырвалг is float: " + STB.BoolToString(STB.CheckFloatStr("абырвалг")) + "\n");
+	//PrintToConsole("\"\" is float: " + STB.BoolToString(STB.CheckFloatStr("")) + "\n");
+	////unsigned int
+	//PrintToConsole("123.0 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("123.0")) + "\n");
+	//PrintToConsole("-123.0 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("-123.0")) + "\n");
+	//PrintToConsole("123 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("123")) + "\n");
+	//PrintToConsole("-123 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("-123")) + "\n");
+	//PrintToConsole("+123 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("+123")) + "\n");
+	//PrintToConsole("*123 is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("*123")) + "\n");
+	//PrintToConsole("абырвалг is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("абырвалг")) + "\n");
+	//PrintToConsole("\"\" is unsInt: " + STB.BoolToString(STB.CheckUnsIntStr("")) + "\n");
+	////signed int
+	//PrintToConsole("123.0 is int: " + STB.BoolToString(STB.CheckSignedIntStr("123.0")) + "\n");
+	//PrintToConsole("-123.0 is int: " + STB.BoolToString(STB.CheckSignedIntStr("-123.0")) + "\n");
+	//PrintToConsole("123 is int: " + STB.BoolToString(STB.CheckSignedIntStr("123")) + "\n");
+	//PrintToConsole("-123 is int: " + STB.BoolToString(STB.CheckSignedIntStr("-123")) + "\n");
+	//PrintToConsole("+123 is int: " + STB.BoolToString(STB.CheckSignedIntStr("-123")) + "\n");
+	//PrintToConsole("*123 is int: " + STB.BoolToString(STB.CheckSignedIntStr("*123")) + "\n");
+	//PrintToConsole("абырвалг is int: " + STB.BoolToString(STB.CheckSignedIntStr("абырвалг")) + "\n");
+	//PrintToConsole("\"\" is int: " + STB.BoolToString(STB.CheckSignedIntStr("")) + "\n");
+	////InfoSizeStr
+	//PrintToConsole("123 is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("123")) + "\n");
+	//PrintToConsole("-123 is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("-123")) + "\n");
+	//PrintToConsole("123ы is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("123ы")) + "\n");
+	//PrintToConsole("123b is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("123b")) + "\n");
+	//PrintToConsole("-123b is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("-123b")) + "\n");
+	//PrintToConsole("+123b is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("+123b")) + "\n");
+	//PrintToConsole("123c is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("123c")) + "\n");
+	//PrintToConsole("123M is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("123M")) + "\n");
+	//PrintToConsole("123G is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("123G")) + "\n");
+	//PrintToConsole("123t is InfoSizeStr: " + STB.BoolToString(STB.CheckInfoSizeStr("123t")) + "\n");
+	////InfoSizeStr as bytes
+	//PrintToConsole("АБЫРВАЛГ is in bytes: ");
+	//cout << STB.InfoSizeToBytesNum("АБЫРВАЛГ") << "\n";
+	//PrintToConsole("\"\" is in bytes: ");
+	//cout << STB.InfoSizeToBytesNum("") << "\n";
+	//PrintToConsole("1 is in bytes: ");
+	//cout << STB.InfoSizeToBytesNum("1") << "\n";
+	//PrintToConsole("1ы is in bytes: ");
+	//cout << STB.InfoSizeToBytesNum("1ы") << "\n";
+	//PrintToConsole("1b is in bytes: ");
+	//cout << STB.InfoSizeToBytesNum("1b") << "\n";
+	//PrintToConsole("1K is in bytes: ");
+	//cout << STB.InfoSizeToBytesNum("1K") << "\n";
+	//PrintToConsole("1m is in bytes: ");
+	//cout << STB.InfoSizeToBytesNum("1m") << "\n";
+	//PrintToConsole("1G is in bytes: ");
+	//cout << STB.InfoSizeToBytesNum("1G") << "\n";
+	//PrintToConsole("1t is in bytes: ");
+	//cout << STB.InfoSizeToBytesNum("1t") << "\n";
 
-//	//Заглушка, работает когда ничего не тестируется.
-//	PrintToConsole("Вы кто такие? Я вас не звал! Никаких тестов в этой версии\n\
-//всё равно не выполняется ;).\n");
+	//Заглушка, работает когда ничего не тестируется.
+	PrintToConsole("Вы кто такие? Я вас не звал! Никаких тестов в этой версии\n\
+всё равно не выполняется ;).\n");
 	return 0;
 }
 
