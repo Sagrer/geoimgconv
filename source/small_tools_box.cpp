@@ -248,7 +248,7 @@ const unsigned long long SmallToolsBox::InfoSizeToBytesNum(const std::string inp
 const bool SmallToolsBox::CheckUnsIntStr(const std::string &inputStr) const
 //Проверить содержится ли в строке целое беззнаковое число.
 {
-	if ((inputStr.length() > 0) && (isdigit((unsigned char)(inputStr[0]))))
+	if ((inputStr.length() > 0) && ((isdigit((unsigned char)(inputStr[0]))) || (inputStr[0] == '+')) )
 	{
 		//^^^ - исключить что это целое число но со знаком.
 		istringstream strStream(inputStr);
@@ -285,8 +285,24 @@ const bool SmallToolsBox::CheckInfoSizeStr(const std::string &inputStr) const
 //Проверить содержится ли в строке размер чего-либо в байтах (формат тот же, что в
 //методе InfoSizeToBytesNum()
 {
-	//Заглушка
-	return false;
+	//Всё кроме последнего символа должно быть unsigned int.
+	string tempStr = inputStr;
+	char lastChar = 'b';
+	if ((tempStr.length() > 0) && (!isdigit((unsigned char)(tempStr[tempStr.length() - 1]))))
+	{
+		//Последний символ - не число, запомним его и уменьшим размер строки.
+		lastChar = tempStr[tempStr.length() - 1];
+		tempStr = tempStr.substr(0, tempStr.length() - 1);
+	}
+	if (!CheckUnsIntStr(tempStr))
+		return false;
+	
+	//Надо проверить последний символ.
+	if ((lastChar != 'b') && (lastChar != 'B') && (lastChar != 'k') && (lastChar != 'K') &&
+		(lastChar != 'm') && (lastChar != 'M') && (lastChar != 'g') && (lastChar != 'G') &&
+		(lastChar != 't') && (lastChar != 'T'))
+		return false;
+	else return true;
 }
 
 const unsigned int SmallToolsBox::GetCpuCoresNumber() const
