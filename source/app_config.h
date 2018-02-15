@@ -131,127 +131,127 @@ public:
 	//inputFileName;
 	std::string const& getInputFileName() const
 	{
-		if (this->inputFileNameCmdIsSet_)
-			return this->inputFileNameCmd_;
-		else return this->inputFileNameCfg_;
+		if (inputFileNameCmdIsSet_)
+			return inputFileNameCmd_;
+		else return inputFileNameCfg_;
 	}
 	std::string const& getInputFileNameCfg() const
-		{return this->inputFileNameCfg_;}
+		{return inputFileNameCfg_;}
 	bool const& getInputFileNameIsSaving() const
-		{return this->inputFileNameCfgIsSaving_;}
+		{return inputFileNameCfgIsSaving_;}
 	void setInputFileName(const std::string &value)
 	{
-		this->inputFileNameCfg_ = value;
-		this->inputFileNameCfgIsSaving_ = true;
-		this->inputFileNameCmdIsSet_ = false;
+		inputFileNameCfg_ = value;
+		inputFileNameCfgIsSaving_ = true;
+		inputFileNameCmdIsSet_ = false;
 	}
 	
 	//outputFileName;
 	std::string const& getOutputFileName() const
 	{
-		if (this->outputFileNameCmdIsSet_)
-			return this->outputFileNameCmd_;
-		else return this->outputFileNameCfg_;
+		if (outputFileNameCmdIsSet_)
+			return outputFileNameCmd_;
+		else return outputFileNameCfg_;
 	}
 	std::string const& getOutputFileNameCfg() const
-		{return this->outputFileNameCfg_;}
+		{return outputFileNameCfg_;}
 	bool const& getOutputFileNameIsSaving() const
-		{return this->outputFileNameCfgIsSaving_;}
+		{return outputFileNameCfgIsSaving_;}
 	void setOutputFileName(const std::string &value)
 	{
-		this->outputFileNameCfg_ = value;
-		this->outputFileNameCfgIsSaving_ = true;
-		this->outputFileNameCmdIsSet_ = false;
+		outputFileNameCfg_ = value;
+		outputFileNameCfgIsSaving_ = true;
+		outputFileNameCmdIsSet_ = false;
 	};
 	
 	//medfilterAperture;
 	int const& getMedfilterAperture() const
 	{
-		if (this->medfilterApertureCmdIsSet_)
-			return this->medfilterApertureCmd_;
-		else return this->medfilterApertureCfg_;
+		if (medfilterApertureCmdIsSet_)
+			return medfilterApertureCmd_;
+		else return medfilterApertureCfg_;
 	};
 	int const& getMedfilterApertureCfg() const
-		{return this->medfilterApertureCfg_;};
+		{return medfilterApertureCfg_;};
 	bool const& getMedfilterApertureIsSaving() const
-		{return this->medfilterApertureCfgIsSaving_;};
+		{return medfilterApertureCfgIsSaving_;};
 	void setMedfilterAperture(const int &value)
 	{
-		this->medfilterApertureCfg_ = value;
-		this->medfilterApertureCfgIsSaving_ = true;
-		this->medfilterApertureCmdIsSet_ = false;
+		medfilterApertureCfg_ = value;
+		medfilterApertureCfgIsSaving_ = true;
+		medfilterApertureCmdIsSet_ = false;
 	};
 	
 	//medfilterThreshold;
 	double const& getMedfilterThreshold() const
 	{
-		if (this->medfilterThresholdCmdIsSet_)
-			return this->medfilterThresholdCmd_;
-		else return this->medfilterThresholdCfg_;
+		if (medfilterThresholdCmdIsSet_)
+			return medfilterThresholdCmd_;
+		else return medfilterThresholdCfg_;
 	};
 	double const& getMedfilterThresholdCfg() const
-		{return this->medfilterThresholdCfg_;};
+		{return medfilterThresholdCfg_;};
 	bool const& getMedfilterThresholdIsSaving() const
-		{return this->medfilterThresholdCfgIsSaving_;};
+		{return medfilterThresholdCfgIsSaving_;};
 	void setMedfilterThreshold(const double &value)
 	{
-		this->medfilterThresholdCfg_ = value;
-		this->medfilterThresholdCfgIsSaving_ = true;
-		this->medfilterThresholdCmdIsSet_ = false;
+		medfilterThresholdCfg_ = value;
+		medfilterThresholdCfgIsSaving_ = true;
+		medfilterThresholdCmdIsSet_ = false;
 	};
 	
 	//medfilterMarginType
 	MarginType const& getMedfilterMarginType() const
 	{
-		if (this->medfilterMarginTypeCmdIsSet_)
-			return this->medfilterMarginTypeCmd_;
-		else return this->medfilterMarginTypeCfg_;
+		if (medfilterMarginTypeCmdIsSet_)
+			return medfilterMarginTypeCmd_;
+		else return medfilterMarginTypeCfg_;
 	};
 	MarginType const& getMedfilterMarginTypeCfg() const
-		{return this->medfilterMarginTypeCfg_;};
+		{return medfilterMarginTypeCfg_;};
 	bool const& getMedfilterMarginTypeIsSaving() const
-		{return this->medfilterMarginTypeCfgIsSaving_;};
+		{return medfilterMarginTypeCfgIsSaving_;};
 	void setMedfilterMarginType(const MarginType &value)
 	{
-		this->medfilterMarginTypeCfg_ = value;
-		this->medfilterMarginTypeCfgIsSaving_ = true;
-		this->medfilterMarginTypeCmdIsSet_ = false;
+		medfilterMarginTypeCfg_ = value;
+		medfilterMarginTypeCfgIsSaving_ = true;
+		medfilterMarginTypeCmdIsSet_ = false;
 	};
 	
 	//appMode
 	AppMode const& getAppMode() const
 	{
-		if (this->appModeCmdIsSet_)
-			return this->appModeCmd_;
-		else return this->appModeCfg_;
+		if (appModeCmdIsSet_)
+			return appModeCmd_;
+		else return appModeCfg_;
 	};
 	AppMode const& getAppModeCfg() const
-		{return this->appModeCfg_;};
+		{return appModeCfg_;};
 	bool const& getAppModeIsSaving() const
-		{return this->appModeCfgIsSaving_;};
+		{return appModeCfgIsSaving_;};
 	void setAppMode(const AppMode &value)
 	{
-		this->appModeCfg_ = value;
-		this->appModeCfgIsSaving_ = true;
-		this->appModeCmdIsSet_ = false;
+		appModeCfg_ = value;
+		appModeCfgIsSaving_ = true;
+		appModeCmdIsSet_ = false;
 	};
 
 	//memMode и memSize
 	MemoryMode const& getMemMode() const
 	{
-		if (this->memModeCmdIsSet_)
-			return this->memModeCmd_;
-		else return this->memModeCfg_;
+		if (memModeCmdIsSet_)
+			return memModeCmd_;
+		else return memModeCfg_;
 	};
 	unsigned long long const& getMemSize() const
 	{
-		if (this->memModeCmdIsSet_)
-			return this->memSizeCmd_;
-		else return this->memSizeCfg_;
+		if (memModeCmdIsSet_)
+			return memSizeCmd_;
+		else return memSizeCfg_;
 	};
 	MemoryMode const& getMemModeCfg() const
 	{
-		return this->memModeCfg_;
+		return memModeCfg_;
 	};
 	unsigned long long const& getMemSizeCfg() const
 	{
@@ -259,28 +259,28 @@ public:
 	};
 	bool const& getMemModeIsSaving() const
 	{
-		return this->memModeCfgIsSaving_;
+		return memModeCfgIsSaving_;
 	};
 	void setMemMode(const MemoryMode &value, const unsigned long long &memSize)
 	{
-		this->memModeCfg_ = value;
-		this->memSizeCfg_ = memSize;
-		this->memModeCfgIsSaving_ = true;
-		this->memModeCmdIsSet_ = false;
+		memModeCfg_ = value;
+		memSizeCfg_ = memSize;
+		memModeCfgIsSaving_ = true;
+		memModeCmdIsSet_ = false;
 	};
 	
 	//helpAsked
-	bool const& getHelpAsked() const {return this->helpAsked_;};
+	bool const& getHelpAsked() const {return helpAsked_;};
 	//versionAsked
-	bool const& getVersionAsked() const {return this->versionAsked_;};
+	bool const& getVersionAsked() const {return versionAsked_;};
 	//argc
-	int const& getArgc() const {return this->argc_;};
+	int const& getArgc() const {return argc_;};
 	//argv
-	char const* const* getArgv() const {return this->argv_;};
+	char const* const* getArgv() const {return argv_;};
 	//appPath
-	std::string const& getAppPath() const {return this->appPath_;};
+	std::string const& getAppPath() const {return appPath_;};
 	//currPath
-	std::string const& getCurrPath() const {return this->currPath_;};
+	std::string const& getCurrPath() const {return currPath_;};
 	//helpMsg (генерируется)
 	const std::string getHelpMsg();
 	
@@ -293,7 +293,7 @@ public:
 	bool ReadConfigFile(ErrorInfo *errObj = NULL);
 	//Завершить инициализацию объекта (отдельно от конструктора т.к. для правильной инициализации
 	//могло быть необходимо сначала обработать конфиги и командную строку)
-	void FinishInitialization() { this->FillDependentPO_(); };
+	void FinishInitialization() { FillDependentPO_(); };
 };
 
 } //namespace geoimgconv

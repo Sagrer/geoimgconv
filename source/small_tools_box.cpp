@@ -85,92 +85,92 @@ void SmallToolsBox::InitEncodings()
 	#ifdef _WIN32
 		//Пока что всё будет чисто русскоязычным (пока руки не дойдут до чего-нибудь
 		//типа gettext, поэтому жёстко проставим кодировки.
-		this->consoleEncoding_ = "cp866";
-		this->systemEncoding_ = "cp1251";
+		consoleEncoding_ = "cp866";
+		systemEncoding_ = "cp1251";
 		//Вообще там ниже через фасет locale::info можно как минимум получить код языка,
 		//но потом, всё потом. TODO типа.
 	#else
 		//Линукс и всякое неизвестно-что.
 		setlocale(LC_ALL, "");	//Нужно только тут. Чтобы работало ncursesw. Для PDCurses - наоборот вредно.
 		locale currLocale = locGen("");
-		this->consoleEncoding_ = std::use_facet<boost::locale::info>(currLocale).encoding();
-		this->systemEncoding_ = consoleEncoding_;
+		consoleEncoding_ = std::use_facet<boost::locale::info>(currLocale).encoding();
+		systemEncoding_ = consoleEncoding_;
 	#endif
 
 	//Сгенерируем локаль для работы с utf8
-	this->utf8Locale_ = locGen("utf8");
+	utf8Locale_ = locGen("utf8");
 
 	//Готово.
-	this->encodingsInited_ = true;
+	encodingsInited_ = true;
 }
 
 string SmallToolsBox::Utf8ToConsoleCharset(const string &InputStr)
 //Перекодирует строку из utf8 в кодировку, подходящую для вывода в консоль.
 {
-	if (!this->encodingsInited_)
-		this->InitEncodings();
-	return boost::locale::conv::from_utf(InputStr, this->consoleEncoding_);
+	if (!encodingsInited_)
+		InitEncodings();
+	return boost::locale::conv::from_utf(InputStr, consoleEncoding_);
 }
 
 string SmallToolsBox::ConsoleCharsetToUtf8(const string &InputStr)
 //Перекодирует строку из кодировки консоли в utf8
 {
-	if (!this->encodingsInited_)
-		this->InitEncodings();
-	return boost::locale::conv::to_utf<char>(InputStr, this->consoleEncoding_);
+	if (!encodingsInited_)
+		InitEncodings();
+	return boost::locale::conv::to_utf<char>(InputStr, consoleEncoding_);
 }
 
 
 string SmallToolsBox::Utf8ToSystemCharset(const string &InputStr)
 //Перекодирует строку из utf8 в системную кодировку.
 {
-	if (!this->encodingsInited_)
-		this->InitEncodings();
-	return boost::locale::conv::from_utf(InputStr, this->systemEncoding_);
+	if (!encodingsInited_)
+		InitEncodings();
+	return boost::locale::conv::from_utf(InputStr, systemEncoding_);
 }
 
 
 string SmallToolsBox::SystemCharsetToUtf8(const string &InputStr)
 //Перекодирует строку из системной кодировки в utf8
 {
-	if (!this->encodingsInited_)
-		this->InitEncodings();
-	return boost::locale::conv::to_utf<char>(InputStr, this->systemEncoding_);
+	if (!encodingsInited_)
+		InitEncodings();
+	return boost::locale::conv::to_utf<char>(InputStr, systemEncoding_);
 }
 
 
 string SmallToolsBox::Utf8ToSelectedCharset(const string &InputStr)
 //Перекодирует строку из utf8 в кодировку, выбранную ранее методами SelectCharset*.
 {
-	if (this->consoleEncodingIsSelected_)
-		return this->Utf8ToConsoleCharset(InputStr);
+	if (consoleEncodingIsSelected_)
+		return Utf8ToConsoleCharset(InputStr);
 	else
-		return this->Utf8ToSystemCharset(InputStr);
+		return Utf8ToSystemCharset(InputStr);
 }
 
 
 string SmallToolsBox::SelectedCharsetToUtf8(const string &InputStr)
 //Перекодирует строку из кодировки, выбранной ранее методами SelectCharset* в utf8
 {
-	if (this->consoleEncodingIsSelected_)
-		return this->ConsoleCharsetToUtf8(InputStr);
+	if (consoleEncodingIsSelected_)
+		return ConsoleCharsetToUtf8(InputStr);
 	else
-		return this->SystemCharsetToUtf8(InputStr);
+		return SystemCharsetToUtf8(InputStr);
 }
 
 std::string SmallToolsBox::WstringToUtf8(const std::wstring &inputStr)
 //Перекодирует wstring в string в кодировке utf8
 {
-	if (!this->encodingsInited_)
-		this->InitEncodings();
+	if (!encodingsInited_)
+		InitEncodings();
 	return boost::locale::conv::utf_to_utf<char,wchar_t>(inputStr);
 }
 
 std::wstring SmallToolsBox::Utf8ToWstring(const std::string &inputStr)
 //Перекодирует string в кодировке utf8 в wstring
 {
-	if (!this->encodingsInited_)
-		this->InitEncodings();
+	if (!encodingsInited_)
+		InitEncodings();
 	return boost::locale::conv::utf_to_utf<wchar_t,char>(inputStr);
 }
 
@@ -194,14 +194,14 @@ std::string SmallToolsBox::BoolToString(const bool &input) const
 void SmallToolsBox::Utf8ToLower(const std::string &inputStr, std::string &outputStr) const
 //Перевести в нижний регистр utf8-строку.
 {
-	outputStr = boost::locale::to_lower(inputStr, this->utf8Locale_);
+	outputStr = boost::locale::to_lower(inputStr, utf8Locale_);
 }
 
 
 void SmallToolsBox::Utf8ToUpper(const std::string &inputStr, std::string &outputStr) const
 //Перевести в верхний регистр utf8-строку.
 {
-	outputStr = boost::locale::to_upper(inputStr, this->utf8Locale_);
+	outputStr = boost::locale::to_upper(inputStr, utf8Locale_);
 }
 
 const std::string SmallToolsBox::BytesNumToInfoSizeStr(const unsigned long long &bytesNum) const

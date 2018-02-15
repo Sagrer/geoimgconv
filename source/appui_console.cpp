@@ -63,15 +63,15 @@ AppUIConsoleCallBack::AppUIConsoleCallBack() : skipCounter_(0), skipNumber_(1),
 //Возвращает объект в состояние как будто только после инициализации.
 void AppUIConsoleCallBack::Clear()
 {
-	if (this->isNotClean_)
+	if (isNotClean_)
 	{
-		this->skipCounter_ = 0;
-		this->skipNumber_ = 1;
-		this->isStarted_ = false;
-		this->isNotClean_ = false;
-		this->lastTextSize_ = 0;
-		this->pixelsPerSecond_ = 0.0;
-		this->updatePeriod_ = DEFAULT_PROGRESS_UPDATE_PERIOD;
+		skipCounter_ = 0;
+		skipNumber_ = 1;
+		isStarted_ = false;
+		isNotClean_ = false;
+		lastTextSize_ = 0;
+		pixelsPerSecond_ = 0.0;
+		updatePeriod_ = DEFAULT_PROGRESS_UPDATE_PERIOD;
 	};
 }
 
@@ -82,59 +82,59 @@ void AppUIConsoleCallBack::CallBack(const unsigned long &progressPosition)
 {
 	using namespace boost::posix_time;
 
-	if (progressPosition < this->getMaxProgress())
+	if (progressPosition < getMaxProgress())
 	{
-		if (this->skipCounter_ < this->skipNumber_)
+		if (skipCounter_ < skipNumber_)
 		{
-			this->skipCounter_++;
+			skipCounter_++;
 			return;
 		};
 		//skipCounter_ будет обнулён позже.
 	};
 	//Можно выводить.
-	if (this->isStarted_)
+	if (isStarted_)
 	{
 		cout << "\r";	//Переводим вывод на начало текущей строки.
 		//А ещё сейчас надо проверить сколько времени занял предыдущий период вычислений
 		//и если надо - подкрутить skipNumber_. Заодно вычислим количество пикселей в секунду.
-		this->nowTime_ = microsec_clock::local_time();
-		this->timeDelta_ = this->nowTime_ - this->lastPrintTime_;
-		this->currMilliseconds_ = this->timeDelta_.total_milliseconds();
+		nowTime_ = microsec_clock::local_time();
+		timeDelta_ = nowTime_ - lastPrintTime_;
+		currMilliseconds_ = timeDelta_.total_milliseconds();
 		//Всегда считаем что операция заняла хоть сколько-то времени. Иначе гроб гроб кладбище...
-		if (!this->currMilliseconds_) this->currMilliseconds_ = 10;
+		if (!currMilliseconds_) currMilliseconds_ = 10;
 		//И только теперь можно считать скорость и всё прочее.
-		this->pixelsPerSecond_ = 1000.0 / (double(this->currMilliseconds_) / double(this->skipCounter_));
-		if (this->pixelsPerSecond_ < 1)
-			this->skipNumber_ = size_t(std::ceil(this->updatePeriod_ / this->pixelsPerSecond_));
+		pixelsPerSecond_ = 1000.0 / (double(currMilliseconds_) / double(skipCounter_));
+		if (pixelsPerSecond_ < 1)
+			skipNumber_ = size_t(std::ceil(updatePeriod_ / pixelsPerSecond_));
 		else
-			this->skipNumber_ = size_t(std::ceil(this->pixelsPerSecond_*this->updatePeriod_));
+			skipNumber_ = size_t(std::ceil(pixelsPerSecond_*updatePeriod_));
 	}
 	else
-		this->isStarted_ = true;
-	this->lastPrintTime_ = microsec_clock::local_time(); //Запомним на будущее :).
-	this->text_ = lexical_cast<string>(progressPosition) + "/" + lexical_cast<string>(this->getMaxProgress()) +
-		" ( " + lexical_cast<string>(progressPosition / (this->getMaxProgress() / 100)) + "% ) "
-		+ STB.DoubleToString(this->pixelsPerSecond_,2) + " пикс/с, skipNumber: "
-		+ lexical_cast<string>(this->skipNumber_);
-	this->tempSize_ = this->text_.size();
-	if (this->tempSize_ < this->lastTextSize_)
+		isStarted_ = true;
+	lastPrintTime_ = microsec_clock::local_time(); //Запомним на будущее :).
+	text_ = lexical_cast<string>(progressPosition) + "/" + lexical_cast<string>(getMaxProgress()) +
+		" ( " + lexical_cast<string>(progressPosition / (getMaxProgress() / 100)) + "% ) "
+		+ STB.DoubleToString(pixelsPerSecond_,2) + " пикс/с, skipNumber: "
+		+ lexical_cast<string>(skipNumber_);
+	tempSize_ = text_.size();
+	if (tempSize_ < lastTextSize_)
 	{
 		//Надо добавить пробелов чтобы затереть символы предыдущего вывода
-		this->text_.append(" ", this->lastTextSize_ - this->tempSize_);
+		text_.append(" ", lastTextSize_ - tempSize_);
 	}
-	this->lastTextSize_ = this->tempSize_;
-	cout << STB.Utf8ToConsoleCharset(this->text_) << std::flush;
+	lastTextSize_ = tempSize_;
+	cout << STB.Utf8ToConsoleCharset(text_) << std::flush;
 	//Не забыть обнулить skipCounter_!
-	this->skipCounter_ = 0;
+	skipCounter_ = 0;
 }
 
 void AppUIConsoleCallBack::OperationStart()
 //Сообщить объекту о том что операция начинается
 {
 	//Очистим объект и запомним время начала операции.
-	this->Clear();
-	this->isNotClean_ = true;
-	this->startTime_ = boost::posix_time::microsec_clock::local_time();
+	Clear();
+	isNotClean_ = true;
+	startTime_ = boost::posix_time::microsec_clock::local_time();
 }
 
 void AppUIConsoleCallBack::OperationEnd()
@@ -143,13 +143,13 @@ void AppUIConsoleCallBack::OperationEnd()
 	//Запомним время завершения операции и запостим в cout последний
 	//вариант прогрессбара и информацию о времени, затраченном на выполнение операции.
 	using namespace boost::posix_time;
-	this->endTime_ = microsec_clock::local_time();
-	this->skipCounter_ = 1;
-	this->isStarted_ = false;	//Не даст пересчитать скорость
+	endTime_ = microsec_clock::local_time();
+	skipCounter_ = 1;
+	isStarted_ = false;	//Не даст пересчитать скорость
 	cout << "\r";
-	this->CallBack(this->getMaxProgress());
+	CallBack(getMaxProgress());
 	cout << STB.Utf8ToConsoleCharset("\nЗавершено за: ")
-		<< to_simple_string(this->endTime_ - this->startTime_) << endl;
+		<< to_simple_string(endTime_ - startTime_) << endl;
 }
 
 //////////////////////////////
@@ -177,52 +177,52 @@ void AppUIConsole::InitApp(AppConfig &conf)
 //Внутрь передаётся объект с конфигом, в который уже должны быть прочитаны параметры
 //командной строки.
 {
-	this->confObj_ = &conf;
+	confObj_ = &conf;
 	GDALRegister_GTiff();	//Регистрация драйвера GDAL.
 	//Замена обработчика ошибок GDAL на свой, корректно работающий в данном потоке.
-	CPLPushErrorHandlerEx(GDALThreadErrorHandler,(void*)(&this->GDALErrorMsgBuffer));
+	CPLPushErrorHandlerEx(GDALThreadErrorHandler,(void*)(&GDALErrorMsgBuffer));
 	//Явное включение именно консольной кодировки и завершение инициализации объекта program options
 	STB.SelectConsoleEncoding();
-	this->confObj_->FinishInitialization();
+	confObj_->FinishInitialization();
 }
 
 int AppUIConsole::RunApp()
 //По сути тут главный цикл.
 {
 	//Поприветствуем юзверя и расскажем где мы есть.
-	this->PrintToConsole("\nПриветствую! Это geoimgconv v."+ APP_VERSION+"\n");
-	this->PrintToConsole("Данная программа предназначена для преобразования геокартинок.\n");
-	this->PrintToConsole("Это прототип. Не ждите от него многого.\n");
-	//this->PrintToConsole("Программа запущена по пути: "+ this->getAppPath() + "\n");
-	//this->PrintToConsole("Текущий рабочий путь: "+this->getCurrPath() + "\n");
+	PrintToConsole("\nПриветствую! Это geoimgconv v."+ APP_VERSION+"\n");
+	PrintToConsole("Данная программа предназначена для преобразования геокартинок.\n");
+	PrintToConsole("Это прототип. Не ждите от него многого.\n");
+	//PrintToConsole("Программа запущена по пути: "+ getAppPath() + "\n");
+	//PrintToConsole("Текущий рабочий путь: "+getCurrPath() + "\n");
 	SysResInfo sysResInfo;
 	STB.GetSysResInfo(sysResInfo);
-	this->PrintToConsole("\nОбнаружено ядер процессора:" +
+	PrintToConsole("\nОбнаружено ядер процессора: " +
 		lexical_cast<string>(sysResInfo.cpuCoresNumber) + "\n");
-	this->PrintToConsole("Всего ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo.systemMemoryFullSize) + ".\n");
-	this->PrintToConsole("Доступно ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo.systemMemoryFreeSize) + ".\n");
-	this->PrintToConsole("Процесс может адресовать памяти: " + STB.BytesNumToInfoSizeStr(sysResInfo.maxProcessMemorySize) + ".\n");
-	this->PrintToConsole("Выбран режим работы с памятью: " + MemoryModeTexts[confObj_->getMemMode()] + "\n");
+	PrintToConsole("Всего ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo.systemMemoryFullSize) + ".\n");
+	PrintToConsole("Доступно ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo.systemMemoryFreeSize) + ".\n");
+	PrintToConsole("Процесс может адресовать памяти: " + STB.BytesNumToInfoSizeStr(sysResInfo.maxProcessMemorySize) + ".\n");
+	PrintToConsole("Выбран режим работы с памятью: " + MemoryModeTexts[confObj_->getMemMode()] + "\n");
 	PrintToConsole("Размер, указанный для режима работы с памятью: " +
 		lexical_cast<string>(confObj_->getMemSize()) + "\n\n");
 
 	//Выдать больше инфы если не было передано никаких опций командной строки.
-	if (this->confObj_->getArgc() == 1)
+	if (confObj_->getArgc() == 1)
 	{
-		this->PrintToConsole("Вы можете вызвать geoimgconv -h чтобы увидеть справку по опциям командной\n");
-		this->PrintToConsole("строки.\n\nПо умолчанию (если вызвать без опций) - программа откроет\n");
-		this->PrintToConsole("файл с именем input.tif и попытается его обработать медианным фильтром,\n");
-		this->PrintToConsole("сохранив результат в output.tif (при необходимости пересоздав этот файл).\n");
+		PrintToConsole("Вы можете вызвать geoimgconv -h чтобы увидеть справку по опциям командной\n");
+		PrintToConsole("строки.\n\nПо умолчанию (если вызвать без опций) - программа откроет\n");
+		PrintToConsole("файл с именем input.tif и попытается его обработать медианным фильтром,\n");
+		PrintToConsole("сохранив результат в output.tif (при необходимости пересоздав этот файл).\n");
 	}
 	std::cout << std::endl;
 
 	//Реагируем на опции командной строки.
-	if (this->confObj_->getHelpAsked())
+	if (confObj_->getHelpAsked())
 	{
-		this->PrintHelp();
+		PrintHelp();
 		return 0;
 	}
-	else if (this->confObj_->getVersionAsked())
+	else if (confObj_->getVersionAsked())
 	{
 		//Версия и так выводится, поэтому просто делаем ничего.
 		return 0;
@@ -238,62 +238,62 @@ int AppUIConsole::RunApp()
 	medFilter.setAperture(confObj_->getMedfilterAperture());
 	medFilter.setThreshold(confObj_->getMedfilterThreshold());
 	medFilter.setMarginType(confObj_->getMedfilterMarginType());
-	this->PrintToConsole("Пытаюсь открыть файл:\n" + inputFileName + "\n");
+	PrintToConsole("Пытаюсь открыть файл:\n" + inputFileName + "\n");
 	if (medFilter.LoadImage(inputFileName, &errObj))
 	{
-		this->PrintToConsole("Открыто. Визуализация значимых пикселей:\n");
+		PrintToConsole("Открыто. Визуализация значимых пикселей:\n");
 		medFilter.SourcePrintStupidVisToCout();
 
-		//this->PrintToConsole("Для дополнительной отладки сохраняю файл: input_source.csv\n");
+		//PrintToConsole("Для дополнительной отладки сохраняю файл: input_source.csv\n");
 		//if (!medFilter.SourceSaveToCSVFile("input_source.csv", &errObj))
 		//{
-		//	this->PrintToConsole("Ошибка: " + errObj.errorText_ + "\n");
+		//	PrintToConsole("Ошибка: " + errObj.errorText_ + "\n");
 		//	return 1;
 		//};
 
-		this->PrintToConsole("Заполняю краевые области...\n");
-		this->PrintToConsole("Тип заполнения: "+ MarginTypesTexts[medFilter.getMarginType()]+"\n");
+		PrintToConsole("Заполняю краевые области...\n");
+		PrintToConsole("Тип заполнения: "+ MarginTypesTexts[medFilter.getMarginType()]+"\n");
 		AppUIConsoleCallBack CallBackObj;
 		CallBackObj.OperationStart();
 		medFilter.FillMargins(&CallBackObj);
 		CallBackObj.OperationEnd();	//Выведет время выполнения.
 
-		//this->PrintToConsole("Для дополнительной отладки сохраняю файл: input_filled.csv\n");
+		//PrintToConsole("Для дополнительной отладки сохраняю файл: input_filled.csv\n");
 		//if (!medFilter.SourceSaveToCSVFile("input_filled.csv", &errObj))
 		//{
-		//	this->PrintToConsole("Ошибка: " + errObj.errorText_ + "\n");
+		//	PrintToConsole("Ошибка: " + errObj.errorText_ + "\n");
 		//	return 1;
 		//};
 
-		this->PrintToConsole("Готово. Применяю \"тупую\" версию фильтра.\n");
-		this->PrintToConsole("Апертура: " + lexical_cast<std::string>(medFilter.getAperture()) +
+		PrintToConsole("Готово. Применяю \"тупую\" версию фильтра.\n");
+		PrintToConsole("Апертура: " + lexical_cast<std::string>(medFilter.getAperture()) +
 			"; Порог: " + STB.DoubleToString(medFilter.getThreshold(),5) + ".\n");
 		CallBackObj.OperationStart();
 		medFilter.ApplyStupidFilter(&CallBackObj);
 		//medFilter.ApplyStubFilter(&CallBackObj);	//Отладочный "мгновенный" фильтр - только имитирует фильтрацию.
 		CallBackObj.OperationEnd();   //Выведет время выполнения.
 
-		//this->PrintToConsole("Для дополнительной отладки сохраняю файл: output_stupid.csv\n");
+		//PrintToConsole("Для дополнительной отладки сохраняю файл: output_stupid.csv\n");
 		//if (!medFilter.DestSaveToCSVFile("output_stupid.csv", &errObj))
 		//{
-		//	this->PrintToConsole("Ошибка: " + errObj.errorText_ + "\n");
+		//	PrintToConsole("Ошибка: " + errObj.errorText_ + "\n");
 		//	return 1;
 		//};
 
 		//Вроде всё ок, можно сохранять.
-		this->PrintToConsole("Готово. Сохраняю файл:\n" + outputFileName + "\n");
+		PrintToConsole("Готово. Сохраняю файл:\n" + outputFileName + "\n");
 		if (!medFilter.SaveImage(outputFileName, &errObj))
 		{
-			this->PrintToConsole("Ошибка: " + errObj.getErrorText() + "\n");
+			PrintToConsole("Ошибка: " + errObj.getErrorText() + "\n");
 			return 1;
 		};
 
-		this->PrintToConsole("Готово.\n");
+		PrintToConsole("Готово.\n");
 	}
 	else
 	{
 		//Что-то пошло не так.
-		this->PrintToConsole("Ошибка: " + errObj.getErrorText() + "\n");
+		PrintToConsole("Ошибка: " + errObj.getErrorText() + "\n");
 		return 1;
 	}
 
@@ -383,7 +383,7 @@ void AppUIConsole::PrintToConsole(const std::string &str)
 void AppUIConsole::PrintHelp()
 //Вывод справки.
 {
-	std::cout << this->confObj_->getHelpMsg();
+	std::cout << confObj_->getHelpMsg();
 }
 
 } //namespace geoimgconv

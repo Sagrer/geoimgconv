@@ -64,7 +64,7 @@ class SmallToolsBox
 		~SmallToolsBox();
 
 		//Геттеры-сеттеры.
-		std::string const& GetConsoleEncoding() const { return this->consoleEncoding_; };
+		std::string const& GetConsoleEncoding() const { return consoleEncoding_; };
 
 		//Остальные методы.
 
@@ -74,10 +74,10 @@ class SmallToolsBox
 		void InitEncodings();
 
 		//Выбрать консольную кодировку для работы с SelectedCharset
-		inline void SelectConsoleEncoding() { this->consoleEncodingIsSelected_ = true; };
+		inline void SelectConsoleEncoding() { consoleEncodingIsSelected_ = true; };
 
 		//Выбрать системную кодировку для работы с SelectedCharset
-		inline void SelectSystemEncoding() { this->consoleEncodingIsSelected_ = false; };
+		inline void SelectSystemEncoding() { consoleEncodingIsSelected_ = false; };
 		
 		//Перекодирует строку из utf8 в кодировку, подходящую для вывода в консоль.
 		std::string Utf8ToConsoleCharset(const std::string &InputStr);

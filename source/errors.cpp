@@ -38,16 +38,16 @@ void ErrorInfo::SetError(const CommonErrors &errCode, const std::string &text, c
 //аргумента если истинен третий. Если text пуст - стандартный текст
 //сообщения берётся независимо от значения replaceText
 {
-	this->errorCode_ = errCode;
+	errorCode_ = errCode;
 	if (text != "")
 	{
 		if (replaceText)
-			this->errorText_ = text;
+			errorText_ = text;
 		else
-			this->errorText_ = CommonErrorsTexts[errCode] + text;
+			errorText_ = CommonErrorsTexts[errCode] + text;
 	}
 	else
-		this->errorText_ = CommonErrorsTexts[errCode];
+		errorText_ = CommonErrorsTexts[errCode];
 }
 
 }	//namespace geoimgconv

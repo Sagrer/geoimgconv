@@ -59,7 +59,7 @@ AppConfig::AppConfig() : inputFileNameCfg_(DEFAULT_INPUT_FILE_NAME),
 	appPath_(""), currPath_(""), helpParamsDesc_(NULL)
 {
 	//Надо сразу заполнить базовые объекты program_options
-	this->FillBasePO_();
+	FillBasePO_();
 };
 
 //Деструктор
@@ -87,7 +87,7 @@ void AppConfig::FillBasePO_()
 	namespace po = boost::program_options;
 	//Извратный синтаксис с перегруженными скобками.
 	//Описание пустое т.к. хелп генерится не здесь.
-	this->cmdLineParamsDesc_.add_options()
+	cmdLineParamsDesc_.add_options()
 		("help,h","")
 		("version,v","")
 		("input", po::value<std::string>(), "" )
@@ -102,7 +102,7 @@ void AppConfig::FillBasePO_()
 	//Позиционные параметры (без имени). Опять извратный синтаксис.
 	//Это значит что первый безымянный параметр в количестве 1 штука
 	//будет поименован как input а второй как output.
-	this->positionalDesc_.add("input",1).add("output",1);
+	positionalDesc_.add("input",1).add("output",1);
 	//TODO: аналогично задать configParamsDesc_
 }
 
@@ -115,7 +115,7 @@ void AppConfig::FillDependentPO_()
 	//Заполняем desc, который единственное что делает - генерирует текст
 	//справки по опциям.
 	helpParamsDesc_ = new po::options_description(STB.Utf8ToSelectedCharset("Опции командной строки"));
-	this->helpParamsDesc_->add_options()
+	helpParamsDesc_->add_options()
 		("help,h",STB.Utf8ToSelectedCharset("Вывести справку по опциям (ту, которую \
 Вы сейчас читаете).").c_str())
 		("version,v",STB.Utf8ToSelectedCharset("Вывести информацию о версии программы \
@@ -236,7 +236,7 @@ const std::string AppConfig::getHelpMsg()
 исходящим output.tif.\n\n\
 Программа обрабатывает входящий файл медианным фильтром и, сохраняя метаданные\n\
 - записывает то что получилось в исходящий файл.\n\n");
-	tempStream << *this->helpParamsDesc_;
+	tempStream << *helpParamsDesc_;
 	return tempStream.str();
 }
 
@@ -247,24 +247,24 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 	po::options_description desc;
 	
 	//argc и argv могут потребоваться пользователям объекта. Их надо запомнить.
-	this->argc_ = argc;
-	this->argv_ = argv;
+	argc_ = argc;
+	argv_ = argv;
 	
 	//Задетектить пути
 	boost::filesystem::path p(argv[0]);
 	//make_preferred - чтобы поправить кривые пути типа C:/somedir\blabla\loolz.txt
-	this->appPath_ = STB.WstringToUtf8(
+	appPath_ = STB.WstringToUtf8(
 		boost::filesystem::canonical(p.parent_path()).make_preferred().wstring());
-	this->currPath_ = STB.WstringToUtf8(boost::filesystem::current_path().wstring());
+	currPath_ = STB.WstringToUtf8(boost::filesystem::current_path().wstring());
 
-	this->poVarMap_.clear();
+	poVarMap_.clear();
 	try
 	{
 		//Вот эта жуть читает в poVarMap_ параметры командной строки в соответствии с
 		//инфой о параметрах из cmdLineParamsDesc_ и с учётом списка позиционных
 		//(неименованных) параметров, заданных в positionalDesc_.
-		po::store(po::command_line_parser(argc, argv).options(this->cmdLineParamsDesc_).
-			positional(this->positionalDesc_).run(), this->poVarMap_);
+		po::store(po::command_line_parser(argc, argv).options(cmdLineParamsDesc_).
+			positional(positionalDesc_).run(), poVarMap_);
 		//notify в данном случае не нужно.
 	}
 	catch (po::required_option &err)
@@ -294,76 +294,76 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 	//будет происходить:
 	try
 	{
-		if (this->poVarMap_.count("appmode"))
+		if (poVarMap_.count("appmode"))
 		{
-			this->appModeCmd_ = AppModeStrToEnum(this->poVarMap_["appmode"].
+			appModeCmd_ = AppModeStrToEnum(poVarMap_["appmode"].
 				as<std::string>());
-			if (this->appModeCmd_ != APPMODE_MEDIAN)
+			if (appModeCmd_ != APPMODE_MEDIAN)
 			{
 				//Неизвестный или пока не реализованный вариант.
 				if (errObj) errObj->SetError(CMNERR_UNKNOWN_IDENTIF, ": " +
-					this->poVarMap_["appmode"].as<std::string>());
+					poVarMap_["appmode"].as<std::string>());
 				return false;
 			};
-			this->appModeCmdIsSet_ = true;
+			appModeCmdIsSet_ = true;
 		};
-		if (this->poVarMap_.count("test"))
+		if (poVarMap_.count("test"))
 		{
 			//Скрытая опция для разработки. Программа запускается в отдельном
 			//тестовом режиме.
 			appModeCmd_ = APPMODE_DEVTEST;
 			appModeCmdIsSet_ = true;
 		}
-		if (this->poVarMap_.count("help"))
-			this->helpAsked_ = true;
-		if (this->poVarMap_.count("version"))
-			this->versionAsked_ = true;
-		if ((this->helpAsked_) || (this->versionAsked_))
+		if (poVarMap_.count("help"))
+			helpAsked_ = true;
+		if (poVarMap_.count("version"))
+			versionAsked_ = true;
+		if ((helpAsked_) || (versionAsked_))
 			//Дальше обрабатывать нет смысла, прога ничего не будет делать кроме вывода
 			//собственно версии или справки.
 			return true;
-		if (this->poVarMap_.count("input"))
+		if (poVarMap_.count("input"))
 		{
-			this->inputFileNameCmd_ = STB.SystemCharsetToUtf8(this->poVarMap_["input"].as<std::string>());
-			this->inputFileNameCmdIsSet_ = true;
+			inputFileNameCmd_ = STB.SystemCharsetToUtf8(poVarMap_["input"].as<std::string>());
+			inputFileNameCmdIsSet_ = true;
 		};
-		if (this->poVarMap_.count("output"))
+		if (poVarMap_.count("output"))
 		{
-			this->outputFileNameCmd_ = STB.SystemCharsetToUtf8(this->poVarMap_["output"].as<std::string>());
-			this->outputFileNameCmdIsSet_ = true;
+			outputFileNameCmd_ = STB.SystemCharsetToUtf8(poVarMap_["output"].as<std::string>());
+			outputFileNameCmdIsSet_ = true;
 		};
-		if (this->poVarMap_.count("medfilter.aperture"))
+		if (poVarMap_.count("medfilter.aperture"))
 		{
-			this->medfilterApertureCmd_ = this->poVarMap_["medfilter.aperture"].as<int>();
-			this->medfilterApertureCmdIsSet_ = true;
+			medfilterApertureCmd_ = poVarMap_["medfilter.aperture"].as<int>();
+			medfilterApertureCmdIsSet_ = true;
 		};
-		if (this->poVarMap_.count("medfilter.threshold"))
+		if (poVarMap_.count("medfilter.threshold"))
 		{
-			this->medfilterThresholdCmd_ = this->poVarMap_["medfilter.threshold"].as<double>();
-			this->medfilterThresholdCmdIsSet_ = true;
+			medfilterThresholdCmd_ = poVarMap_["medfilter.threshold"].as<double>();
+			medfilterThresholdCmdIsSet_ = true;
 		};
-		if (this->poVarMap_.count("medfilter.margintype"))
+		if (poVarMap_.count("medfilter.margintype"))
 		{
-			this->medfilterMarginTypeCmd_ = MarginTypeStrToEnum(this->poVarMap_[
+			medfilterMarginTypeCmd_ = MarginTypeStrToEnum(poVarMap_[
 				"medfilter.margintype"].as<std::string>());
-			if (this->medfilterMarginTypeCmd_ == MARGIN_UNKNOWN_FILLING)
+			if (medfilterMarginTypeCmd_ == MARGIN_UNKNOWN_FILLING)
 			{
 				//Неизвестный или пока не реализованный вариант.
 				if (errObj) errObj->SetError(CMNERR_UNKNOWN_IDENTIF, ": " +
-					this->poVarMap_["medfilter.margintype"].as<std::string>());
+					poVarMap_["medfilter.margintype"].as<std::string>());
 				return false;
 			};
-			this->medfilterMarginTypeCmdIsSet_ = true;
+			medfilterMarginTypeCmdIsSet_ = true;
 		};
-		if (this->poVarMap_.count("memmode"))
+		if (poVarMap_.count("memmode"))
 		{
-			ParseMemoryModeStr(this->poVarMap_["memmode"].as<std::string>(), memModeCmd_,
+			ParseMemoryModeStr(poVarMap_["memmode"].as<std::string>(), memModeCmd_,
 				memSizeCmd_);
 			if (memModeCmd_ == MEMORY_MODE_UNKNOWN)
 			{
 				//Неизвестный или пока не реализованный вариант.
 				if (errObj) errObj->SetError(CMNERR_UNKNOWN_IDENTIF, "Параметр --memmode имеет неверное значение: " +
-					this->poVarMap_["memmode"].as<std::string>(),true);
+					poVarMap_["memmode"].as<std::string>(),true);
 				return false;
 			};
 			memModeCmdIsSet_ = true;

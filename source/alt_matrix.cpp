@@ -89,31 +89,31 @@ signData_(NULL), xSize_(0), ySize_(0), matrixArr_(NULL), signMatrixArr_(NULL), d
 {
 	//Объект должен точно знать какого типа у него пиксели.
 	if (typeid(CellType) == typeid(double))
-		this->pixelType_ = PIXEL_FLOAT64;
+		pixelType_ = PIXEL_FLOAT64;
 	else if (typeid(CellType) == typeid(float))
-		this->pixelType_ = PIXEL_FLOAT32;
+		pixelType_ = PIXEL_FLOAT32;
 	else if (typeid(CellType) == typeid(int8_t))
-		this->pixelType_ = PIXEL_INT8;
+		pixelType_ = PIXEL_INT8;
 	else if (typeid(CellType) == typeid(uint8_t))
-		this->pixelType_ = PIXEL_UINT8;
+		pixelType_ = PIXEL_UINT8;
 	else if (typeid(CellType) == typeid(int16_t))
-		this->pixelType_ = PIXEL_INT16;
+		pixelType_ = PIXEL_INT16;
 	else if (typeid(CellType) == typeid(uint16_t))
-		this->pixelType_ = PIXEL_UINT16;
+		pixelType_ = PIXEL_UINT16;
 	else if (typeid(CellType) == typeid(int32_t))
-		this->pixelType_ = PIXEL_INT32;
+		pixelType_ = PIXEL_INT32;
 	else if (typeid(CellType) == typeid(uint32_t))
-		this->pixelType_ = PIXEL_UINT32;
-	else this->pixelType_ = PIXEL_UNKNOWN;
+		pixelType_ = PIXEL_UINT32;
+	else pixelType_ = PIXEL_UNKNOWN;
 }
 
 template <typename CellType> AltMatrix<CellType>::~AltMatrix()
 {
 	//new нет в конструкторе, но он мог быть в других методах
-	delete[] (CellType*)this->data_;
-	delete[] this->signData_;
-	delete[] this->matrixArr_;
-	delete[] this->signMatrixArr_;
+	delete[] (CellType*)data_;
+	delete[] signData_;
+	delete[] matrixArr_;
+	delete[] signMatrixArr_;
 }
 
 //--------------------------------//
@@ -167,8 +167,8 @@ bool AltMatrix<CellType>::SaveToGDALFile(const std::string &fileName, const int 
 
 	//Пишем
 	CPLErr gdalResult;
-	gdalResult = inputRaster->RasterIO(GF_Write, xStart, yStart, this->xSize_, this->ySize_,
-		(void*)(this->data_), this->xSize_, this->ySize_, GICToGDAL_PixelType(this->pixelType_),
+	gdalResult = inputRaster->RasterIO(GF_Write, xStart, yStart, xSize_, ySize_,
+		(void*)(data_), xSize_, ySize_, GICToGDAL_PixelType(pixelType_),
 		0, 0, NULL);
 	if (gdalResult != CE_None)
 	{
@@ -198,7 +198,7 @@ bool AltMatrix<CellType>::LoadFromGDALFile(const std::string &fileName,
 {	
 	//Независимо от того удастся ли загрузить файл - данные в объекте
 	//должны быть удалены.
-	if (this->IsClear()) this->Clear();
+	if (IsClear()) Clear();
 	//А был ли файл?
 	filesystem::path filePath = STB.Utf8ToWstring(fileName);
 	if (!filesystem::is_regular_file(filePath))
@@ -234,7 +234,7 @@ bool AltMatrix<CellType>::LoadFromGDALFile(const std::string &fileName,
 	}
 	
 	//Выделяем память.
-	this->CreateEmpty(rasterXSize+(marginSize * 2), rasterYSize+(marginSize * 2));
+	CreateEmpty(rasterXSize+(marginSize * 2), rasterYSize+(marginSize * 2));
 
 	//RasterIO умеет в spacing, поэтому нет необходимости читать картинку построчно для того
 	//чтобы добавлять в начале и конце строк пустоту для marginSize. Всё можно загрузить сразу
@@ -242,8 +242,8 @@ bool AltMatrix<CellType>::LoadFromGDALFile(const std::string &fileName,
 	//в пиксельное месиво :).
 	CPLErr gdalResult;
 	gdalResult = inputRaster->RasterIO(GF_Read, 0, 0, rasterXSize, rasterYSize,
-		(void*)((CellType*)(this->data_) + marginSize*this->xSize_ + marginSize),
-		rasterXSize, rasterYSize, GICToGDAL_PixelType(this->pixelType_), 0,
+		(void*)((CellType*)(data_) + marginSize*xSize_ + marginSize),
+		rasterXSize, rasterYSize, GICToGDAL_PixelType(pixelType_), 0,
 		(rasterXSize + (marginSize*2))*sizeof(CellType), NULL);
 	if (gdalResult != CE_None)
 	{
@@ -257,13 +257,13 @@ bool AltMatrix<CellType>::LoadFromGDALFile(const std::string &fileName,
 	//Осталось пробежаться по всем пикселям и откласифицировать их на значимые и незначимые.
 	//Незначимым считаем пиксели равные нулю. Граничные пиксели кстати трогать нет смысла.
 	int i, j;
-	for (i = marginSize; i < (this->ySize_ - marginSize); i++)
+	for (i = marginSize; i < (ySize_ - marginSize); i++)
 	{
-		for (j = marginSize; j < (this->xSize_ - marginSize); j++)
+		for (j = marginSize; j < (xSize_ - marginSize); j++)
 		{
-			if (this->matrixArr_[i][j] != CellType(0))
+			if (matrixArr_[i][j] != CellType(0))
 				//Это значимый пиксель.
-				this->signMatrixArr_[i][j] = 1;
+				signMatrixArr_[i][j] = 1;
 		}
 	}
 
@@ -299,37 +299,37 @@ bool AltMatrix<CellType>::SaveChunkToFile(const string &fileName,
 template <typename CellType> void AltMatrix<CellType>::Clear()
 //В соответствии с названием - очищает содержимое объекта чтобы он представлял пустую матрицу.
 {
-	delete[] (CellType*)this->data_;
-	delete[] this->signData_;
-	delete[] this->matrixArr_;
-	delete[] this->signMatrixArr_;
-	this->data_ = NULL;
-	this->matrixArr_ = NULL;
-	this->xSize_ = 0;
-	this->ySize_ = 0;
-	this->dataElemsNum_ = 0;
+	delete[] (CellType*)data_;
+	delete[] signData_;
+	delete[] matrixArr_;
+	delete[] signMatrixArr_;
+	data_ = NULL;
+	matrixArr_ = NULL;
+	xSize_ = 0;
+	ySize_ = 0;
+	dataElemsNum_ = 0;
 }
 
 template <typename CellType>
 void AltMatrix<CellType>::CreateEmpty(const int &newX, const int &newY)
 //Уничтожает содержащуюся в объекте матрицу и создаёт пустую новую указанного размера.
 {
-	if (!this->IsClear()) this->Clear();
-	this->xSize_ = newX;
-	this->ySize_ = newY;
-	this->dataElemsNum_ = this->xSize_ * this->ySize_;
+	if (!IsClear()) Clear();
+	xSize_ = newX;
+	ySize_ = newY;
+	dataElemsNum_ = xSize_ * ySize_;
 	//size_t debugElemSize = sizeof(CellType);	//Для отладки (т.к. что тут за CellType в отладчике не видно).
-	this->data_ = (void*) new CellType[this->dataElemsNum_]();	//явно инициализовано нулями!
-	this->signData_ = new char[dataElemsNum_]();
+	data_ = (void*) new CellType[dataElemsNum_]();	//явно инициализовано нулями!
+	signData_ = new char[dataElemsNum_]();
 	//Массивы указателей для быстрого доступа по координатам X и Y.
-	this->matrixArr_ = new CellType*[this->ySize_];
-	this->signMatrixArr_ = new char*[this->ySize_];
+	matrixArr_ = new CellType*[ySize_];
+	signMatrixArr_ = new char*[ySize_];
 	int i, j;
-	for (i = 0; i < this->ySize_; i++)
+	for (i = 0; i < ySize_; i++)
 	{
-		j = i*this->xSize_;
-		this->matrixArr_[i] = &((CellType*)this->data_)[j];
-		this->signMatrixArr_[i] = &this->signData_[j];
+		j = i*xSize_;
+		matrixArr_[i] = &((CellType*)data_)[j];
+		signMatrixArr_[i] = &signData_[j];
 	}
 }
 
@@ -341,23 +341,23 @@ void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatr
 //marginSize задаёт размер незначимой краевой области в исходной матрице. Целевая
 //матрица будет создана без этой области, т.е. меньшего размера.
 {
-	if (!this->IsClear()) this->Clear();
+	if (!IsClear()) Clear();
 	if (sourceMatrix_.IsClear()) return;
 	//Выделим память.
-	this->CreateEmpty(sourceMatrix_.xSize_-(marginSize * 2),
+	CreateEmpty(sourceMatrix_.xSize_-(marginSize * 2),
 		sourceMatrix_.ySize_-(marginSize * 2));
 	//Теперь нужно пройтись по всей вспомогательной матрице и скопировать
 	//все равные единице элементы.
 	int x, y, sourceX, sourceY;
-	for (y=0; y < this->ySize_; y++)
+	for (y=0; y < ySize_; y++)
 	{
 		sourceY = y + marginSize;
-		for (x=0; x < this->xSize_; x++)
+		for (x=0; x < xSize_; x++)
 		{
 			sourceX = x + marginSize;
 			if (sourceMatrix_.signMatrixArr_[sourceY][sourceX] == 1)
 			{
-				this->signMatrixArr_[y][x] = 1;
+				signMatrixArr_[y][x] = 1;
 			}
 		};
 	};
@@ -366,8 +366,8 @@ void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatr
 template <typename CellType> bool AltMatrix<CellType>::IsClear() const
 //Очевидно вернёт true если матрица пуста, либо false если там есть значения.
 {
-	//!(this->data_==NULL)==true
-	return !this->data_;
+	//!(data_==NULL)==true
+	return !data_;
 }
 
 template <typename CellType> void AltMatrix<CellType>::PrintStupidVisToCout() const
@@ -379,17 +379,17 @@ template <typename CellType> void AltMatrix<CellType>::PrintStupidVisToCout() co
 	//консоли в windows.
 	CellType accum;
 	int x, y, i, j;
-	int scale = (int)(ceil(double(this->xSize_)/79));
+	int scale = (int)(ceil(double(xSize_)/79));
 	cout << endl;
-	for (y = 0; y < this->ySize_-scale-1; y+=scale)
+	for (y = 0; y < ySize_-scale-1; y+=scale)
 	{
-		for (x = 0; (x < this->xSize_-scale-1)&&(x < 79*scale); x+=scale)
+		for (x = 0; (x < xSize_-scale-1)&&(x < 79*scale); x+=scale)
 		{
 			accum = CellType();		//обнуление
 			for (i = 0; i < scale; i++)
 				for (j = 0; j < scale; j++)
 				{
-					accum += this->matrixArr_[y + j][x + i];
+					accum += matrixArr_[y + j][x + i];
 				}
 			if (accum == 0) cout << '*';
 			else cout << '#';
@@ -412,11 +412,11 @@ bool AltMatrix<CellType>::SaveToCSVFile(const std::string &fileName, ErrorInfo *
 		return false;
 	}
 	int x, y;
-	for (y = 0; y < this->ySize_; y++)
+	for (y = 0; y < ySize_; y++)
 	{
-		for (x = 0;x < this->xSize_; x++)
+		for (x = 0;x < xSize_; x++)
 		{
-			fileStream << x << "," << this->ySize_ - y << "," << this->matrixArr_[y][x] << endl;
+			fileStream << x << "," << ySize_ - y << "," << matrixArr_[y][x] << endl;
 		}
 	}
 	fileStream.close();

@@ -84,8 +84,8 @@ public:
 	~AppUIConsole();
 
 	//Геттеры-сеттеры
-	std::string const& getAppPath() {return this->confObj_->getAppPath();};
-	std::string const& getCurrPath() {return this->confObj_->getCurrPath();};
+	std::string const& getAppPath() {return confObj_->getAppPath();};
+	std::string const& getCurrPath() {return confObj_->getCurrPath();};
 
 	//Готовит приложение к запуску.
 	//Внутрь передаётся объект с конфигом, в который уже должны быть прочитаны параметры

@@ -90,7 +90,7 @@ bool RealMedianFilterTemplBase<CellType>::PixelStep(int &x, int &y, const PixelD
 		x--;
 		y++;
 	}
-	if ((x >= 0) && (y >= 0) && (x < this->sourceMatrix_.getXSize()) && (y < this->sourceMatrix_.getYSize()))
+	if ((x >= 0) && (y >= 0) && (x < sourceMatrix_.getXSize()) && (y < sourceMatrix_.getYSize()))
 		return true;
 	else
 		return false;
@@ -127,10 +127,10 @@ void RealMedianFilterTemplBase<CellType>::GetMirrorPixel(const int &x, const int
 			firstX = outX;
 			firstY = outY;
 		};
-		if ((outX >= 0) && (outX < this->sourceMatrix_.getXSize()) &&
-			(outY >= 0) && (outY < this->sourceMatrix_.getYSize()))
+		if ((outX >= 0) && (outX < sourceMatrix_.getXSize()) &&
+			(outY >= 0) && (outY < sourceMatrix_.getYSize()))
 		{
-			if (this->sourceMatrix_.getSignMatrixElem(outY,outX) == 1)
+			if (sourceMatrix_.getSignMatrixElem(outY,outX) == 1)
 			{
 				//Найден значимый пиксел. В идеале эта ветка должна
 				//отрабатывать с первого раза, исключение - если слой
@@ -145,7 +145,7 @@ void RealMedianFilterTemplBase<CellType>::GetMirrorPixel(const int &x, const int
 					//зеркальный к которому мы ищем.
 					tempX=outX;
 					tempY=outY;
-					this->GetMirrorPixel(tempX,tempY,firstX,firstY,outX,outY,recurseDepth+1);
+					GetMirrorPixel(tempX,tempY,firstX,firstY,outX,outY,recurseDepth+1);
 				};
 				found = true;
 			}		
@@ -163,24 +163,24 @@ void RealMedianFilterTemplBase<CellType>::SimpleFiller(const int &x, const int &
 	int currY = y;
 	int stepCounter = 0;
 
-	while (this->PixelStep(currX, currY, direction))
+	while (PixelStep(currX, currY, direction))
 	{
 		stepCounter++;
-		if((this->sourceMatrix_.getSignMatrixElem(currY,currX)==1) ||
+		if((sourceMatrix_.getSignMatrixElem(currY,currX)==1) ||
 			(stepCounter > marginSize) )
 		{
 			//Значимый пиксель, либо ушли за пределы окна. Прекращаем заполнение.
 			return;
 		}
-		else if ((this->sourceMatrix_.getSignMatrixElem(currY,currX) == 0) ||
+		else if ((sourceMatrix_.getSignMatrixElem(currY,currX) == 0) ||
 			(direction == PIXEL_DIR_UP) || (direction == PIXEL_DIR_DOWN) ||
 			(direction == PIXEL_DIR_RIGHT) || (direction == PIXEL_DIR_LEFT))
 		{
 			//Заполняем либо вообще не заполненные пиксели, либо любые незначимые
 			//если двигаемся не по диагонали чтобы возможно переписать те, что были
 			//уже заполнены диагональным заполнителем.
-			this->sourceMatrix_.setMatrixElem(currY,currX,this->sourceMatrix_.getMatrixElem(y,x));
-			this->sourceMatrix_.setSignMatrixElem(currY,currX,2); //Заполненный незначимый пиксель.
+			sourceMatrix_.setMatrixElem(currY,currX,sourceMatrix_.getMatrixElem(y,x));
+			sourceMatrix_.setSignMatrixElem(currY,currX,2); //Заполненный незначимый пиксель.
 		}
 	}
 }
@@ -195,25 +195,25 @@ void RealMedianFilterTemplBase<CellType>::MirrorFiller(const int &x, const int &
 	int mirrorX, mirrorY;
 	int stepCounter = 0;
 
-	while (this->PixelStep(currX, currY, direction))
+	while (PixelStep(currX, currY, direction))
 	{
 		stepCounter++;
-		if((this->sourceMatrix_.getSignMatrixElem(currY,currX) == 1) ||
+		if((sourceMatrix_.getSignMatrixElem(currY,currX) == 1) ||
 			(stepCounter > marginSize) )
 		{
 			//Значимый пиксель, либо ушли за пределы окна. Прекращаем заполнение.
 			return;
 		}
-		else if ((this->sourceMatrix_.getSignMatrixElem(currY,currX) == 0) ||
+		else if ((sourceMatrix_.getSignMatrixElem(currY,currX) == 0) ||
 			(direction == PIXEL_DIR_UP) || (direction == PIXEL_DIR_DOWN) ||
 			(direction == PIXEL_DIR_RIGHT) || (direction == PIXEL_DIR_LEFT))
 		{
 			//Заполняем либо вообще не заполненные пиксели, либо любые незначимые
 			//если двигаемся не по диагонали чтобы возможно переписать те, что были
 			//уже заполнены диагональным заполнителем.
-			this->GetMirrorPixel(x,y,currX,currY,mirrorX,mirrorY);	//Координаты зеркального пикселя.
-			this->sourceMatrix_.setMatrixElem(currY,currX,this->sourceMatrix_.getMatrixElem(mirrorY,mirrorX));
-			this->sourceMatrix_.setSignMatrixElem(currY,currX,2); //Заполненный незначимый пиксель.
+			GetMirrorPixel(x,y,currX,currY,mirrorX,mirrorY);	//Координаты зеркального пикселя.
+			sourceMatrix_.setMatrixElem(currY,currX,sourceMatrix_.getMatrixElem(mirrorY,mirrorX));
+			sourceMatrix_.setSignMatrixElem(currY,currX,2); //Заполненный незначимый пиксель.
 		}
 	}
 }
@@ -229,16 +229,16 @@ void RealMedianFilterTemplBase<CellType>::FillMargins_PixelBasedAlgo(const TFill
 	marginSize = (getOwnerObj().getAperture() - 1) / 2;
 	//Настроим объект, выводящий информацию о прогрессе обработки.
 	if (callBackObj)
-		callBackObj->setMaxProgress((this->sourceMatrix_.getXSize() - marginSize*2) *
-			(this->sourceMatrix_.getYSize() - marginSize*2));
+		callBackObj->setMaxProgress((sourceMatrix_.getXSize() - marginSize*2) *
+			(sourceMatrix_.getYSize() - marginSize*2));
 	unsigned long progressPosition = 0;
 	//Поехали.
-	for (y = marginSize; y < (this->sourceMatrix_.getYSize() - marginSize); y++)
+	for (y = marginSize; y < (sourceMatrix_.getYSize() - marginSize); y++)
 	{
-		for (x = marginSize; x < (this->sourceMatrix_.getXSize() - marginSize); x++)
+		for (x = marginSize; x < (sourceMatrix_.getXSize() - marginSize); x++)
 		{
 			progressPosition++;
-			if (this->sourceMatrix_.getSignMatrixElem(y,x) == 1)
+			if (sourceMatrix_.getSignMatrixElem(y,x) == 1)
 			{
 				//Теперь будем проверять значимы ли пикселы вверху, внизу, справа, слева и
 				//по всем диагоналям. Если незначимы (независимо от фактической заполненности)
@@ -267,7 +267,7 @@ template <typename CellType>
 void RealMedianFilterTemplBase<CellType>::FillMargins_Simple(CallBackBase *callBackObj)
 //Заполнить пустые пиксели source-матрицы простым алгоритмом (сплошной цвет).
 {
-	this->FillMargins_PixelBasedAlgo(&RealMedianFilterTemplBase<CellType>::SimpleFiller,
+	FillMargins_PixelBasedAlgo(&RealMedianFilterTemplBase<CellType>::SimpleFiller,
 		callBackObj);
 }
 
@@ -275,7 +275,7 @@ template <typename CellType>
 void RealMedianFilterTemplBase<CellType>::FillMargins_Mirror(CallBackBase *callBackObj)
 //Заполнить пустые пиксели source-матрицы зеркальным алгоритмом.
 {
-	this->FillMargins_PixelBasedAlgo(&RealMedianFilterTemplBase<CellType>::MirrorFiller,
+	FillMargins_PixelBasedAlgo(&RealMedianFilterTemplBase<CellType>::MirrorFiller,
 		callBackObj);
 }
 
@@ -291,9 +291,9 @@ bool RealMedianFilterTemplBase<CellType>::LoadImage(const std::string &fileName,
 {
 	//Чистим матрицу и грузим в неё файл.
 	bool result;
-	this->sourceMatrix_.Clear();
+	sourceMatrix_.Clear();
 	getOwnerObj().FixAperture();
-	result = this->sourceMatrix_.LoadFromGDALFile(fileName, (getOwnerObj().getAperture() - 1) / 2, errObj);
+	result = sourceMatrix_.LoadFromGDALFile(fileName, (getOwnerObj().getAperture() - 1) / 2, errObj);
 	if (result)
 		getOwnerObj().setSourceFileName(fileName);
 	return result;
@@ -354,7 +354,7 @@ bool  RealMedianFilterTemplBase<CellType>::SaveImage(const std::string &fileName
 	}
 	
 	//Собсно, запись.
-	if (!this->destMatrix_.SaveToGDALFile(tempFileName, 0, 0, errObj))
+	if (!destMatrix_.SaveToGDALFile(tempFileName, 0, 0, errObj))
 	{
 		filesystem::remove(tempFilePath, boostErrCode);
 		return false;
@@ -380,8 +380,8 @@ void RealMedianFilterTemplBase<CellType>::FillMargins(CallBackBase *callBackObj)
 {
 	switch (getOwnerObj().getMarginType())
 	{
-	case MARGIN_SIMPLE_FILLING: this->FillMargins_Simple(callBackObj); break;
-	case MARGIN_MIRROR_FILLING: this->FillMargins_Mirror(callBackObj);
+	case MARGIN_SIMPLE_FILLING: FillMargins_Simple(callBackObj); break;
+	case MARGIN_MIRROR_FILLING: FillMargins_Mirror(callBackObj);
 	}		
 }
 
@@ -395,7 +395,7 @@ void RealMedianFilterTemplBase<CellType>::ApplyStupidFilter(CallBackBase *callBa
 	//сравнения с оптимизированными алгоритмами.
 	int destX, destY, windowX, windowY, sourceX, sourceY, marginSize, medianArrPos;
 	marginSize = (getOwnerObj().getAperture() - 1) / 2;
-	this->destMatrix_.CreateDestMatrix(this->sourceMatrix_,marginSize);
+	destMatrix_.CreateDestMatrix(sourceMatrix_,marginSize);
 	//Сразу вычислим индексы и указатели чтобы не считать в цикле.
 	//И выделим память под массив для пикселей окна, в котором ищем медиану.
 	int medianArrSize = getOwnerObj().getAperture() * getOwnerObj().getAperture();
@@ -406,19 +406,19 @@ void RealMedianFilterTemplBase<CellType>::ApplyStupidFilter(CallBackBase *callBa
 	CellType *medianArrEnd = medianArr+medianArrSize; //Элемент за последним в массиве!
 	//Настроим объект, выводящий информацию о прогрессе обработки.
 	if (callBackObj)
-		callBackObj->setMaxProgress(this->destMatrix_.getXSize() * this->destMatrix_.getYSize());
+		callBackObj->setMaxProgress(destMatrix_.getXSize() * destMatrix_.getYSize());
 	unsigned long progressPosition = 0;
 	
 	//Поехали.
-	for (destY = 0; destY < this->destMatrix_.getYSize(); destY++)
+	for (destY = 0; destY < destMatrix_.getYSize(); destY++)
 	{
 		sourceY=destY+marginSize;
-		for (destX = 0; destX < this->destMatrix_.getXSize(); destX++)
+		for (destX = 0; destX < destMatrix_.getXSize(); destX++)
 		{
 			sourceX=destX+marginSize;
 			progressPosition++;
 			//Незначимые пиксели не трогаем.
-			if (this->sourceMatrix_.getSignMatrixElem(sourceY,sourceX) !=1) continue;
+			if (sourceMatrix_.getSignMatrixElem(sourceY,sourceX) !=1) continue;
 			//Теперь надо пройти по каждому пикселю окна чтобы составить массив
 			//и сортировкой получить медиану. Наверное самый неэффективны способ.
 			medianArrPos = 0;
@@ -426,24 +426,24 @@ void RealMedianFilterTemplBase<CellType>::ApplyStupidFilter(CallBackBase *callBa
 			{
 				for (windowX=destX; windowX<(sourceX+marginSize); windowX++)
 				{
-					medianArr[medianArrPos]=this->sourceMatrix_.getMatrixElem(windowY,windowX);
+					medianArr[medianArrPos]=sourceMatrix_.getMatrixElem(windowY,windowX);
 					medianArrPos++;
 				}
 			}
 			//Сортируем, берём медиану из середины. Точностью поиска середины не
 			//заморачиваемся т.к. окна будут большие, в десятки пикселов.
 			std::nth_element(medianArr,medianPos,medianArrEnd);
-			if (this->GetDelta(*medianPos,this->sourceMatrix_.getMatrixElem(sourceY,sourceX))
+			if (GetDelta(*medianPos,sourceMatrix_.getMatrixElem(sourceY,sourceX))
 				< getOwnerObj().getThreshold())
 			{
 				//Отличие от медианы меньше порогового. Просто копируем пиксел.
-				this->destMatrix_.setMatrixElem(destY,destX,
-					this->sourceMatrix_.getMatrixElem(sourceY,sourceX));
+				destMatrix_.setMatrixElem(destY,destX,
+					sourceMatrix_.getMatrixElem(sourceY,sourceX));
 			}
 			else
 			{
 				//Отличие больше порогового - записываем в dest-пиксель медиану.
-				this->destMatrix_.setMatrixElem(destY,destX,*medianPos);
+				destMatrix_.setMatrixElem(destY,destX,*medianPos);
 			};
 			//Сообщить вызвавшему коду прогресс выполнения.
 			if (callBackObj) callBackObj->CallBack(progressPosition);
@@ -460,25 +460,25 @@ void RealMedianFilterTemplBase<CellType>::ApplyStubFilter(CallBackBase *callBack
 {
 	int destX, destY, sourceX, sourceY, marginSize;
 	marginSize = (getOwnerObj().getAperture() - 1) / 2;
-	this->destMatrix_.CreateDestMatrix(this->sourceMatrix_, marginSize);
+	destMatrix_.CreateDestMatrix(sourceMatrix_, marginSize);
 	if (callBackObj)
-		callBackObj->setMaxProgress(this->destMatrix_.getXSize() * this->destMatrix_.getYSize());
+		callBackObj->setMaxProgress(destMatrix_.getXSize() * destMatrix_.getYSize());
 	unsigned long progressPosition = 0;
 
 	//Поехали.
-	for (destY = 0; destY < this->destMatrix_.getYSize(); destY++)
+	for (destY = 0; destY < destMatrix_.getYSize(); destY++)
 	{
 		sourceY = destY + marginSize;
-		for (destX = 0; destX < this->destMatrix_.getXSize(); destX++)
+		for (destX = 0; destX < destMatrix_.getXSize(); destX++)
 		{
 			sourceX = destX + marginSize;
 			progressPosition++;
 			//Незначимые пиксели не трогаем.
-			if (this->sourceMatrix_.getSignMatrixElem(sourceY,sourceX) != 1) continue;
+			if (sourceMatrix_.getSignMatrixElem(sourceY,sourceX) != 1) continue;
 
 			//Просто копируем пиксел.
-			this->destMatrix_.setMatrixElem(destY,destX,
-				this->sourceMatrix_.getMatrixElem(sourceY,sourceX));
+			destMatrix_.setMatrixElem(destY,destX,
+				sourceMatrix_.getMatrixElem(sourceY,sourceX));
 
 			//Сообщить вызвавшему коду прогресс выполнения.
 			if (callBackObj) callBackObj->CallBack(progressPosition);
@@ -491,7 +491,7 @@ void RealMedianFilterTemplBase<CellType>::SourcePrintStupidVisToCout()
 //"Тупая" визуализация матрицы, отправляется прямо в cout.
 {
 	//Просто проброс вызова в объект матрицы.
-	this->sourceMatrix_.PrintStupidVisToCout();
+	sourceMatrix_.PrintStupidVisToCout();
 }
 
 template <typename CellType>
@@ -501,7 +501,7 @@ bool RealMedianFilterTemplBase<CellType>::SourceSaveToCSVFile(const std::string 
 //Это "тупой" вариант вывода - метаданные нормально не сохраняются.
 {
 	//Просто проброс вызова в объект матрицы.
-	return this->sourceMatrix_.SaveToCSVFile(fileName, errObj);
+	return sourceMatrix_.SaveToCSVFile(fileName, errObj);
 }
 
 template <typename CellType>
@@ -509,7 +509,7 @@ bool RealMedianFilterTemplBase<CellType>::DestSaveToCSVFile(const std::string &f
 //Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 {
 	//Просто проброс вызова в объект матрицы.
-	return this->destMatrix_.SaveToCSVFile(fileName, errObj);
+	return destMatrix_.SaveToCSVFile(fileName, errObj);
 }
 
 ////////////////////////////////////
@@ -567,10 +567,10 @@ bool MedianFilter::SelectInputFile(const std::string &fileName, ErrorInfo *errOb
 		return false;
 	}
 	GDALRasterBand *inputRaster = inputDataset->GetRasterBand(1);
-	this->dataType_ = GDALToGIC_PixelType(inputRaster->GetRasterDataType());
+	dataType_ = GDALToGIC_PixelType(inputRaster->GetRasterDataType());
 	imageSizeX_ = inputRaster->GetXSize();
 	imageSizeY_ = inputRaster->GetYSize();
-	if (this->dataType_ == PIXEL_UNKNOWN)
+	if (dataType_ == PIXEL_UNKNOWN)
 	{
 		GDALClose(inputDataset);
 		if (errObj) errObj->SetError(CMNERR_UNSUPPORTED_FILE_FORMAT, ": " + fileName);
@@ -579,13 +579,13 @@ bool MedianFilter::SelectInputFile(const std::string &fileName, ErrorInfo *errOb
 
 	//Если GDAL говорит что тип пикселя - байт - надо посмотреть метаданные какой именно там
 	//тип байтов.
-	if (this->dataType_ == PIXEL_INT8)
+	if (dataType_ == PIXEL_INT8)
 	{
 		const char *tempStr = inputRaster->GetMetadataItem("PIXELTYPE", "IMAGE_STRUCTURE");
 		if ((tempStr == NULL) || strcmp(tempStr, "SIGNEDBYTE"))
 		{
 			//Это явно не signed-байт
-			this->dataType_ = PIXEL_UINT8;
+			dataType_ = PIXEL_UINT8;
 		}
 	}
 
@@ -595,16 +595,16 @@ bool MedianFilter::SelectInputFile(const std::string &fileName, ErrorInfo *errOb
 	GDALClose(inputDataset);
 	inputRaster = NULL;
 	delete pFilterObj;
-	switch (this->dataType_)
+	switch (dataType_)
 	{
-		case PIXEL_INT8: this->pFilterObj = new RealMedianFilterInt8(this); break;
-		case PIXEL_UINT8: this->pFilterObj = new RealMedianFilterUInt8(this); break;
-		case PIXEL_INT16: this->pFilterObj = new RealMedianFilterInt16(this); break;
-		case PIXEL_UINT16: this->pFilterObj = new RealMedianFilterUInt16(this); break;
-		case PIXEL_INT32: this->pFilterObj = new RealMedianFilterInt32(this); break;
-		case PIXEL_UINT32: this->pFilterObj = new RealMedianFilterUInt32(this); break;
-		case PIXEL_FLOAT32: this->pFilterObj = new RealMedianFilterFloat32(this); break;
-		case PIXEL_FLOAT64: this->pFilterObj = new RealMedianFilterFloat64(this); break;
+		case PIXEL_INT8: pFilterObj = new RealMedianFilterInt8(this); break;
+		case PIXEL_UINT8: pFilterObj = new RealMedianFilterUInt8(this); break;
+		case PIXEL_INT16: pFilterObj = new RealMedianFilterInt16(this); break;
+		case PIXEL_UINT16: pFilterObj = new RealMedianFilterUInt16(this); break;
+		case PIXEL_INT32: pFilterObj = new RealMedianFilterInt32(this); break;
+		case PIXEL_UINT32: pFilterObj = new RealMedianFilterUInt32(this); break;
+		case PIXEL_FLOAT32: pFilterObj = new RealMedianFilterFloat32(this); break;
+		case PIXEL_FLOAT64: pFilterObj = new RealMedianFilterFloat64(this); break;
 		default: pFilterObj = NULL;
 	}
 	if (pFilterObj)
@@ -636,13 +636,13 @@ bool MedianFilter::LoadImage(const std::string &fileName, ErrorInfo *errObj,
 	//Читает изображение в матрицу так чтобы по краям оставалось место для создания граничных
 	//пикселей.
 {
-	this->FixAperture();
-	if (this->SelectInputFile(fileName, errObj))
+	FixAperture();
+	if (SelectInputFile(fileName, errObj))
 	{
-		this->imageIsLoaded_ = this->pFilterObj->LoadImage(fileName, errObj, callBackObj);
+		imageIsLoaded_ = pFilterObj->LoadImage(fileName, errObj, callBackObj);
 	}
 	
-	return this->imageIsLoaded_;
+	return imageIsLoaded_;
 }
 
 bool MedianFilter::SaveImage(const std::string &fileName, ErrorInfo *errObj)
@@ -651,9 +651,9 @@ bool MedianFilter::SaveImage(const std::string &fileName, ErrorInfo *errObj)
 ///В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
 {
 	//Тупой проброс вызова.
-	if (this->imageIsLoaded_)
+	if (imageIsLoaded_)
 	{
-		return this->pFilterObj->SaveImage(fileName, errObj);
+		return pFilterObj->SaveImage(fileName, errObj);
 	}
 	else
 	{
@@ -667,9 +667,9 @@ void MedianFilter::FillMargins(CallBackBase *callBackObj)
 //выбранным алгоритмом.
 {
 	//Проброс вызова.
-	if (this->imageIsLoaded_)
+	if (imageIsLoaded_)
 	{
-		this->pFilterObj->FillMargins(callBackObj);
+		pFilterObj->FillMargins(callBackObj);
 	}
 }
 
@@ -677,9 +677,9 @@ void MedianFilter::ApplyStupidFilter(CallBackBase *callBackObj)
 //Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
 {
 	//Проброс вызова
-	if (this->imageIsLoaded_)
+	if (imageIsLoaded_)
 	{
-		this->pFilterObj->ApplyStupidFilter(callBackObj);
+		pFilterObj->ApplyStupidFilter(callBackObj);
 	}
 }
 
@@ -689,12 +689,12 @@ void MedianFilter::FixAperture()
 	//Апертура меньше трёх невозможна и не имеет смысла.
 	//Апертура больше трёх должна быть нечётной чтобы в любую сторону от текущего пикселя было
 	//одинаковое количество пикселей до края окна. Округлять будем в бОльшую сторону.
-	if (this->aperture_ < 3)
-		this->aperture_ = 3;
+	if (aperture_ < 3)
+		aperture_ = 3;
 	else
 	{
-		if ((this->aperture_ % 2) == 0)
-			this->aperture_++;
+		if ((aperture_ % 2) == 0)
+			aperture_++;
 	}
 }
 
@@ -703,9 +703,9 @@ void MedianFilter::ApplyStubFilter(CallBackBase *callBackObj)
 //Для отладки. Результат записывает в destMatrix_.
 {
 	//Проброс вызова
-	if (this->imageIsLoaded_)
+	if (imageIsLoaded_)
 	{
-		this->pFilterObj->ApplyStubFilter(callBackObj);
+		pFilterObj->ApplyStubFilter(callBackObj);
 	}
 }
 
@@ -713,7 +713,7 @@ void MedianFilter::SourcePrintStupidVisToCout()
 //"Тупая" визуализация матрицы, отправляется прямо в cout.
 {
 	//Просто проброс вызова в объект матрицы.
-	this->pFilterObj->SourcePrintStupidVisToCout();
+	pFilterObj->SourcePrintStupidVisToCout();
 }
 
 bool MedianFilter::SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
@@ -722,14 +722,14 @@ bool MedianFilter::SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *e
 //Это "тупой" вариант вывода - метаданные нормально не сохраняются.
 {
 	//Просто проброс вызова в объект матрицы.
-	return this->pFilterObj->SourceSaveToCSVFile(fileName, errObj);
+	return pFilterObj->SourceSaveToCSVFile(fileName, errObj);
 }
 
 bool MedianFilter::DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
 //Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 {
 	//Просто проброс вызова в объект матрицы.
-	return this->pFilterObj->DestSaveToCSVFile(fileName, errObj);
+	return pFilterObj->DestSaveToCSVFile(fileName, errObj);
 }
 
 //Вычислить минимальный размер блока (в байтах), которыми можно обработать данную картинку.
