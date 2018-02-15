@@ -2,7 +2,7 @@
 //                                                       //
 //                  GeoImageConverter                    //
 //       Преобразователь изображений с геоданными        //
-//       Copyright © 2017 Александр (Sagrer) Гриднев     //
+//    Copyright © 2017-2018 Александр (Sagrer) Гриднев   //
 //              Распространяется на условиях             //
 //                 GNU GPL v3 или выше                   //
 //                  см. файл gpl.txt                     //
@@ -19,6 +19,7 @@
 #include "common.h"
 #include <string>
 #include "small_tools_box.h"
+#include <boost/lexical_cast.hpp>
 
 namespace geoimgconv
 {
@@ -36,6 +37,16 @@ const std::string AppModeTexts[] = {"median",	//0
 const std::string MarginTypesTexts[] = {"simple",	//0
 			"mirror",	//1
 			"unknown"	//2
+};
+
+//Текстовое представление для MemoryMode (без цифр)
+const std::string MemoryModeTexts[] = { "auto",	//0
+			"limit",				//1
+			"limit_free_prc",		//2
+			"limit_full_prc",		//3
+			"stayfree",				//4
+			"onechunk",				//5
+			"unknown"				//6
 };
 
 PixelType GDALToGIC_PixelType(const GDALDataType &GDALType)
@@ -107,7 +118,7 @@ AppMode AppModeStrToEnum(const std::string &inputStr)
 
 MarginType MarginTypeStrToEnum(const std::string &inputStr)
 //Получить MarginType из строки, совпадающей без учёта регистра с одним из
-//элементов GIC_MarginTypeTexts
+//элементов MarginTypeTexts
 {
 	std::string inpStr;
 	STB.Utf8ToLower(inputStr, inpStr);

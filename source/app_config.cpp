@@ -33,6 +33,7 @@ const size_t DEFAULT_MEDFILTER_APERTURE = 101;
 const double DEFAULT_MEDFILTER_THRESHOLD = 0.5;
 const MarginType DEFAULT_MEDFILTER_MARGIN_TYPE = MARGIN_MIRROR_FILLING;
 const AppMode DEFAULT_APP_MODE = APPMODE_MEDIAN;
+const MemoryMode DEFAULT_MEM_MODE = MEMORY_MODE_AUTO;
 
 //////////////////////////////////
 //        Класс AppConfig       //
@@ -53,8 +54,9 @@ AppConfig::AppConfig() : inputFileNameCfg_(DEFAULT_INPUT_FILE_NAME),
 	medfilterThresholdCmdIsSet_(false), medfilterMarginTypeCfg_(DEFAULT_MEDFILTER_MARGIN_TYPE),
 	medfilterMarginTypeCfgIsSaving_(false), medfilterMarginTypeCmdIsSet_(false),
 	appModeCfg_(DEFAULT_APP_MODE), appModeCfgIsSaving_(false), appModeCmdIsSet_(false),
-	helpAsked_(false), versionAsked_(false), argc_(0), argv_(NULL), appPath_(""),
-	currPath_(""), helpParamsDesc_(NULL)
+	memModeCfg_(DEFAULT_MEM_MODE), memSizeCfg_(0), memModeCfgIsSaving_(false),
+	memModeCmdIsSet_(false), helpAsked_(false), versionAsked_(false), argc_(0), argv_(NULL),
+	appPath_(""), currPath_(""), helpParamsDesc_(NULL)
 {
 	//Надо сразу заполнить базовые объекты program_options
 	this->FillBasePO_();
@@ -94,6 +96,7 @@ void AppConfig::FillBasePO_()
 		("medfilter.threshold", po::value<double>(), "")
 		("medfilter.margintype", po::value<std::string>(), "")
 		("appmode", po::value<std::string>(), "")
+		("memmode", po::value<std::string>(), "")
 		("test","")	//Не документировать эту опцию в справку юзера! Только для разработки.
 	;
 	//Позиционные параметры (без имени). Опять извратный синтаксис.
@@ -143,7 +146,80 @@ void AppConfig::FillDependentPO_()
 холмов на месте леса при фильтрации.").c_str())
 //		("appmode", po::value<std::string>(),STB.Utf8ToSelectedCharset("Режим работы \
 //программы. На данный момент единственный работающий вариант - median.").c_str())
+		("memmode", po::value<std::string>(), STB.Utf8ToSelectedCharset("Режим использования \
+памяти. Позволяет ограничить количество памяти, которое программа может использовать для загрузки \
+обрабатываемого изображения. Если изображение не поместится в эту ограниченную область целиком то \
+оно будет обрабатываться по частям. Возможно указать один из следующих режимов:\n    " + 
+MemoryModeTexts[MEMORY_MODE_AUTO] + " - оставить решение о режиме работы с памятью на усмотрение \
+программы;\n    " + MemoryModeTexts[MEMORY_MODE_LIMIT] + " - явно задать максимальное количество \
+используемой памяти в байтах. Сразу после имени режима без пробела нужно указать это количество. \
+Буквы k, m, g, t после числа (без пробела) означают соответственно килобайты, мегабайты, гигабайты \
+и терабайты. Размер в байтах указывается без буквы или буквой b;\n    " +
+MemoryModeTexts[MEMORY_MODE_STAYFREE] + " - явно задать количество памяти в ОЗУ (т.е. сколько есть \
+физически в компьютере, без учёта \"подкачки\"!), которое должно остаться свободным в момент начала \
+работы над изображением. Размер указывается без пробела сразу за именем режима, точно так же как и для \
+режима " + MemoryModeTexts[MEMORY_MODE_LIMIT] + ";\n    " + MemoryModeTexts[MEMORY_MODE_LIMIT_FREEPRC] +
+" - задать количество памяти в процентах от свободного ОЗУ в момент начала работы. Сразу после имени \
+режима без пробела должно быть указано целое число от 0 до 100;\n    " + 
+MemoryModeTexts[MEMORY_MODE_LIMIT_FULLPRC] + " - задать количество памяти в процентах от общего \
+количества ОЗУ. Сразу после имени режима без пробела должно быть указано целое число от 0 до 100;\n    " +
+MemoryModeTexts[MEMORY_MODE_ONECHUNK] + " - заставить программу попытаться обработать изображение одним \
+куском, загрузив её в память сразу целиком.\n    По умолчанию (если не указано) используется режим " +
+MemoryModeTexts[MEMORY_MODE_AUTO] + ".").c_str())
 	;
+}
+
+void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memMode, unsigned long long &size)
+//Получить MemoryMode из строки, совпадающей без учёта регистра с одним из
+//элементов MemoryModeTexts + прочитать и правильно интерпретировать
+//указанный там размер.
+{
+	std::string inpStr;
+	STB.Utf8ToLower(inputStr, inpStr);
+	size = 0;
+	//Помимо перевода в нижний регистр от строки нужно отрезать часть с возможными
+	//цифрами.
+	size_t pos = inpStr.find_first_of("0123456789", 0);
+	if (pos != std::string::npos)
+		inpStr = inpStr.substr(0, pos);
+	//Теперь можно искать совпадение с одной из констант.
+	memMode = MEMORY_MODE_UNKNOWN;
+	for (unsigned char i = 0; i <= MEMORY_MODE_UNKNOWN; i++)
+	{
+		if (inpStr == MemoryModeTexts[i])
+		{
+			memMode = MemoryMode(i);
+			break;
+		}
+	};
+	//Для тех констант, у которых должен был быть указан размер - прочитаем размер.
+	if ((memMode == MEMORY_MODE_LIMIT) || (memMode == MEMORY_MODE_STAYFREE))
+	{
+		//Размер должен быть указан в байтах (кб, мб итд).
+		if (pos != std::string::npos)
+			size = STB.InfoSizeToBytesNum(inputStr.substr(pos, inputStr.length() - pos),'m');
+		//Нулевого размера не бывает
+		if (!size)
+			memMode = MEMORY_MODE_UNKNOWN;
+	}
+	else if ((memMode == MEMORY_MODE_LIMIT_FREEPRC) || (memMode == MEMORY_MODE_LIMIT_FULLPRC))
+	{
+		//Размер должен быть указан в процентах, т.е. просто целое число.
+		if (pos != std::string::npos)
+		{
+			inpStr = inputStr.substr(pos, inputStr.length() - pos);
+			if (STB.CheckUnsIntStr(inpStr))
+			{
+				size = boost::lexical_cast<unsigned long long>(inpStr);
+				if (size > 100)
+					//Нельзя указывать больше 100%
+					size = 0;
+			}
+		}
+		//Если размер остался нулевым - всё плохо.
+		if (!size)
+			memMode = MEMORY_MODE_UNKNOWN;
+	}
 }
 
 //--------------------------------//
@@ -159,7 +235,7 @@ const std::string AppConfig::getHelpMsg()
 По умолчанию (если вызвать без опций) - входящим файлом будет input.tif, а \n\
 исходящим output.tif.\n\n\
 Программа обрабатывает входящий файл медианным фильтром и, сохраняя метаданные\n\
-- записывает то что получилось в исходящий файл.");
+- записывает то что получилось в исходящий файл.\n\n");
 	tempStream << *this->helpParamsDesc_;
 	return tempStream.str();
 }
@@ -204,7 +280,7 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 		//т.к. это в любом случае будет что-то не то с синтаксисом в командной строке.
 		//Как ни странно, program_options в what() нередко даёт информации больше чем можно
 		//вытянуть по классу исключения, например для po::unknown_option там будет имя неизвестной
-		//опции, но узнать её из объекта исключения кроме как по what() нельзя :(.
+		//опции, но узнать её кроме как по what() нельзя :(.
 		if (errObj) errObj->SetError(CMNERR_CMDLINE_PARSE_ERROR, err.what(), true);
 		return false;
 		//Все остальные исключения считаем неожиданными, не обрабатываем и либо падаем с ними,
@@ -278,6 +354,19 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 				return false;
 			};
 			this->medfilterMarginTypeCmdIsSet_ = true;
+		};
+		if (this->poVarMap_.count("memmode"))
+		{
+			ParseMemoryModeStr(this->poVarMap_["memmode"].as<std::string>(), memModeCmd_,
+				memSizeCmd_);
+			if (memModeCmd_ == MEMORY_MODE_UNKNOWN)
+			{
+				//Неизвестный или пока не реализованный вариант.
+				if (errObj) errObj->SetError(CMNERR_UNKNOWN_IDENTIF, "Параметр --memmode имеет неверное значение: " +
+					this->poVarMap_["memmode"].as<std::string>(),true);
+				return false;
+			};
+			memModeCmdIsSet_ = true;
 		};
 	}
 	catch (po::error &err)

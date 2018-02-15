@@ -4,7 +4,7 @@
 //                                                       //
 //                  GeoImageConverter                    //
 //       Преобразователь изображений с геоданными        //
-//       Copyright © 2017 Александр (Sagrer) Гриднев     //
+//    Copyright © 2017-2018 Александр (Sagrer) Гриднев   //
 //              Распространяется на условиях             //
 //                 GNU GPL v3 или выше                   //
 //                  см. файл gpl.txt                     //
@@ -79,17 +79,23 @@ enum AppMode : unsigned char
 	//APPMODE_UNKNOWN ДОЛЖЕН быть последним, по нему определяется количество элементов!
 };
 
+//Текстовое представление для AppMode
+extern const std::string AppModeTexts[];
+
 enum MemoryMode : unsigned char
 //Режим использования памяти программой
 {
 	MEMORY_MODE_AUTO = 0,		//Выберать режим на своё усмотрение.
 	MEMORY_MODE_LIMIT = 1,		//Занять под рабочее множество не более указанного количества памяти.
-	MEMORY_MODE_STAYFREE = 2,	//Занять столько памяти чтобы в ОЗУ осталось не менее указанного количества.
-	MEMORY_MODE_ONECHUNK = 3	//Попытаться загрузить изображение в память целиком и обработать одним куском.
+	MEMORY_MODE_LIMIT_FREEPRC = 2,	//Занять не более указанного процента свободной памяти.
+	MEMORY_MODE_LIMIT_FULLPRC = 3,	//Занять не более указанного процента от всего ОЗУ.
+	MEMORY_MODE_STAYFREE = 4,	//Занять столько памяти чтобы в ОЗУ осталось не менее указанного количества.
+	MEMORY_MODE_ONECHUNK = 5,	//Попытаться загрузить изображение в память целиком и обработать одним куском.
+	MEMORY_MODE_UNKNOWN = 6		//Режим неизвестен. Это признак ошибки. Должен быть последним в enum-е.
 };
 
-//Текстовое представление для AppMode
-extern const std::string AppModeTexts[];
+//Текстовое представление для MemoryMode (без цифр)
+extern const std::string MemoryModeTexts[];
 
 //Преобразование типа пикселя из enum-а GDALDataType в PixelType.
 //Важный момент - если тип был PIXEL_INT8 - невозможно просто так понять
@@ -115,7 +121,7 @@ std::string &GetLastGDALError();
 AppMode AppModeStrToEnum(const std::string &inputStr);
 
 //Получить MarginType из строки, совпадающей без учёта регистра с одним из
-//элементов GIC_MarginTypeTexts
+//элементов MarginTypeTexts
 MarginType MarginTypeStrToEnum(const std::string &inputStr);
 
 class CallBackBase

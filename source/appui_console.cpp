@@ -201,7 +201,10 @@ int AppUIConsole::RunApp()
 		lexical_cast<string>(sysResInfo.cpuCoresNumber) + "\n");
 	this->PrintToConsole("Всего ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo.systemMemoryFullSize) + ".\n");
 	this->PrintToConsole("Доступно ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo.systemMemoryFreeSize) + ".\n");
-	this->PrintToConsole("Процесс может адресовать памяти: " + STB.BytesNumToInfoSizeStr(sysResInfo.maxProcessMemorySize) + ".\n\n");
+	this->PrintToConsole("Процесс может адресовать памяти: " + STB.BytesNumToInfoSizeStr(sysResInfo.maxProcessMemorySize) + ".\n");
+	this->PrintToConsole("Выбран режим работы с памятью: " + MemoryModeTexts[confObj_->getMemMode()] + "\n");
+	PrintToConsole("Размер, указанный для режима работы с памятью: " +
+		lexical_cast<string>(confObj_->getMemSize()) + "\n\n");
 
 	//Выдать больше инфы если не было передано никаких опций командной строки.
 	if (this->confObj_->getArgc() == 1)

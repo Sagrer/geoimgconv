@@ -117,6 +117,10 @@ private:
 	void FillDependentPO_();
 	//Прочитать ini-файл по указанному пути. Файл должен существовать.
 	bool ReadConfigFile_(const std::string &filePath, ErrorInfo *errObj = NULL);
+	//Получить MemoryMode из строки, совпадающей без учёта регистра с одним из
+	//элементов MemoryModeTexts + прочитать и правильно интерпретировать
+	//указанный там размер.
+	void ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memMode, unsigned long long &size);
 public:
 	//Конструкторы-деструкторы
 	AppConfig();
@@ -230,6 +234,39 @@ public:
 		this->appModeCfg_ = value;
 		this->appModeCfgIsSaving_ = true;
 		this->appModeCmdIsSet_ = false;
+	};
+
+	//memMode и memSize
+	MemoryMode const& getMemMode() const
+	{
+		if (this->memModeCmdIsSet_)
+			return this->memModeCmd_;
+		else return this->memModeCfg_;
+	};
+	unsigned long long const& getMemSize() const
+	{
+		if (this->memModeCmdIsSet_)
+			return this->memSizeCmd_;
+		else return this->memSizeCfg_;
+	};
+	MemoryMode const& getMemModeCfg() const
+	{
+		return this->memModeCfg_;
+	};
+	unsigned long long const& getMemSizeCfg() const
+	{
+		return memSizeCfg_;
+	};
+	bool const& getMemModeIsSaving() const
+	{
+		return this->memModeCfgIsSaving_;
+	};
+	void setMemMode(const MemoryMode &value, const unsigned long long &memSize)
+	{
+		this->memModeCfg_ = value;
+		this->memSizeCfg_ = memSize;
+		this->memModeCfgIsSaving_ = true;
+		this->memModeCmdIsSet_ = false;
 	};
 	
 	//helpAsked
