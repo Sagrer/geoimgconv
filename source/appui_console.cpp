@@ -169,6 +169,173 @@ AppUIConsole::~AppUIConsole()
 }
 
 //--------------------------------//
+//        Приватные методы        //
+//--------------------------------//
+
+bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize,
+	const unsigned long long &minBlockSize, const SwapMode swapMode, ErrorInfo *errObj)
+	//Задетектить какое максимальное количество памяти можно использовать исходя из
+	//характеристик компьютера и параметров, переданных в командной строке. Результат
+	//пишется в maxMemCanBeUsed_. 0 означает отсутствие лимита. minMemSize - реальное минимально
+	//допустимое количество. Если оно не влезет в память вообще никак - вернёт false. При этом если
+	//изображение будет способно влезть в память только с попаданием части буфера в своп - метод
+	//самостоятельно спросит у юзверя что именно ему делать если swapMode позволяет.
+	//В minBlockSize содержится размер блока, кратно которому реально выбранный размер
+	//рабочего буфера может быть больше чем минимальный размер.
+	//Перед запуском метода _должен_ был быть выполнен метод DetectSysResInfo()!
+{
+	maxMemCanBeUsed_ = 0;
+	//Смотрим влезет ли указанный минимальный размер в оперативку и в лимит по адресному
+	//пространству (актуально для 32битной версии)
+	if (((swapMode == SWAPMODE_SILENT_NOSWAP) && (minMemSize > sysResInfo_.systemMemoryFreeSize)) ||
+		(minMemSize > sysResInfo_.systemMemoryFullSize) ||
+		(minMemSize > sysResInfo_.maxProcessMemorySize))
+	{
+		if (errObj)
+			errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
+		return false;
+	};
+
+	//Теперь всё зависит от режима работы с памятью. Если режим был MEMORY_MODE_ONECHUNK то в
+	//minMemSize у нас указан весь размер картинки и размер блока нам не интересен. Если же
+	//режим какой-то другой - надо будет учитывать minBlockSize и кратно ему подбирать оптимальный
+	//размер.
+	if (confObj_->getMemMode() == MEMORY_MODE_ONECHUNK)
+	{
+		if ((swapMode == SWAPMODE_ASK) && (minMemSize > sysResInfo_.systemMemoryFreeSize))
+		{
+			//Нужно обрабатывать изображение одним куском, в свободную память оно не лезет, но
+			//помещается в максимально доступное адресное пространство. Надо спрашивать юзера.
+			cout << endl;
+			if (!ConsoleAnsweredYes("Изображение не поместится в свободное ОЗУ но должно поместиться в подкачку\n\
+Продолжить работу?"))
+			{
+				if (errObj)
+					errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
+				return false;
+			}
+		}
+		maxMemCanBeUsed_ = minMemSize;
+	}
+	//Далее - сначала получаем просто предельный лимит в байтах, и только потом единообразно
+	//уменьшим его так, чтобы размер был кратен размеру блока.
+	else if ((confObj_->getMemMode() == MEMORY_MODE_LIMIT) ||
+		(confObj_->getMemMode() == MEMORY_MODE_LIMIT_FULLPRC))
+	{
+		//Максимальное количество памяти, которое можно использовать - задано либо явно, в байтах,
+		//либо в процентах.
+		unsigned long long tempLimit = 0;
+		if (confObj_->getMemMode() == MEMORY_MODE_LIMIT)
+			tempLimit = confObj_->getMemSize();
+		else if (confObj_->getMemMode() == MEMORY_MODE_LIMIT_FULLPRC)
+			tempLimit = confObj_->getMemSize() * (sysResInfo_.systemMemoryFullSize / 100);
+		//В любом случае - если оно помещается в свободную память - вопросов нет. Если только
+		//с подкачкой - смотрим на swapMode и при наобходимости спрашиваем у юзера.
+		if (tempLimit > sysResInfo_.systemMemoryFreeSize)
+		{
+			switch (swapMode)
+			{
+			case SWAPMODE_ASK:
+				cout << endl;
+				if (ConsoleAnsweredYes("Изображение не поместится в свободное ОЗУ но должно поместиться в подкачку\n\
+Продолжить работу с подкачкой (да) или использовать только свободное ОЗУ (нет)?"))
+				{
+					maxMemCanBeUsed_ = tempLimit;
+				}
+				else
+				{
+					maxMemCanBeUsed_ = sysResInfo_.systemMemoryFreeSize;
+				};
+				break;
+			case SWAPMODE_SILENT_NOSWAP:
+				maxMemCanBeUsed_ = sysResInfo_.systemMemoryFreeSize;
+				break;
+			case SWAPMODE_SILENT_USESWAP:
+				maxMemCanBeUsed_ = tempLimit;
+			}
+
+		}
+		else
+		{
+			maxMemCanBeUsed_ = tempLimit;
+		};
+	}
+	else if (confObj_->getMemMode() == MEMORY_MODE_STAYFREE)
+	{
+		//Оставить фиксированное количество места в ОЗУ.
+		if ((confObj_->getMemSize() > sysResInfo_.systemMemoryFreeSize))
+		{
+			//Не помещаемся никак :(
+			if (errObj)
+				errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
+			return false;
+		}
+		else
+		{
+			maxMemCanBeUsed_ = sysResInfo_.systemMemoryFreeSize - confObj_->getMemSize();
+		};
+	}
+	else if ((confObj_->getMemMode() == MEMORY_MODE_LIMIT_FREEPRC) ||
+		(confObj_->getMemMode() == MEMORY_MODE_AUTO))
+	{
+		//Процент от свободного ОЗУ. Если стоял автомат - используем 80%
+		switch (confObj_->getMemMode())
+		{
+		case MEMORY_MODE_LIMIT_FREEPRC:
+			maxMemCanBeUsed_ = confObj_->getMemSize() * (sysResInfo_.systemMemoryFreeSize / 100);
+			break;
+		case MEMORY_MODE_AUTO:
+			maxMemCanBeUsed_ = 80 * (sysResInfo_.systemMemoryFreeSize / 100);
+		};		
+	}
+	else
+	{
+		//На вход функции пришло фиг знает что.
+		if (errObj)
+			errObj->SetError(CMNERR_UNKNOWN_ERROR, ", AppUIConsole::DetectMaxMemoryCanBeUsed() - unknown MemMode.");
+		return false;
+	}
+
+	//Возможно надо скорректировать полученный размер чтобы он был кратен размеру блока.
+	if (!(confObj_->getMemMode() == MEMORY_MODE_ONECHUNK))
+	{
+		//Фиксированная часть памяти, не обязана быть кратной размеру блока. Может быть 0.
+		unsigned long long invariableMemSize = minMemSize - minBlockSize;
+		//Вот эта часть _должна_ быть кратна размеру блока.
+		unsigned long long variableMemSize = maxMemCanBeUsed_ - invariableMemSize;
+		if (minBlockSize > variableMemSize)
+		{
+			if (errObj)
+				errObj->SetError(CMNERR_UNKNOWN_ERROR, ", AppUIConsole::DetectMaxMemoryCanBeUsed() - wrong minBlockSize.");
+			return false;
+		}
+		//Целочисленное деление здесь как раз подходит ).
+		maxMemCanBeUsed_ = (variableMemSize / minBlockSize) * minBlockSize;
+	}
+	
+	//Заглушка
+	return false;
+}
+
+void AppUIConsole::DetectSysResInfo()
+//Задетектить инфу для sysResInfo_
+{
+	STB.GetSysResInfo(sysResInfo_);
+}
+
+bool AppUIConsole::ConsoleAnsweredYes(const std::string &messageText)
+//Задать юзверю попрос на да\нет и вернуть true если было да и false если было нет.
+{
+	PrintToConsole(messageText + " да\\нет? (y\\д\\n\\н) > ");
+	std::string answer;
+	cin >> answer;
+	STB.Utf8ToLower(STB.ConsoleCharsetToUtf8(answer), answer);
+	if ((answer == "y") || (answer == "д") || (answer == "yes") || (answer == "да"))
+		return true;
+	else return false;
+}
+
+//--------------------------------//
 //          Самое важное          //
 //--------------------------------//
 
@@ -184,6 +351,8 @@ void AppUIConsole::InitApp(AppConfig &conf)
 	//Явное включение именно консольной кодировки и завершение инициализации объекта program options
 	STB.SelectConsoleEncoding();
 	confObj_->FinishInitialization();
+	//Детектим параметры системы - память, ядра процессора
+	DetectSysResInfo();
 }
 
 int AppUIConsole::RunApp()
@@ -195,13 +364,11 @@ int AppUIConsole::RunApp()
 	PrintToConsole("Это прототип. Не ждите от него многого.\n");
 	//PrintToConsole("Программа запущена по пути: "+ getAppPath() + "\n");
 	//PrintToConsole("Текущий рабочий путь: "+getCurrPath() + "\n");
-	SysResInfo sysResInfo;
-	STB.GetSysResInfo(sysResInfo);
 	PrintToConsole("\nОбнаружено ядер процессора: " +
-		lexical_cast<string>(sysResInfo.cpuCoresNumber) + "\n");
-	PrintToConsole("Всего ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo.systemMemoryFullSize) + ".\n");
-	PrintToConsole("Доступно ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo.systemMemoryFreeSize) + ".\n");
-	PrintToConsole("Процесс может адресовать памяти: " + STB.BytesNumToInfoSizeStr(sysResInfo.maxProcessMemorySize) + ".\n");
+		lexical_cast<string>(sysResInfo_.cpuCoresNumber) + "\n");
+	PrintToConsole("Всего ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo_.systemMemoryFullSize) + ".\n");
+	PrintToConsole("Доступно ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo_.systemMemoryFreeSize) + ".\n");
+	PrintToConsole("Процесс может адресовать памяти: " + STB.BytesNumToInfoSizeStr(sysResInfo_.maxProcessMemorySize) + ".\n");
 	PrintToConsole("Выбран режим работы с памятью: " + MemoryModeTexts[confObj_->getMemMode()] + "\n");
 	PrintToConsole("Размер, указанный для режима работы с памятью: " +
 		lexical_cast<string>(confObj_->getMemSize()) + "\n\n");

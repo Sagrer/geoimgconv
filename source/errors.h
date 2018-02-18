@@ -4,7 +4,7 @@
 //                                                       //
 //                  GeoImageConverter                    //
 //       Преобразователь изображений с геоданными        //
-//       Copyright © 2017 Александр (Sagrer) Гриднев     //
+//    Copyright © 2017-2018 Александр (Sagrer) Гриднев   //
 //              Распространяется на условиях             //
 //                 GNU GPL v3 или выше                   //
 //                  см. файл gpl.txt                     //
@@ -35,7 +35,8 @@ enum CommonErrors : int
 	CMNERR_FILE_NOT_LOADED = 6,
 	CMNERR_CMDLINE_PARSE_ERROR = 7,
 	CMNERR_UNKNOWN_IDENTIF = 8,
-	CMNERR_UNKNOWN_ERROR = 9
+	CMNERR_CANT_ALLOC_MEMORY = 9,
+	CMNERR_UNKNOWN_ERROR = 10
 };
 
 extern const std::string CommonErrorsTexts[];

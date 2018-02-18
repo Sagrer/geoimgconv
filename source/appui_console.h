@@ -26,6 +26,7 @@
 #include "common.h"
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include "app_config.h"
+#include "small_tools_box.h"
 
 namespace geoimgconv
 {
@@ -76,8 +77,41 @@ public:
 class AppUIConsole
 {
 private:
+	//Приватные типы
+	enum SwapMode : char
+	//Для DetectMaxMemoryCanBeUsed
+	{
+		SWAPMODE_SILENT_NOSWAP = 0,		//Не использовать swap, не спрашивать
+		SWAPMODE_SILENT_USESWAP = 1,	//При необходимости использовать swap, не спрашивать.
+		SWAPMODE_ASK = 2				//В случае непоняток - спросить у юзера.
+	};
+
+	//Приватные поля
 	std::string GDALErrorMsgBuffer;
 	AppConfig *confObj_;
+	unsigned long long maxMemCanBeUsed_;	//сюда детектится количество памяти которое можно занимать
+	SysResInfo sysResInfo_;		//Характеристики компа.
+
+	//Приватные методы
+
+	//Задетектить какое максимальное количество памяти можно использовать исходя из
+	//характеристик компьютера и параметров, переданных в командной строке. Результат
+	//пишется в maxMemCanBeUsed_. 0 означает отсутствие лимита. minMemSize - реальное минимально
+	//допустимое количество. Если оно не влезет в память вообще никак - вернёт false. При этом если
+	//изображение будет способно влезть в память только с попаданием части буфера в своп - метод
+	//самостоятельно спросит у юзверя что именно ему делать если swapMode позволяет.
+	//В minBlockSize содержится размер блока, кратно которому реально выбранный размер
+	//рабочего буфера может быть больше чем минимальный размер.
+	//Перед запуском метода _должен_ был быть выполнен метод DetectSysResInfo()!
+	bool DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize,
+		const unsigned long long &minBlockSize, const SwapMode swapMode = SWAPMODE_ASK,
+		ErrorInfo *errObj = NULL);
+
+	//Задетектить инфу для sysResInfo_
+	void DetectSysResInfo();
+
+	//Задать юзверю попрос на да\нет и вернуть true если было да и false если было нет.
+	bool ConsoleAnsweredYes(const std::string &messageText);
 public:
 	//Конструкторы-деструкторы.
 	AppUIConsole();
