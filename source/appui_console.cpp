@@ -160,7 +160,8 @@ void AppUIConsoleCallBack::OperationEnd()
 //   Конструкторы-деструкторы     //
 //--------------------------------//
 
-AppUIConsole::AppUIConsole()
+AppUIConsole::AppUIConsole() : confObj_(NULL), maxMemCanBeUsed_(0),
+	maxBlocksCanBeUsed_(0)
 {
 }
 
@@ -175,9 +176,12 @@ AppUIConsole::~AppUIConsole()
 bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize,
 	const unsigned long long &minBlockSize, const SwapMode swapMode, ErrorInfo *errObj)
 	//Задетектить какое максимальное количество памяти можно использовать исходя из
-	//характеристик компьютера и параметров, переданных в командной строке. Результат
-	//пишется в maxMemCanBeUsed_. 0 означает отсутствие лимита. minMemSize - реальное минимально
-	//допустимое количество. Если оно не влезет в память вообще никак - вернёт false. При этом если
+	//характеристик компьютера и параметров, переданных в командной строке, а также вычислить
+	//количество блоков, которое используемый в данный момент фильтр может одновременно держать
+	//в памяти. Результат пишется в maxMemCanBeUsed_ (количество памяти в байтах) и в
+	//maxBlocksCanBeUsed_ (количество блоков). В случае ошибки туда запишется 0.
+	//minMemSize - реальное минимально допустимое количество памяти, требуемое фильтром
+	//для работы. Если оно не влезет в память вообще никак - метод вернёт false. При этом если
 	//изображение будет способно влезть в память только с попаданием части буфера в своп - метод
 	//самостоятельно спросит у юзверя что именно ему делать если swapMode позволяет.
 	//В minBlockSize содержится размер блока, кратно которому реально выбранный размер
@@ -216,6 +220,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 			}
 		}
 		maxMemCanBeUsed_ = minMemSize;
+		maxBlocksCanBeUsed_ = 1;
 	}
 	//Далее - сначала получаем просто предельный лимит в байтах, и только потом единообразно
 	//уменьшим его так, чтобы размер был кратен размеру блока.
@@ -297,6 +302,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 	}
 
 	//Возможно надо скорректировать полученный размер чтобы он был кратен размеру блока.
+	//Одновременно вычислим количество блоков.
 	if (!(confObj_->getMemMode() == MEMORY_MODE_ONECHUNK))
 	{
 		//Фиксированная часть памяти, не обязана быть кратной размеру блока. Может быть 0.
@@ -309,12 +315,12 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 				errObj->SetError(CMNERR_UNKNOWN_ERROR, ", AppUIConsole::DetectMaxMemoryCanBeUsed() - wrong minBlockSize.");
 			return false;
 		}
-		//Целочисленное деление здесь как раз подходит ).
-		maxMemCanBeUsed_ = (variableMemSize / minBlockSize) * minBlockSize;
+		//Целочисленное деление здесь как раз подходит :).
+		maxBlocksCanBeUsed_ = (variableMemSize / minBlockSize);
+		maxMemCanBeUsed_ = maxBlocksCanBeUsed_ * minBlockSize;
 	}
 	
-	//Заглушка
-	return false;
+	return true;
 }
 
 void AppUIConsole::DetectSysResInfo()
@@ -333,6 +339,12 @@ bool AppUIConsole::ConsoleAnsweredYes(const std::string &messageText)
 	if ((answer == "y") || (answer == "д") || (answer == "yes") || (answer == "да"))
 		return true;
 	else return false;
+}
+
+//Напечатать в консоль сообщение об ошибке.
+void AppUIConsole::ConsolePrintError(ErrorInfo &errObj)
+{
+	PrintToConsole("Ошибка: " + errObj.getErrorText() + "\n");
 }
 
 //--------------------------------//
@@ -406,63 +418,73 @@ int AppUIConsole::RunApp()
 	medFilter.setThreshold(confObj_->getMedfilterThreshold());
 	medFilter.setMarginType(confObj_->getMedfilterMarginType());
 	PrintToConsole("Пытаюсь открыть файл:\n" + inputFileName + "\n");
-	if (medFilter.LoadImage(inputFileName, &errObj))
+	if (!medFilter.LoadImage(inputFileName, &errObj))
 	{
-		PrintToConsole("Открыто. Визуализация значимых пикселей:\n");
-		medFilter.SourcePrintStupidVisToCout();
-
-		//PrintToConsole("Для дополнительной отладки сохраняю файл: input_source.csv\n");
-		//if (!medFilter.SourceSaveToCSVFile("input_source.csv", &errObj))
-		//{
-		//	PrintToConsole("Ошибка: " + errObj.errorText_ + "\n");
-		//	return 1;
-		//};
-
-		PrintToConsole("Заполняю краевые области...\n");
-		PrintToConsole("Тип заполнения: "+ MarginTypesTexts[medFilter.getMarginType()]+"\n");
-		AppUIConsoleCallBack CallBackObj;
-		CallBackObj.OperationStart();
-		medFilter.FillMargins(&CallBackObj);
-		CallBackObj.OperationEnd();	//Выведет время выполнения.
-
-		//PrintToConsole("Для дополнительной отладки сохраняю файл: input_filled.csv\n");
-		//if (!medFilter.SourceSaveToCSVFile("input_filled.csv", &errObj))
-		//{
-		//	PrintToConsole("Ошибка: " + errObj.errorText_ + "\n");
-		//	return 1;
-		//};
-
-		PrintToConsole("Готово. Применяю \"тупую\" версию фильтра.\n");
-		PrintToConsole("Апертура: " + lexical_cast<std::string>(medFilter.getAperture()) +
-			"; Порог: " + STB.DoubleToString(medFilter.getThreshold(),5) + ".\n");
-		CallBackObj.OperationStart();
-		medFilter.ApplyStupidFilter(&CallBackObj);
-		//medFilter.ApplyStubFilter(&CallBackObj);	//Отладочный "мгновенный" фильтр - только имитирует фильтрацию.
-		CallBackObj.OperationEnd();   //Выведет время выполнения.
-
-		//PrintToConsole("Для дополнительной отладки сохраняю файл: output_stupid.csv\n");
-		//if (!medFilter.DestSaveToCSVFile("output_stupid.csv", &errObj))
-		//{
-		//	PrintToConsole("Ошибка: " + errObj.errorText_ + "\n");
-		//	return 1;
-		//};
-
-		//Вроде всё ок, можно сохранять.
-		PrintToConsole("Готово. Сохраняю файл:\n" + outputFileName + "\n");
-		if (!medFilter.SaveImage(outputFileName, &errObj))
-		{
-			PrintToConsole("Ошибка: " + errObj.getErrorText() + "\n");
-			return 1;
-		};
-
-		PrintToConsole("Готово.\n");
-	}
-	else
-	{
-		//Что-то пошло не так.
-		PrintToConsole("Ошибка: " + errObj.getErrorText() + "\n");
+		ConsolePrintError(errObj);
 		return 1;
 	}
+	//Детектим сколько памяти нам нужно
+	if (!DetectMaxMemoryCanBeUsed(medFilter.getMinMemSize(), medFilter.getMinBlockSize(),
+		SWAPMODE_ASK, &errObj))
+	{
+		ConsolePrintError(errObj);
+		return 1;
+	}
+
+	PrintToConsole("Открыто. Визуализация значимых пикселей:\n");
+	//medFilter.SourcePrintStupidVisToCout();
+	PrintToConsole("Устарела и пока не работает :(\n\n");
+
+	PrintToConsole("Программа будет обрабатывать файл, используя " +
+		STB.BytesNumToInfoSizeStr(maxMemCanBeUsed_) + " памяти, частями по " +
+		lexical_cast<std::string>(maxBlocksCanBeUsed_) + " блока(ов).\n\
+Размер блока: " + STB.BytesNumToInfoSizeStr(medFilter.getMinBlockSize()) + ".\n\n");
+
+	//PrintToConsole("Для дополнительной отладки сохраняю файл: input_source.csv\n");
+	//if (!medFilter.SourceSaveToCSVFile("input_source.csv", &errObj))
+	//{
+	//	ConsolePrintError(errObj);
+	//	return 1;
+	//};
+
+	PrintToConsole("Заполняю краевые области...\n");
+	PrintToConsole("Тип заполнения: " + MarginTypesTexts[medFilter.getMarginType()] + "\n");
+	AppUIConsoleCallBack CallBackObj;
+	CallBackObj.OperationStart();
+	medFilter.FillMargins(&CallBackObj);
+	CallBackObj.OperationEnd();	//Выведет время выполнения.
+
+	//PrintToConsole("Для дополнительной отладки сохраняю файл: input_filled.csv\n");
+	//if (!medFilter.SourceSaveToCSVFile("input_filled.csv", &errObj))
+	//{
+	//	ConsolePrintError(errObj);
+	//	return 1;
+	//};
+
+	PrintToConsole("Готово. Применяю \"тупую\" версию фильтра.\n");
+	PrintToConsole("Апертура: " + lexical_cast<std::string>(medFilter.getAperture()) +
+		"; Порог: " + STB.DoubleToString(medFilter.getThreshold(), 5) + ".\n");
+	CallBackObj.OperationStart();
+	medFilter.ApplyStupidFilter(&CallBackObj);
+	//medFilter.ApplyStubFilter(&CallBackObj);	//Отладочный "мгновенный" фильтр - только имитирует фильтрацию.
+	CallBackObj.OperationEnd();   //Выведет время выполнения.
+
+	//PrintToConsole("Для дополнительной отладки сохраняю файл: output_stupid.csv\n");
+	//if (!medFilter.DestSaveToCSVFile("output_stupid.csv", &errObj))
+	//{
+	//	ConsolePrintError(errObj);
+	//	return 1;
+	//};
+
+	//Вроде всё ок, можно сохранять.
+	PrintToConsole("Готово. Сохраняю файл:\n" + outputFileName + "\n");
+	if (!medFilter.SaveImage(outputFileName, &errObj))
+	{
+		ConsolePrintError(errObj);
+		return 1;
+	};
+
+	PrintToConsole("Готово.\n");
 
 	return 0;
 }

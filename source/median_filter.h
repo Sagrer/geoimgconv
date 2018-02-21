@@ -302,7 +302,7 @@ private:
 	//unsigned int threadsNumber_;	//Количество потоков при многопоточной обработке. 0 - автоопределение. Пока не реализовано.
 	MarginType marginType_;		//Тип заполнения краевых пикселей.
 	bool useMemChunks_;		//Использовать ли режим обработки файла по кускам для экономии памяти.
-	unsigned long long maxDataSize_;	//Максимальное количество памяти, которое можно занять под обрабатываемую матрицу. 0 значит неограничено.
+	size_t blocksInMem_;	//Количество блоков, которое можно загружать в память. Без учёта первого и последнего блоков (граничные пиксели). 0 - отсутствие лимита.
 	std::string sourceFileName_;	//Имя и путь файла с исходными данными.
 	std::string destFileName_;	//Имя и путь файла назначения.
 	int imageSizeX_;	//Ширина картинки (0 если картинка не подсоединялась)
@@ -311,7 +311,16 @@ private:
 	bool sourceIsAttached_;	//Настроен ли файл с источником.
 	bool destIsAttached_;	//Настроен ли файл с назначением
 	PixelType dataType_;	//Тип пикселя в картинке.
-	RealMedianFilterBase *pFilterObj;	//Сюда будет создаваться объект для нужного типа данных.
+	size_t dataTypeSize_;	//Размер типа данных пикселя.
+	RealMedianFilterBase *pFilterObj_;	//Сюда будет создаваться объект для нужного типа данных.
+	unsigned long long minBlockSize_;	//Размер минимального блока, которыми обрабатывается файл.
+	unsigned long long minMemSize_;  //Минимальное количество памяти, без которого фильтр вообще не сможет обработать данное изображение.
+
+	//Приватные методы
+
+	//Вычислить минимальные размеры блоков памяти, которые нужны для принятия решения о
+	//том сколько памяти разрешено использовать медианному фильтру в процессе своей работы.
+	void CalcMemSizes();
 public:
 	//Доступ к полям.
 
@@ -334,8 +343,8 @@ public:
 	bool const& getUseMemChunks() const { return useMemChunks_; }
 	void setUseMemChunks(const bool &useMemChunks) { useMemChunks_ = useMemChunks; }
 	//maxDataSize
-	unsigned long long const& getMaxDataSize() const { return maxDataSize_; }
-	void setMaxDataSize(const unsigned long long maxDataSize) { maxDataSize_ = maxDataSize; }
+	size_t const& getMaxDataSize() const { return blocksInMem_; }
+	void setMaxDataSize(const size_t &maxDataSize) { blocksInMem_ = maxDataSize; }
 	//sourceFileName
 	std::string const& getSourceFileName() const { return sourceFileName_; }
 	//TODO setSourceFileName нужен только временно! Убрать после того как уберутся всякие LoadFile!
@@ -348,6 +357,12 @@ public:
 	//imageSizeY
 	int const& getImageSizeY() const { return imageSizeY_; }
 	void setImageSizeY(const int &imageSizeY) { imageSizeY_ = imageSizeY; }
+	//minBlockSize
+	unsigned long long const& getMinBlockSize() const { return minBlockSize_; }
+	//void setMinBlockSize(const unsigned long long &value) { minBlockSize_ = value; }
+	//minMemSize
+	unsigned long long const& getMinMemSize() const { return minMemSize_; }
+	//void setMinMemSize(const unsigned long long &value) { minMemSize_ = value; }
 
 	//Конструкторы-деструкторы
 	MedianFilter();
@@ -397,20 +412,6 @@ public:
 	//Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 	virtual bool DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
 
-	//Вычислить минимальный размер исходного блока (в байтах), которыми можно обработать данную картинку.
-	//Исходный блок - т.е. содержащий данные исходной картинки.
-	//Файл картинки должен уже был быть выбран. В случае проблем вернёт 0.
-	unsigned long long CalcMinSourceBlockSize() const;
-
-	//Вычислить минимальный размер блока назначения (в байтах). Блок назначения - куда записываются пиксели
-	//уже обработанного изображения и хранятся до их записи в файл. Количество этих блоков равно количеству
-	//исходных блоков - 2 штуки (т.к. 1 блок - верхние граничные пиксели и 1 блок - нижние), размер самого
-	//блока - немного меньше чем размер исходного блока.
-	//Файл картинки должен уже был быть выбран. В случае проблем вернёт 0.
-	unsigned long long CalcMinDestBlockSize() const;
-
-	//Вычислить минимальное количество памяти, с которым вообще сможет работать медианный фильтр.
-	unsigned long long CalcMinMemSize() const;
 };
 
 }	//namespace geoimgconv

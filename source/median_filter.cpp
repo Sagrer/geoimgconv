@@ -517,9 +517,10 @@ bool RealMedianFilterTemplBase<CellType>::DestSaveToCSVFile(const std::string &f
 ////////////////////////////////////
 
 MedianFilter::MedianFilter() : aperture_(DEFAULT_APERTURE), threshold_(DEFAULT_THRESHOLD),
-marginType_(DEFAULT_MARGIN_TYPE), useMemChunks_(false), maxDataSize_(0), sourceFileName_(""),
+marginType_(DEFAULT_MARGIN_TYPE), useMemChunks_(false), blocksInMem_(0), sourceFileName_(""),
 destFileName_(""), imageSizeX_(0), imageSizeY_(0), imageIsLoaded_(false), sourceIsAttached_(false),
-destIsAttached_(false), dataType_(PIXEL_UNKNOWN), pFilterObj(NULL)
+destIsAttached_(false), dataType_(PIXEL_UNKNOWN), dataTypeSize_(0), pFilterObj_(NULL),
+minBlockSize_(0), minMemSize_(0)
 {
 
 }
@@ -527,8 +528,59 @@ destIsAttached_(false), dataType_(PIXEL_UNKNOWN), pFilterObj(NULL)
 MedianFilter::~MedianFilter()
 {
 	//Возможно создавался объект реального фильтра. Надо удалить.
-	delete pFilterObj;
+	delete pFilterObj_;
 }
+
+//--------------------------//
+//     Приватные методы     //
+//--------------------------//
+
+void MedianFilter::CalcMemSizes()
+//Вычислить минимальные размеры блоков памяти, которые нужны для принятия решения о
+//том сколько памяти разрешено использовать медианному фильтру в процессе своей работы.
+{
+	//Смысл в том, что фильтр обрабатывает картинку, в которой помимо самой картинки содержатся
+	//граничные пиксели - сверху, снизу, слева, справа. Они либо генерируются одним из алгоритмов,
+	//либо это часть самой картинки, но в данный момент эта часть считается незначимой, т.е. не
+	//обрабатывается. Картинки удобно обрабатывать построчно. Ширина и высота этих незначимых "полей"
+	//известна из апертуры. Получается что нам надо держать в памяти одновременно 3 блока: строки
+	//уже незначимых пикселей сверху значимого блока, затем строки значимого блока (в начале и в конце
+	//этих строк тоже будут лежать незначимые пиксели), а затем строки ещё незначимого блока (то что ниже).
+	//Это касается матрицы с исходной информацией. Помимо этого нужно держать в памяти и матрицу
+	//с результатами обработки. Поэтому здесь вычисляется во-первых минимальный разме блока с
+	//исходной информацией, во-вторых минимальный размер блока с результатами, в третьих
+	//минимальное количество памяти, при наличии которого фильтр вообще сможет работать.
+	//Всё в байтах. Минимальные размеры блоков исходных и результирующих данных можно
+	//сложить т.к. память всегда будет выделяться для того и другого одновременно.Эти значения
+	//позволят некоему внешнему коду, вообще ничего не знающему о том, как работает данный
+	//конкретный фильтр, вичислить количество блоков, обрабатываемых за раз так, чтобы влезть
+	//в некий ограниченный лимит памяти.
+
+	//В общем, считаем:
+	unsigned long long firstLastBlockHeight = (aperture_ - 1) / 2;
+	unsigned long long blockHeight;
+	if (firstLastBlockHeight > imageSizeY_)
+		blockHeight = imageSizeY_;
+	else
+		blockHeight = firstLastBlockHeight;
+	unsigned long long blockWidth = imageSizeX_ + firstLastBlockHeight;
+	//Размер пиксела в исходного блока в байтах у нас складывается из размера типа
+	//элементов в матрице и размера элемента вспомогательной матрицы (это 1 байт).
+	//
+	//Размер исходного блока.
+	unsigned long long minSourceBlockSize = (2 * firstLastBlockHeight*blockWidth +
+		blockHeight * blockWidth) * (dataTypeSize_ + 1);
+	//Размер блока с результатом
+	unsigned long long minDestBlockSize = imageSizeX_ * imageSizeY_ * dataTypeSize_;
+	//Минимальное допустимое количество памяти.
+	minMemSize_ = (3 * minSourceBlockSize) + minDestBlockSize;
+	//Обобщённый размер "блока", содержащего и исходные данные и результат.
+	minBlockSize_ = minSourceBlockSize + minDestBlockSize;
+}
+
+//--------------------------//
+//      Прочие методы       //
+//--------------------------//
 
 bool MedianFilter::SelectInputFile(const std::string &fileName, ErrorInfo *errObj)
 //Выбрать исходный файл для дальнейшего чтения и обработки. Получает информацию о параметрах изображения,
@@ -594,31 +646,58 @@ bool MedianFilter::SelectInputFile(const std::string &fileName, ErrorInfo *errOb
 	//не забыть пробросить.
 	GDALClose(inputDataset);
 	inputRaster = NULL;
-	delete pFilterObj;
+	delete pFilterObj_;
 	switch (dataType_)
 	{
-		case PIXEL_INT8: pFilterObj = new RealMedianFilterInt8(this); break;
-		case PIXEL_UINT8: pFilterObj = new RealMedianFilterUInt8(this); break;
-		case PIXEL_INT16: pFilterObj = new RealMedianFilterInt16(this); break;
-		case PIXEL_UINT16: pFilterObj = new RealMedianFilterUInt16(this); break;
-		case PIXEL_INT32: pFilterObj = new RealMedianFilterInt32(this); break;
-		case PIXEL_UINT32: pFilterObj = new RealMedianFilterUInt32(this); break;
-		case PIXEL_FLOAT32: pFilterObj = new RealMedianFilterFloat32(this); break;
-		case PIXEL_FLOAT64: pFilterObj = new RealMedianFilterFloat64(this); break;
-		default: pFilterObj = NULL;
+		case PIXEL_INT8:
+			pFilterObj_ = new RealMedianFilterInt8(this);
+			dataTypeSize_ = sizeof(boost::int8_t);
+			break;
+		case PIXEL_UINT8:
+			pFilterObj_ = new RealMedianFilterUInt8(this);
+			dataTypeSize_ = sizeof(boost::uint8_t);
+			break;
+		case PIXEL_INT16:
+			pFilterObj_ = new RealMedianFilterInt16(this);
+			dataTypeSize_ = sizeof(boost::int16_t);
+			break;
+		case PIXEL_UINT16:
+			pFilterObj_ = new RealMedianFilterUInt16(this);
+			dataTypeSize_ = sizeof(boost::uint16_t);
+			break;
+		case PIXEL_INT32:
+			pFilterObj_ = new RealMedianFilterInt32(this);
+			dataTypeSize_ = sizeof(boost::int32_t);
+			break;
+		case PIXEL_UINT32:
+			pFilterObj_ = new RealMedianFilterUInt32(this);
+			dataTypeSize_ = sizeof(boost::uint32_t);
+			break;
+		case PIXEL_FLOAT32:
+			pFilterObj_ = new RealMedianFilterFloat32(this);
+			dataTypeSize_ = sizeof(float);
+			break;
+		case PIXEL_FLOAT64:
+			pFilterObj_ = new RealMedianFilterFloat64(this);
+			dataTypeSize_ = sizeof(double);
+			break;
+		default: 
+			pFilterObj_ = NULL;
+			dataTypeSize_ = 0;
 	}
-	if (pFilterObj)
+	if (pFilterObj_)
 	{
 		sourceIsAttached_ = true;
 		sourceFileName_ = fileName;
+		CalcMemSizes();
+		return true;
 	}
 	else
 	{
-		if (errObj) errObj->SetError(CMNERR_UNKNOWN_ERROR, "MedianFilter::SelectInputFile() error creating pFilterObj!",true);
+		if (errObj) errObj->SetError(CMNERR_UNKNOWN_ERROR, "MedianFilter::SelectInputFile() error creating pFilterObj_!",true);
 		sourceIsAttached_ = false;
 		return false;
 	}
-	return true;
 }
 
 
@@ -639,7 +718,7 @@ bool MedianFilter::LoadImage(const std::string &fileName, ErrorInfo *errObj,
 	FixAperture();
 	if (SelectInputFile(fileName, errObj))
 	{
-		imageIsLoaded_ = pFilterObj->LoadImage(fileName, errObj, callBackObj);
+		imageIsLoaded_ = pFilterObj_->LoadImage(fileName, errObj, callBackObj);
 	}
 	
 	return imageIsLoaded_;
@@ -653,7 +732,7 @@ bool MedianFilter::SaveImage(const std::string &fileName, ErrorInfo *errObj)
 	//Тупой проброс вызова.
 	if (imageIsLoaded_)
 	{
-		return pFilterObj->SaveImage(fileName, errObj);
+		return pFilterObj_->SaveImage(fileName, errObj);
 	}
 	else
 	{
@@ -669,7 +748,7 @@ void MedianFilter::FillMargins(CallBackBase *callBackObj)
 	//Проброс вызова.
 	if (imageIsLoaded_)
 	{
-		pFilterObj->FillMargins(callBackObj);
+		pFilterObj_->FillMargins(callBackObj);
 	}
 }
 
@@ -679,7 +758,7 @@ void MedianFilter::ApplyStupidFilter(CallBackBase *callBackObj)
 	//Проброс вызова
 	if (imageIsLoaded_)
 	{
-		pFilterObj->ApplyStupidFilter(callBackObj);
+		pFilterObj_->ApplyStupidFilter(callBackObj);
 	}
 }
 
@@ -705,7 +784,7 @@ void MedianFilter::ApplyStubFilter(CallBackBase *callBackObj)
 	//Проброс вызова
 	if (imageIsLoaded_)
 	{
-		pFilterObj->ApplyStubFilter(callBackObj);
+		pFilterObj_->ApplyStubFilter(callBackObj);
 	}
 }
 
@@ -713,7 +792,7 @@ void MedianFilter::SourcePrintStupidVisToCout()
 //"Тупая" визуализация матрицы, отправляется прямо в cout.
 {
 	//Просто проброс вызова в объект матрицы.
-	pFilterObj->SourcePrintStupidVisToCout();
+	pFilterObj_->SourcePrintStupidVisToCout();
 }
 
 bool MedianFilter::SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
@@ -722,59 +801,14 @@ bool MedianFilter::SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *e
 //Это "тупой" вариант вывода - метаданные нормально не сохраняются.
 {
 	//Просто проброс вызова в объект матрицы.
-	return pFilterObj->SourceSaveToCSVFile(fileName, errObj);
+	return pFilterObj_->SourceSaveToCSVFile(fileName, errObj);
 }
 
 bool MedianFilter::DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
 //Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 {
 	//Просто проброс вызова в объект матрицы.
-	return pFilterObj->DestSaveToCSVFile(fileName, errObj);
-}
-
-unsigned long long MedianFilter::CalcMinSourceBlockSize() const
-//Вычислить минимальный размер исходного блока (в байтах), которыми можно обработать данную картинку.
-//Исходный блок - т.е. содержащий данные исходной картинки.
-//Файл картинки должен уже был быть выбран. В случае проблем вернёт 0.
-{
-	//Смысл в том, что фильтр обрабатывает картинку, в которой помимо самой картинки содержатся
-	//граничные пиксели - сверху, снизу, слева, справа. Они либо генерируются одним из алгоритмов,
-	//либо это часть самой картинки, но в данный момент эта часть считается незначимой, т.е. не
-	//обрабатывается. Картинки удобно обрабатывать построчно. Ширина и высота этих незначимых "полей"
-	//известна из апертуры. Получается что нам надо держать в памяти одновременно 3 блока: строки
-	//уже незначимых пикселей сверху значимого блока, затем строки значимого блока (в начале и в конце
-	//этих строк тоже будут лежать незначимые пиксели), а затем строки ещё незначимого блока (то что ниже).
-	//Таким образом, минимально для обработки картинки в памяти должно быть доступно утроенное количество
-	//байт от значения, возвращаемого данной функцией.
-
-	//ВысотаБлока = (апертура-1)/2 но не больше высоты изображения!
-	//ШиринаБлока = 2*ВысотаБлока+ШиринаКартинки
-	//РазмерБлока = 3*ВысотаБлока*ШиринаБлока*(размер элемента+1 байт на элемент вспомогательной матрицы)
-	//В общем, комментариев много, кода мало:
-	unsigned long long blockHeight = (aperture_ - 1) / 2;
-	if (blockHeight > imageSizeY_)
-		blockHeight = imageSizeY_;
-	return 3 * blockHeight*((2 * blockHeight) + imageSizeX_)/* * (pFilterObj->)*/;
-}
-
-
-unsigned long long MedianFilter::CalcMinDestBlockSize() const
-//Вычислить минимальный размер блока назначения (в байтах). Блок назначения - куда записываются пиксели
-//уже обработанного изображения и хранятся до их записи в файл. Количество этих блоков равно количеству
-//исходных блоков - 2 штуки (т.к. 1 блок - верхние граничные пиксели и 1 блок - нижние), размер самого
-//блока - немного меньше чем размер исходного блока.
-//Файл картинки должен уже был быть выбран. В случае проблем вернёт 0.
-{
-	//Заглушка
-	return 0;
-}
-
-
-unsigned long long MedianFilter::CalcMinMemSize() const
-//Вычислить минимальное количество памяти, с которым вообще сможет работать медианный фильтр.
-{
-	//Заглушка
-	return 0;
+	return pFilterObj_->DestSaveToCSVFile(fileName, errObj);
 }
 
 } //namespace geoimgconv
