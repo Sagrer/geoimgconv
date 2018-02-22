@@ -189,11 +189,24 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 	//Перед запуском метода _должен_ был быть выполнен метод DetectSysResInfo()!
 {
 	maxMemCanBeUsed_ = 0;
+	//Нельзя выходить за пределы доступного адресного пространства, поэтому придётся обращаться
+	//не к sysResInfo_ напрямую а к локальным переменным.
+	unsigned long long sysMemFreeSize;
+	if (sysResInfo_.systemMemoryFreeSize < sysResInfo_.maxProcessMemorySize)
+		sysMemFreeSize = sysResInfo_.systemMemoryFreeSize;
+	else
+		sysMemFreeSize = sysResInfo_.maxProcessMemorySize;
+	//sysMemFreeSize = STB.InfoSizeToBytesNum("2m");	//for tests
+	unsigned long long sysMemFullSize;
+	if (sysResInfo_.systemMemoryFullSize < sysResInfo_.maxProcessMemorySize)
+		sysMemFullSize = sysResInfo_.systemMemoryFullSize;
+	else
+		sysMemFullSize = sysResInfo_.maxProcessMemorySize;
+
 	//Смотрим влезет ли указанный минимальный размер в оперативку и в лимит по адресному
 	//пространству (актуально для 32битной версии)
-	if (((swapMode == SWAPMODE_SILENT_NOSWAP) && (minMemSize > sysResInfo_.systemMemoryFreeSize)) ||
-		(minMemSize > sysResInfo_.systemMemoryFullSize) ||
-		(minMemSize > sysResInfo_.maxProcessMemorySize))
+	if (((swapMode == SWAPMODE_SILENT_NOSWAP) && (minMemSize > sysMemFreeSize)) ||
+		(minMemSize > sysMemFullSize))
 	{
 		if (errObj)
 			errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
@@ -206,7 +219,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 	//размер.
 	if (confObj_->getMemMode() == MEMORY_MODE_ONECHUNK)
 	{
-		if ((swapMode == SWAPMODE_ASK) && (minMemSize > sysResInfo_.systemMemoryFreeSize))
+		if ((swapMode == SWAPMODE_ASK) && (minMemSize > sysMemFreeSize))
 		{
 			//Нужно обрабатывать изображение одним куском, в свободную память оно не лезет, но
 			//помещается в максимально доступное адресное пространство. Надо спрашивать юзера.
@@ -233,10 +246,10 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 		if (confObj_->getMemMode() == MEMORY_MODE_LIMIT)
 			tempLimit = confObj_->getMemSize();
 		else if (confObj_->getMemMode() == MEMORY_MODE_LIMIT_FULLPRC)
-			tempLimit = confObj_->getMemSize() * (sysResInfo_.systemMemoryFullSize / 100);
+			tempLimit = confObj_->getMemSize() * (sysMemFullSize / 100);
 		//В любом случае - если оно помещается в свободную память - вопросов нет. Если только
-		//с подкачкой - смотрим на swapMode и при наобходимости спрашиваем у юзера.
-		if (tempLimit > sysResInfo_.systemMemoryFreeSize)
+		//с подкачкой - смотрим на swapMode и при необходимости спрашиваем у юзера.
+		if (tempLimit > sysMemFreeSize)
 		{
 			switch (swapMode)
 			{
@@ -249,11 +262,11 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 				}
 				else
 				{
-					maxMemCanBeUsed_ = sysResInfo_.systemMemoryFreeSize;
+					maxMemCanBeUsed_ = sysMemFreeSize;
 				};
 				break;
 			case SWAPMODE_SILENT_NOSWAP:
-				maxMemCanBeUsed_ = sysResInfo_.systemMemoryFreeSize;
+				maxMemCanBeUsed_ = sysMemFreeSize;
 				break;
 			case SWAPMODE_SILENT_USESWAP:
 				maxMemCanBeUsed_ = tempLimit;
@@ -268,7 +281,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 	else if (confObj_->getMemMode() == MEMORY_MODE_STAYFREE)
 	{
 		//Оставить фиксированное количество места в ОЗУ.
-		if ((confObj_->getMemSize() > sysResInfo_.systemMemoryFreeSize))
+		if ((confObj_->getMemSize() > sysMemFreeSize))
 		{
 			//Не помещаемся никак :(
 			if (errObj)
@@ -277,7 +290,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 		}
 		else
 		{
-			maxMemCanBeUsed_ = sysResInfo_.systemMemoryFreeSize - confObj_->getMemSize();
+			maxMemCanBeUsed_ = sysMemFreeSize - confObj_->getMemSize();
 		};
 	}
 	else if ((confObj_->getMemMode() == MEMORY_MODE_LIMIT_FREEPRC) ||
@@ -287,10 +300,10 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 		switch (confObj_->getMemMode())
 		{
 		case MEMORY_MODE_LIMIT_FREEPRC:
-			maxMemCanBeUsed_ = confObj_->getMemSize() * (sysResInfo_.systemMemoryFreeSize / 100);
+			maxMemCanBeUsed_ = confObj_->getMemSize() * (sysMemFreeSize / 100);
 			break;
 		case MEMORY_MODE_AUTO:
-			maxMemCanBeUsed_ = 80 * (sysResInfo_.systemMemoryFreeSize / 100);
+			maxMemCanBeUsed_ = 80 * (sysMemFreeSize / 100);
 		};		
 	}
 	else
