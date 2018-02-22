@@ -188,25 +188,41 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 	//рабочего буфера может быть больше чем минимальный размер.
 	//Перед запуском метода _должен_ был быть выполнен метод DetectSysResInfo()!
 {
+	
+	//TODO: монструозный метод! Надо или упростить логику или выделить часть кода во вспомогательные
+	//методы.
+	
 	maxMemCanBeUsed_ = 0;
+	//Определим лимит по адресному пространству в 90% от реального т.к. помимо данных фильтра
+	//процесс обязательно сожрал память на что-то ещё. Это должно уменьшить вероятность
+	//ошибок.
+	unsigned long long addrSizeLimit = 90 * (sysResInfo_.maxProcessMemorySize / 100);
 	//Нельзя выходить за пределы доступного адресного пространства, поэтому придётся обращаться
 	//не к sysResInfo_ напрямую а к локальным переменным.
 	unsigned long long sysMemFreeSize;
-	if (sysResInfo_.systemMemoryFreeSize < sysResInfo_.maxProcessMemorySize)
+	if (sysResInfo_.systemMemoryFreeSize < addrSizeLimit)
 		sysMemFreeSize = sysResInfo_.systemMemoryFreeSize;
 	else
-		sysMemFreeSize = sysResInfo_.maxProcessMemorySize;
+		sysMemFreeSize = addrSizeLimit;
 	//sysMemFreeSize = STB.InfoSizeToBytesNum("2m");	//for tests
 	unsigned long long sysMemFullSize;
-	if (sysResInfo_.systemMemoryFullSize < sysResInfo_.maxProcessMemorySize)
+	if (sysResInfo_.systemMemoryFullSize < addrSizeLimit)
 		sysMemFullSize = sysResInfo_.systemMemoryFullSize;
 	else
-		sysMemFullSize = sysResInfo_.maxProcessMemorySize;
+		sysMemFullSize = addrSizeLimit;
+	//sysMemFullSize = STB.InfoSizeToBytesNum("2m");	//for tests
 
 	//Смотрим влезет ли указанный минимальный размер в оперативку и в лимит по адресному
-	//пространству (актуально для 32битной версии)
-	if (((swapMode == SWAPMODE_SILENT_NOSWAP) && (minMemSize > sysMemFreeSize)) ||
-		(minMemSize > sysMemFullSize))
+	//пространству (что актуально для 32битной версии)
+	if (minMemSize > sysResInfo_.maxProcessMemorySize)
+	{
+		if (errObj)
+			errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", минимальный размер блока, которыми \
+может быть обработано изображение превышает размер адресного пространства процесса. Попробуйте \
+воспользоваться 64-битной версией программы.");
+		return false;
+	}
+	if ((swapMode == SWAPMODE_SILENT_NOSWAP) && (minMemSize > sysMemFreeSize))
 	{
 		if (errObj)
 			errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
@@ -246,7 +262,12 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 		if (confObj_->getMemMode() == MEMORY_MODE_LIMIT)
 			tempLimit = confObj_->getMemSize();
 		else if (confObj_->getMemMode() == MEMORY_MODE_LIMIT_FULLPRC)
-			tempLimit = confObj_->getMemSize() * (sysMemFullSize / 100);
+			tempLimit = confObj_->getMemSize() * (sysResInfo_.systemMemoryFullSize / 100);
+		//То что получилось - не должно превышать размер адресного пространства.
+		if (tempLimit > addrSizeLimit)
+		{
+			tempLimit = addrSizeLimit;
+		};
 		//В любом случае - если оно помещается в свободную память - вопросов нет. Если только
 		//с подкачкой - смотрим на swapMode и при необходимости спрашиваем у юзера.
 		if (tempLimit > sysMemFreeSize)
@@ -255,8 +276,10 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 			{
 			case SWAPMODE_ASK:
 				cout << endl;
-				if (ConsoleAnsweredYes("Изображение не поместится в свободное ОЗУ но должно поместиться в подкачку\n\
-Продолжить работу с подкачкой (да) или использовать только свободное ОЗУ (нет)?"))
+				if (ConsoleAnsweredYes("Изображение не поместится в свободное ОЗУ блоками, размер которых\n\
+задан в настройках, но может поместиться блоками этого размера в \"подкачку\"\n\
+Продолжить работу с \"подкачкой\" (да) или использовать только свободное ОЗУ \n\
+блоками меньшего размера (нет)?"))
 				{
 					maxMemCanBeUsed_ = tempLimit;
 				}
@@ -271,12 +294,20 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 			case SWAPMODE_SILENT_USESWAP:
 				maxMemCanBeUsed_ = tempLimit;
 			}
-
 		}
 		else
 		{
 			maxMemCanBeUsed_ = tempLimit;
 		};
+
+		//Могло получиться так что минимальный блок не поместится в выбранное пространство.
+		//а лимит тут жёсткий, поэтому:
+		if (maxMemCanBeUsed_ < minMemSize)
+		{
+			if (errObj)
+				errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
+			return false;
+		}
 	}
 	else if (confObj_->getMemMode() == MEMORY_MODE_STAYFREE)
 	{
@@ -287,11 +318,18 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 			if (errObj)
 				errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
 			return false;
-		}
-		else
-		{
-			maxMemCanBeUsed_ = sysMemFreeSize - confObj_->getMemSize();
 		};
+
+		maxMemCanBeUsed_ = sysMemFreeSize - confObj_->getMemSize();
+
+		//Могло получиться так что минимальный блок не поместится в выбранное пространство.
+		//а лимит тут жёсткий, поэтому:
+		if (maxMemCanBeUsed_ < minMemSize)
+		{
+			if (errObj)
+				errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
+			return false;
+		}
 	}
 	else if ((confObj_->getMemMode() == MEMORY_MODE_LIMIT_FREEPRC) ||
 		(confObj_->getMemMode() == MEMORY_MODE_AUTO))
@@ -300,11 +338,49 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 		switch (confObj_->getMemMode())
 		{
 		case MEMORY_MODE_LIMIT_FREEPRC:
-			maxMemCanBeUsed_ = confObj_->getMemSize() * (sysMemFreeSize / 100);
+			maxMemCanBeUsed_ = confObj_->getMemSize() * (sysResInfo_.systemMemoryFreeSize / 100);
 			break;
 		case MEMORY_MODE_AUTO:
-			maxMemCanBeUsed_ = 80 * (sysMemFreeSize / 100);
-		};		
+			maxMemCanBeUsed_ = 80 * (sysResInfo_.systemMemoryFreeSize / 100);
+		};
+		//Если получившийся объём памяти меньше минималки - в зависимости от swapMode
+		//можно попробовать использовать некую долю от реального ОЗУ.
+		if (maxMemCanBeUsed_ < minMemSize)
+		{
+			maxMemCanBeUsed_ = maxMemCanBeUsed_ = 90 * (sysMemFreeSize / 100);
+			if (!((maxMemCanBeUsed_ >= minMemSize) && (swapMode == SWAPMODE_ASK)
+				&& ConsoleAnsweredYes(lexical_cast<string>(confObj_->getMemSize()) + "% \
+свободной памяти недостаточно для работы фильтра. Попробовать взять\n90%?")))
+			{
+				//Нельзя пробовать брать больше памяти. Вся надежда на то что разрешат подкачку.
+				maxMemCanBeUsed_ = 0;
+			};
+		};
+		//Всё ещё есть вероятность что памяти недостаточно.
+		if (maxMemCanBeUsed_ < minMemSize)
+		{
+			if ((swapMode == SWAPMODE_SILENT_USESWAP) || ((swapMode == SWAPMODE_ASK) &&
+				(ConsoleAnsweredYes("Изображение поместится в память только при активном \
+использовании \"подкачки\". Продолжить?"))))
+			{
+				//Пока непонятно сколько точно памяти лучше выделять, остановлюсь либо на 70%
+				//от ОЗУ либо на минимально возможном для работы размере, смотря что больше.
+				maxMemCanBeUsed_ = 70 * (sysMemFullSize / 100);
+				if (maxMemCanBeUsed_ < minMemSize)
+					maxMemCanBeUsed_ = minMemSize;
+			}
+			else
+			{
+				if (errObj)
+					errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
+				return false;
+			}
+		}
+		//То что получилось - не должно превышать размер адресного пространства.
+		if (maxMemCanBeUsed_ > addrSizeLimit)
+		{
+			maxMemCanBeUsed_ = addrSizeLimit;
+		}		
 	}
 	else
 	{
