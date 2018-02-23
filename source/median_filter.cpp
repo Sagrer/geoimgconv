@@ -387,7 +387,7 @@ void RealMedianFilterTemplBase<CellType>::FillMargins(CallBackBase *callBackObj)
 
 //Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::ApplyStupidFilter(CallBackBase *callBackObj)
+void RealMedianFilterTemplBase<CellType>::ApplyStupidFilter_old(CallBackBase *callBackObj)
 {
 	//Данный метод применяет медианный фильтр "в лоб", т.ч. тупо для каждого пикселя создаёт
 	//массив из всех пикселей, входящих в окно, после чего сортирует массив и медиану подставляет
@@ -456,7 +456,7 @@ void RealMedianFilterTemplBase<CellType>::ApplyStupidFilter(CallBackBase *callBa
 //Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
 //Для отладки. Результат записывает в destMatrix_.
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::ApplyStubFilter(CallBackBase *callBackObj)
+void RealMedianFilterTemplBase<CellType>::ApplyStubFilter_old(CallBackBase *callBackObj)
 {
 	int destX, destY, sourceX, sourceY, marginSize;
 	marginSize = (getOwnerObj().getAperture() - 1) / 2;
@@ -484,6 +484,14 @@ void RealMedianFilterTemplBase<CellType>::ApplyStubFilter(CallBackBase *callBack
 			if (callBackObj) callBackObj->CallBack(progressPosition);
 		};
 	};
+}
+
+//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
+//Для отладки. Результат записывается в выбранный destFile
+template <typename CellType>
+void RealMedianFilterTemplBase<CellType>::ApplyStubFilter(CallBackBase *callBackObj = NULL)
+{
+	//Новый вариант "никакого" фильтра. Работающий по кускам.
 }
 
 //"Тупая" визуализация матрицы, отправляется прямо в cout.
@@ -755,12 +763,12 @@ void MedianFilter::FillMargins(CallBackBase *callBackObj)
 }
 
 //Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
-void MedianFilter::ApplyStupidFilter(CallBackBase *callBackObj)
+void MedianFilter::ApplyStupidFilter_old(CallBackBase *callBackObj)
 {
 	//Проброс вызова
 	if (imageIsLoaded_)
 	{
-		pFilterObj_->ApplyStupidFilter(callBackObj);
+		pFilterObj_->ApplyStupidFilter_old(callBackObj);
 	}
 }
 
@@ -781,12 +789,12 @@ void MedianFilter::FixAperture()
 
 //Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
 //Для отладки. Результат записывает в destMatrix_.
-void MedianFilter::ApplyStubFilter(CallBackBase *callBackObj)
+void MedianFilter::ApplyStubFilter_old(CallBackBase *callBackObj)
 {
 	//Проброс вызова
 	if (imageIsLoaded_)
 	{
-		pFilterObj_->ApplyStubFilter(callBackObj);
+		pFilterObj_->ApplyStubFilter_old(callBackObj);
 	}
 }
 

@@ -537,9 +537,13 @@ int AppUIConsole::RunApp()
 		return 1;
 	}
 
-	PrintToConsole("Открыто. Визуализация значимых пикселей:\n");
-	//medFilter.SourcePrintStupidVisToCout();
-	PrintToConsole("Устарела и пока не работает :(\n\n");
+	//Настраиваем фильтр в соответствии с полученной инфой о памяти.
+	medFilter.setUseMemChunks(maxBlocksCanBeUsed_);
+
+	//PrintToConsole("Открыто. Визуализация значимых пикселей:\n");
+	////medFilter.SourcePrintStupidVisToCout();
+	//PrintToConsole("Устарела и пока не работает :(\n\n");
+	PrintToConsole("Открыто.\n\n");
 
 	PrintToConsole("Программа будет обрабатывать файл, используя " +
 		STB.BytesNumToInfoSizeStr(maxMemCanBeUsed_) + " памяти, частями по " +
@@ -573,8 +577,8 @@ int AppUIConsole::RunApp()
 	PrintToConsole("Апертура: " + lexical_cast<std::string>(medFilter.getAperture()) +
 		"; Порог: " + STB.DoubleToString(medFilter.getThreshold(), 5) + ".\n");
 	CallBackObj.OperationStart();
-	medFilter.ApplyStupidFilter(&CallBackObj);
-	//medFilter.ApplyStubFilter(&CallBackObj);	//Отладочный "мгновенный" фильтр - только имитирует фильтрацию.
+	medFilter.ApplyStupidFilter_old(&CallBackObj);
+	//medFilter.ApplyStubFilter_old(&CallBackObj);	//Отладочный "мгновенный" фильтр - только имитирует фильтрацию.
 	CallBackObj.OperationEnd();   //Выведет время выполнения.
 
 	//PrintToConsole("Для дополнительной отладки сохраняю файл: output_stupid.csv\n");

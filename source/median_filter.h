@@ -78,10 +78,14 @@ public:
 	virtual void FillMargins(CallBackBase *callBackObj = NULL) = 0;
 
 	//Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
-	virtual void ApplyStupidFilter(CallBackBase *callBackObj = NULL) = 0;
+	virtual void ApplyStupidFilter_old(CallBackBase *callBackObj = NULL) = 0;
 
 	//Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
 	//Для отладки. Результат записывает в destMatrix_.
+	virtual void ApplyStubFilter_old(CallBackBase *callBackObj = NULL) = 0;
+
+	//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
+	//Для отладки. Результат записывается в выбранный destFile
 	virtual void ApplyStubFilter(CallBackBase *callBackObj = NULL) = 0;
 
 	//"Тупая" визуализация матрицы, отправляется прямо в cout.
@@ -169,11 +173,15 @@ public:
 	void FillMargins(CallBackBase *callBackObj = NULL);
 		
 	//Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
-	void ApplyStupidFilter(CallBackBase *callBackObj = NULL);
+	void ApplyStupidFilter_old(CallBackBase *callBackObj = NULL);
 
 	//Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
 	//Для отладки. Результат записывает в destMatrix_.
-	void ApplyStubFilter(CallBackBase *callBackObj = NULL);
+	void ApplyStubFilter_old(CallBackBase *callBackObj = NULL);
+
+	//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
+	//Для отладки. Результат записывается в выбранный destFile
+	virtual void ApplyStubFilter(CallBackBase *callBackObj = NULL);
 
 	//"Тупая" визуализация матрицы, отправляется прямо в cout.
 	void SourcePrintStupidVisToCout();
@@ -396,11 +404,11 @@ public:
 	virtual void FillMargins(CallBackBase *callBackObj = NULL);
 
 	//Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
-	virtual void ApplyStupidFilter(CallBackBase *callBackObj = NULL);
+	virtual void ApplyStupidFilter_old(CallBackBase *callBackObj = NULL);
 
 	//Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
 	//Для отладки. Результат записывает в destMatrix_.
-	virtual void ApplyStubFilter(CallBackBase *callBackObj = NULL);
+	virtual void ApplyStubFilter_old(CallBackBase *callBackObj = NULL);
 
 	//Приводит апертуру к имеющему смысл значению.
 	void FixAperture();

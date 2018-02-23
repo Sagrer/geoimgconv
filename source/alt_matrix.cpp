@@ -84,8 +84,9 @@ void AntiUnresolvedExternals()
 //   Конструкторы-деструкторы     //
 //--------------------------------//
 
-template <typename CellType> AltMatrix<CellType>::AltMatrix() : data_(NULL),
-signData_(NULL), xSize_(0), ySize_(0), matrixArr_(NULL), signMatrixArr_(NULL), dataElemsNum_(0)
+template <typename CellType> AltMatrix<CellType>::AltMatrix(const bool useSignData) : data_(NULL),
+signData_(NULL), xSize_(0), ySize_(0), matrixArr_(NULL), signMatrixArr_(NULL), dataElemsNum_(0),
+useSignData_(useSignData)
 {
 	//Объект должен точно знать какого типа у него пиксели.
 	if (typeid(CellType) == typeid(double))
@@ -256,14 +257,17 @@ bool AltMatrix<CellType>::LoadFromGDALFile(const std::string &fileName,
 
 	//Осталось пробежаться по всем пикселям и откласифицировать их на значимые и незначимые.
 	//Незначимым считаем пиксели равные нулю. Граничные пиксели кстати трогать нет смысла.
-	int i, j;
-	for (i = marginSize; i < (ySize_ - marginSize); i++)
+	if (useSignData_)
 	{
-		for (j = marginSize; j < (xSize_ - marginSize); j++)
+		int i, j;
+		for (i = marginSize; i < (ySize_ - marginSize); i++)
 		{
-			if (matrixArr_[i][j] != CellType(0))
-				//Это значимый пиксель.
-				signMatrixArr_[i][j] = 1;
+			for (j = marginSize; j < (xSize_ - marginSize); j++)
+			{
+				if (matrixArr_[i][j] != CellType(0))
+					//Это значимый пиксель.
+					signMatrixArr_[i][j] = 1;
+			}
 		}
 	}
 
@@ -320,23 +324,38 @@ void AltMatrix<CellType>::CreateEmpty(const int &newX, const int &newY)
 	dataElemsNum_ = xSize_ * ySize_;
 	//size_t debugElemSize = sizeof(CellType);	//Для отладки (т.к. что тут за CellType в отладчике не видно).
 	data_ = (void*) new CellType[dataElemsNum_]();	//явно инициализовано нулями!
-	signData_ = new char[dataElemsNum_]();
 	//Массивы указателей для быстрого доступа по координатам X и Y.
 	matrixArr_ = new CellType*[ySize_];
-	signMatrixArr_ = new char*[ySize_];
-	int i, j;
-	for (i = 0; i < ySize_; i++)
+	if (useSignData_)
 	{
-		j = i*xSize_;
-		matrixArr_[i] = &((CellType*)data_)[j];
-		signMatrixArr_[i] = &signData_[j];
+		//Почти совпадающий код внутри веток if - чтобы не делать кучу проверок
+		//useSignData_ в цикле. Так быстрее. Фиг знает отоптимизировал ли бы это компиллятор.
+		signData_ = new char[dataElemsNum_]();
+		signMatrixArr_ = new char*[ySize_];
+		int i, j;
+		for (i = 0; i < ySize_; i++)
+		{
+			j = i * xSize_;
+			matrixArr_[i] = &((CellType*)data_)[j];
+			signMatrixArr_[i] = &signData_[j];
+		}
 	}
+	else
+	{
+		signMatrixArr_ = new char*[ySize_];
+		int i, j;
+		for (i = 0; i < ySize_; i++)
+		{
+			j = i * xSize_;
+			matrixArr_[i] = &((CellType*)data_)[j];
+		}
+	}	
 }
 
-//Выделить память под пустую матрицу того же размера что и матрица в аргументе, а затем
-//скопировать информацию о значимых пикселях из этой матрицы в новосозданную. Если в
-//объекте, в котором был вызван метод уже была некая матрица - она предварительно удаляется.
-//marginSize задаёт размер незначимой краевой области в исходной матрице. Целевая
+//Выделить память под пустую матрицу того же размера что и матрица в аргументе, а затем при
+//необходимости скопировать информацию о значимых пикселях из этой матрицы в новосозданную.
+//Если в объекте, в котором был вызван метод уже была некая матрица - она предварительно
+//удаляется. marginSize задаёт размер незначимой краевой области в исходной матрице. Целевая
 //матрица будет создана без этой области, т.е. меньшего размера.
 template <typename CellType>
 void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatrix_, const int &marginSize)
@@ -346,21 +365,26 @@ void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatr
 	//Выделим память.
 	CreateEmpty(sourceMatrix_.xSize_-(marginSize * 2),
 		sourceMatrix_.ySize_-(marginSize * 2));
-	//Теперь нужно пройтись по всей вспомогательной матрице и скопировать
-	//все равные единице элементы.
-	int x, y, sourceX, sourceY;
-	for (y=0; y < ySize_; y++)
+	
+	if (useSignData_)
 	{
-		sourceY = y + marginSize;
-		for (x=0; x < xSize_; x++)
+		//Теперь нужно пройтись по всей вспомогательной матрице и скопировать
+		//все равные единице элементы.
+		int x, y, sourceX, sourceY;
+		for (y = 0; y < ySize_; y++)
 		{
-			sourceX = x + marginSize;
-			if (sourceMatrix_.signMatrixArr_[sourceY][sourceX] == 1)
+			sourceY = y + marginSize;
+			for (x = 0; x < xSize_; x++)
 			{
-				signMatrixArr_[y][x] = 1;
+				sourceX = x + marginSize;
+				if (sourceMatrix_.signMatrixArr_[sourceY][sourceX] == 1)
+				{
+					signMatrixArr_[y][x] = 1;
+				}
 			}
-		};
-	};
+		}
+	}
+	
 }
 
 //Очевидно вернёт true если матрица пуста, либо false если там есть значения.
