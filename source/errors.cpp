@@ -14,11 +14,14 @@
 
 ////////////////////////////////////////////////////////////////////////
 
+//Обработка ошибок.
+
 #include "errors.h"
 
 namespace geoimgconv
 {
 
+//Текстовое представление для enum CommonErrors
 const std::string CommonErrorsTexts[] = { "Нет ошибок",	//0
 			"Ошибка чтения файла",							//1
 			"Ошибка записи файла",							//2
@@ -32,12 +35,12 @@ const std::string CommonErrorsTexts[] = { "Нет ошибок",	//0
 			"Неизвестная ошибка"							//10
 };
 
-void ErrorInfo::SetError(const CommonErrors &errCode, const std::string &text, const bool replaceText)
 //Записывает в объект код ошибки и соответствующее коду сообщение
 //из CommonErrorsTexts[], к которому добавляет содержимое второго
 //аргумента если он был указан, либо всё сообщение берёт из второго
 //аргумента если истинен третий. Если text пуст - стандартный текст
 //сообщения берётся независимо от значения replaceText
+void ErrorInfo::SetError(const CommonErrors &errCode, const std::string &text, const bool replaceText)
 {
 	errorCode_ = errCode;
 	if (text != "")

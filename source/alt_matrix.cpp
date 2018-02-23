@@ -2,7 +2,7 @@
 //                                                       //
 //                  GeoImageConverter                    //
 //       Преобразователь изображений с геоданными        //
-//       Copyright © 2017 Александр (Sagrer) Гриднев     //
+//    Copyright © 2017-2018 Александр (Sagrer) Гриднев   //
 //              Распространяется на условиях             //
 //                 GNU GPL v3 или выше                   //
 //                  см. файл gpl.txt                     //
@@ -42,8 +42,8 @@ namespace geoimgconv{
 #pragma warning(disable:4068)
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
-template <typename CellType> void AntiUnrExtsHelper()
 //Дополнение к костылю ниже. Заставляет компиллятор генерить код для всех методов.
+template <typename CellType> void AntiUnrExtsHelper()
 {
 	AltMatrix<CellType> temp;
 	typedef void(AltMatrix<CellType>::*MethodPointer)(...);
@@ -61,11 +61,11 @@ template <typename CellType> void AntiUnrExtsHelper()
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::CreateEmpty);
 }
 
-void AntiUnresolvedExternals()
 //Функция-костыль. Заставляет компиллятор создать реально используемые
 //реализации шаблонного класса без того чтобы добавлять реализацию всех
 //методов в хидер. Ну вот не хочу я замусоривать хидер, а список типов, которые
 //требуется подставлять в шаблон - фиксирован и известен заранее.
+void AntiUnresolvedExternals()
 {
 	AntiUnrExtsHelper<double>();
 	AntiUnrExtsHelper<float>();
@@ -120,24 +120,24 @@ template <typename CellType> AltMatrix<CellType>::~AltMatrix()
 //         Методы всякие          //
 //--------------------------------//
 
+//Сохраняет матрицу высот в файл своего внутреннего формата. Вернёт true если всё ок.
 template <typename CellType>
 bool AltMatrix<CellType>::SaveToFile(const string &fileName, ErrorInfo *errObj) const
-//Сохраняет матрицу высот в файл своего внутреннего формата. Вернёт true если всё ок.
 {
 	//Заглушка.
 	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
 	return false;
 }
 
-template <typename CellType>
-bool AltMatrix<CellType>::SaveToGDALFile(const std::string &fileName, const int &xStart,
-	const int &yStart, ErrorInfo *errObj) const
 //Сохраняет матрицу высот в изображение через GDAL. Изображение уже должно существовать,
 //т.е. мы просто заменяем там указанную часть пикселей. xStart и yStart задают прямоугольник,
 //пикселы из которого будут перезаписаны. T.е. задаёт верхний левый угол в целевом изображении,
 //в который попадёт верхний левый угол записываемого изображения. Размер прямоугольника
 //определяется размером собственно матрицы, размеры целевого изображения должны ему
 //соответствовать. Вернёт true если всё ок.
+template <typename CellType>
+bool AltMatrix<CellType>::SaveToGDALFile(const std::string &fileName, const int &xStart,
+	const int &yStart, ErrorInfo *errObj) const
 {
 	//А был ли файл?
 	filesystem::path filePath = STB.Utf8ToWstring(fileName);
@@ -182,19 +182,19 @@ bool AltMatrix<CellType>::SaveToGDALFile(const std::string &fileName, const int 
 	return true;
 }
 
+//Загружает матрицу высот из файла своего формата. Вернёт true если всё ок.
 template <typename CellType>
 bool AltMatrix<CellType>::LoadFromFile(const string &fileName, ErrorInfo *errObj)
-//Загружает матрицу высот из файла своего формата. Вернёт true если всё ок.
 {
 	//Заглушка.
 	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
 	return false;
 }
 
+//Загружает матрицу высот из изображения через GDAL. Вернёт true если всё ок.
 template <typename CellType>
 bool AltMatrix<CellType>::LoadFromGDALFile(const std::string &fileName,
 	const int &marginSize, ErrorInfo *errObj)
-//Загружает матрицу высот из изображения через GDAL. Вернёт true если всё ок.
 {	
 	//Независимо от того удастся ли загрузить файл - данные в объекте
 	//должны быть удалены.
@@ -271,33 +271,33 @@ bool AltMatrix<CellType>::LoadFromGDALFile(const std::string &fileName,
 	return true;
 }
 
-template <typename CellType>
-AltMatrix<CellType> &AltMatrix<CellType>::SaveChunkToMatrix(AltMatrix<CellType> &NewMatrix,
-	const int &xStart, const int &yStart, const int &xEnd, const int &yEnd) const
 //Создаёт в аргументе новую матрицу, вероятно меньшего размера. Старая матрица, если она
 //там была - удаляется. В созданную матрицу копируется кусок this-матрицы указанного размера.
 //Вернёт тот же объект, что был передан в аргументе. Если операция невозможна, например
 //передан бред в размерах - вернёт пустую матрицу.
+template <typename CellType>
+AltMatrix<CellType> &AltMatrix<CellType>::SaveChunkToMatrix(AltMatrix<CellType> &NewMatrix,
+	const int &xStart, const int &yStart, const int &xEnd, const int &yEnd) const
 {
 	//Заглушка.
 	NewMatrix.Clear();
 	return NewMatrix;
 }
 
+//Создаёт и сохраняет на диск в файл своего формата новую матрицу. Старая матрица, если она
+//там была - удаляется. Вернёт false если что-то пошло не так.
 template <typename CellType>
 bool AltMatrix<CellType>::SaveChunkToFile(const string &fileName,
 	const int &xStart, const int &yStart, const int &xEnd, const int &yEnd,
 	ErrorInfo *errObj) const
-//Создаёт и сохраняет на диск в файл своего формата новую матрицу. Старая матрица, если она
-//там была - удаляется. Вернёт false если что-то пошло не так.
 {
 	//Заглушка.
 	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
 	return false;
 }
 
-template <typename CellType> void AltMatrix<CellType>::Clear()
 //В соответствии с названием - очищает содержимое объекта чтобы он представлял пустую матрицу.
+template <typename CellType> void AltMatrix<CellType>::Clear()
 {
 	delete[] (CellType*)data_;
 	delete[] signData_;
@@ -310,9 +310,9 @@ template <typename CellType> void AltMatrix<CellType>::Clear()
 	dataElemsNum_ = 0;
 }
 
+//Уничтожает содержащуюся в объекте матрицу и создаёт пустую новую указанного размера.
 template <typename CellType>
 void AltMatrix<CellType>::CreateEmpty(const int &newX, const int &newY)
-//Уничтожает содержащуюся в объекте матрицу и создаёт пустую новую указанного размера.
 {
 	if (!IsClear()) Clear();
 	xSize_ = newX;
@@ -333,13 +333,13 @@ void AltMatrix<CellType>::CreateEmpty(const int &newX, const int &newY)
 	}
 }
 
-template <typename CellType>
-void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatrix_, const int &marginSize)
 //Выделить память под пустую матрицу того же размера что и матрица в аргументе, а затем
 //скопировать информацию о значимых пикселях из этой матрицы в новосозданную. Если в
 //объекте, в котором был вызван метод уже была некая матрица - она предварительно удаляется.
 //marginSize задаёт размер незначимой краевой области в исходной матрице. Целевая
 //матрица будет создана без этой области, т.е. меньшего размера.
+template <typename CellType>
+void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatrix_, const int &marginSize)
 {
 	if (!IsClear()) Clear();
 	if (sourceMatrix_.IsClear()) return;
@@ -363,15 +363,15 @@ void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatr
 	};
 }
 
-template <typename CellType> bool AltMatrix<CellType>::IsClear() const
 //Очевидно вернёт true если матрица пуста, либо false если там есть значения.
+template <typename CellType> bool AltMatrix<CellType>::IsClear() const
 {
 	//!(data_==NULL)==true
 	return !data_;
 }
 
-template <typename CellType> void AltMatrix<CellType>::PrintStupidVisToCout() const
 //"Тупая" визуализация матрицы, отправляется прямо в cout.
+template <typename CellType> void AltMatrix<CellType>::PrintStupidVisToCout() const
 {
 	//Вариант с выводом кракозябликов-псевдографики из всего двух
 	//разных символов, т.е. показывает значимые и незначимые пиксели.
@@ -398,11 +398,11 @@ template <typename CellType> void AltMatrix<CellType>::PrintStupidVisToCout() co
 	}
 }
 
-template <typename CellType>
-bool AltMatrix<CellType>::SaveToCSVFile(const std::string &fileName, ErrorInfo *errObj) const
 //Вывод матрицы в csv-файл, который должны понимать всякие картографические
 //программы. Это значит что каждый пиксел - это одна строка в файле.
 //Это "тупой" вариант вывода - метаданные нормально не сохраняются.
+template <typename CellType>
+bool AltMatrix<CellType>::SaveToCSVFile(const std::string &fileName, ErrorInfo *errObj) const
 {
 	std::fstream fileStream;
 	fileStream.open(fileName.c_str(),ios_base::binary|ios_base::trunc|ios_base::out);

@@ -49,11 +49,11 @@ const std::string MemoryModeTexts[] = { "auto",	//0
 			"unknown"				//6
 };
 
-PixelType GDALToGIC_PixelType(const GDALDataType &GDALType)
 //Преобразование типа пикселя из enum-а GDALDataType в PixelType.
 //Важный момент - если тип был PIXEL_INT8 - невозможно просто так понять
 //signed там или unsigned. Для того чтобы отличить одно от другого - надо
 //в MAGE_STRUCTURE Domain посмотреть значение PIXELTYPE
+PixelType GDALToGIC_PixelType(const GDALDataType &GDALType)
 {
 	switch (GDALType)
 	{
@@ -68,8 +68,8 @@ PixelType GDALToGIC_PixelType(const GDALDataType &GDALType)
 	}
 }
 
-GDALDataType GICToGDAL_PixelType(const PixelType GICType)
 //Преобразование обратно из PixelType в GDALDataType
+GDALDataType GICToGDAL_PixelType(const PixelType GICType)
 {
 	switch (GICType)
 	{
@@ -85,26 +85,26 @@ GDALDataType GICToGDAL_PixelType(const PixelType GICType)
 	}
 }
 
-void CPL_STDCALL GDALThreadErrorHandler(CPLErr eErrClass, int err_no, const char *msg)
 //Обработчик ошибок GDAL. Указатель на него должен быть подсунут из каждого
 //потока приложения через CPLPushErrorHandlerEx. Дополнительные данные
 //- указатель на std::string под текст сообщения об ошибке. Строка должна
 //быть для каждого потока своя.
+void CPL_STDCALL GDALThreadErrorHandler(CPLErr eErrClass, int err_no, const char *msg)
 {
 	//Тупо кладём в настроенную для хендлера строку текст сообщения об ошибке.
 	*((std::string*)(CPLGetErrorHandlerUserData())) = msg;
 }
 
-std::string &GetLastGDALError()
 //Вернуть строку с текстом последней ошибки GDAL для данного потока. Работает только
 //если был подключен обработчик GDALThreadErrorHandler
+std::string &GetLastGDALError()
 {
 	return *((std::string*)(CPLGetErrorHandlerUserData()));
 }
 
-AppMode AppModeStrToEnum(const std::string &inputStr)
 //Получить AppMode из строки, совпадающей без учёта регистра с одним из
 //элементов AppModeTexts
+AppMode AppModeStrToEnum(const std::string &inputStr)
 {
 	std::string inpStr;
 	STB.Utf8ToLower(inputStr, inpStr);
@@ -116,9 +116,9 @@ AppMode AppModeStrToEnum(const std::string &inputStr)
 	return APPMODE_UNKNOWN;
 }
 
-MarginType MarginTypeStrToEnum(const std::string &inputStr)
 //Получить MarginType из строки, совпадающей без учёта регистра с одним из
 //элементов MarginTypeTexts
+MarginType MarginTypeStrToEnum(const std::string &inputStr)
 {
 	std::string inpStr;
 	STB.Utf8ToLower(inputStr, inpStr);

@@ -76,9 +76,9 @@ void AppUIConsoleCallBack::Clear()
 }
 
 
-void AppUIConsoleCallBack::CallBack(const unsigned long &progressPosition)
 //CallBack-метод, который будет выводить в консоль количество и процент уже
 //обработанных пикселей.
+void AppUIConsoleCallBack::CallBack(const unsigned long &progressPosition)
 {
 	using namespace boost::posix_time;
 
@@ -128,8 +128,8 @@ void AppUIConsoleCallBack::CallBack(const unsigned long &progressPosition)
 	skipCounter_ = 0;
 }
 
-void AppUIConsoleCallBack::OperationStart()
 //Сообщить объекту о том что операция начинается
+void AppUIConsoleCallBack::OperationStart()
 {
 	//Очистим объект и запомним время начала операции.
 	Clear();
@@ -137,8 +137,8 @@ void AppUIConsoleCallBack::OperationStart()
 	startTime_ = boost::posix_time::microsec_clock::local_time();
 }
 
-void AppUIConsoleCallBack::OperationEnd()
 //Сообщить объекту о том что операция завершена.
+void AppUIConsoleCallBack::OperationEnd()
 {
 	//Запомним время завершения операции и запостим в cout последний
 	//вариант прогрессбара и информацию о времени, затраченном на выполнение операции.
@@ -173,20 +173,20 @@ AppUIConsole::~AppUIConsole()
 //        Приватные методы        //
 //--------------------------------//
 
+//Задетектить какое максимальное количество памяти можно использовать исходя из
+//характеристик компьютера и параметров, переданных в командной строке, а также вычислить
+//количество блоков, которое используемый в данный момент фильтр может одновременно держать
+//в памяти. Результат пишется в maxMemCanBeUsed_ (количество памяти в байтах) и в
+//maxBlocksCanBeUsed_ (количество блоков). В случае ошибки туда запишется 0.
+//filterObj - объект фильтра, который будет обрабатывать изображение.
+//Если изображение не влезет в память вообще никак - вернёт false. При этом если
+//изображение будет способно влезть в память только с попаданием части буфера в своп - метод
+//самостоятельно спросит у юзверя что именно ему делать если swapMode позволяет.
+//swapMode - задаёт либо интерактивный режим либо тихий режим работы, в тихом режиме swap может
+//либо использоваться либо не использоваться в зависимости от выбранного режима.
+//Перед запуском метода _должен_ был быть выполнен метод DetectSysResInfo()!
 bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const SwapMode swapMode, 
 	ErrorInfo *errObj)
-	//Задетектить какое максимальное количество памяти можно использовать исходя из
-	//характеристик компьютера и параметров, переданных в командной строке, а также вычислить
-	//количество блоков, которое используемый в данный момент фильтр может одновременно держать
-	//в памяти. Результат пишется в maxMemCanBeUsed_ (количество памяти в байтах) и в
-	//maxBlocksCanBeUsed_ (количество блоков). В случае ошибки туда запишется 0.
-	//filterObj - объект фильтра, который будет обрабатывать изображение.
-	//Если изображение не влезет в память вообще никак - вернёт false. При этом если
-	//изображение будет способно влезть в память только с попаданием части буфера в своп - метод
-	//самостоятельно спросит у юзверя что именно ему делать если swapMode позволяет.
-	//swapMode - задаёт либо интерактивный режим либо тихий режим работы, в тихом режиме swap может
-	//либо использоваться либо не использоваться в зависимости от выбранного режима.
-	//Перед запуском метода _должен_ был быть выполнен метод DetectSysResInfo()!
 {
 	
 	//TODO: монструозный метод! Надо или упростить логику или выделить часть кода во вспомогательные
@@ -430,14 +430,14 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 	return true;
 }
 
-void AppUIConsole::DetectSysResInfo()
 //Задетектить инфу для sysResInfo_
+void AppUIConsole::DetectSysResInfo()
 {
 	STB.GetSysResInfo(sysResInfo_);
 }
 
-bool AppUIConsole::ConsoleAnsweredYes(const std::string &messageText)
 //Задать юзверю попрос на да\нет и вернуть true если было да и false если было нет.
+bool AppUIConsole::ConsoleAnsweredYes(const std::string &messageText)
 {
 	PrintToConsole(messageText + " да\\нет? (y\\д\\n\\н) > ");
 	std::string answer;
@@ -458,10 +458,10 @@ void AppUIConsole::ConsolePrintError(ErrorInfo &errObj)
 //          Самое важное          //
 //--------------------------------//
 
-void AppUIConsole::InitApp(AppConfig &conf)
 //Готовит приложение к запуску.
 //Внутрь передаётся объект с конфигом, в который уже должны быть прочитаны параметры
 //командной строки.
+void AppUIConsole::InitApp(AppConfig &conf)
 {
 	confObj_ = &conf;
 	GDALRegister_GTiff();	//Регистрация драйвера GDAL.
@@ -474,8 +474,8 @@ void AppUIConsole::InitApp(AppConfig &conf)
 	DetectSysResInfo();
 }
 
-int AppUIConsole::RunApp()
 //По сути тут главный цикл.
+int AppUIConsole::RunApp()
 {
 	//Поприветствуем юзверя и расскажем где мы есть.
 	PrintToConsole("\nПриветствую! Это geoimgconv v."+ APP_VERSION+"\n");
@@ -597,8 +597,8 @@ int AppUIConsole::RunApp()
 	return 0;
 }
 
-int AppUIConsole::RunTestMode()
 //Метод для запуска в тестовом режиме.
+int AppUIConsole::RunTestMode()
 {
 	////Тестируем методы проверки строк.
 	////float
@@ -671,14 +671,14 @@ int AppUIConsole::RunTestMode()
 //       Прочий функционал        //
 //--------------------------------//
 
-void AppUIConsole::PrintToConsole(const std::string &str)
 //Вывести сообщение в обычную (не curses) консоль в правильной кодировке.
+void AppUIConsole::PrintToConsole(const std::string &str)
 {
 	std::cout << STB.Utf8ToConsoleCharset(str) << std::flush;
 }
 
-void AppUIConsole::PrintHelp()
 //Вывод справки.
+void AppUIConsole::PrintHelp()
 {
 	std::cout << confObj_->getHelpMsg();
 }

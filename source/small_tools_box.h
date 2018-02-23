@@ -40,8 +40,8 @@
 namespace geoimgconv
 {
 
-struct SysResInfo
 //Структура для метода GetSysResInfo
+struct SysResInfo
 {
 	unsigned int cpuCoresNumber;	//Количество ядер процессора.
 	unsigned long long systemMemoryFullSize;	//Общее количество (без свопа) оперативной памяти.
@@ -49,6 +49,7 @@ struct SysResInfo
 	unsigned long long maxProcessMemorySize;	//Сколько памяти может адресовать данный процесс.
 };
 
+//Класс-сборник разных функций.
 class SmallToolsBox
 {
 	private:

@@ -76,10 +76,10 @@ SmallToolsBox::~SmallToolsBox()
 {
 }
 
-void SmallToolsBox::InitEncodings()
 //Переключает глобальную локаль на текущую, в которой запущено приложение.\
 //Узнаёт и запоминает кодировки - в консоли и системную. Желательно вызвать
 //до обращения к функциям перекодировки.
+void SmallToolsBox::InitEncodings()
 {
 	boost::locale::generator locGen;
 	#ifdef _WIN32
@@ -104,43 +104,40 @@ void SmallToolsBox::InitEncodings()
 	encodingsInited_ = true;
 }
 
-string SmallToolsBox::Utf8ToConsoleCharset(const string &InputStr)
 //Перекодирует строку из utf8 в кодировку, подходящую для вывода в консоль.
+string SmallToolsBox::Utf8ToConsoleCharset(const string &InputStr)
 {
 	if (!encodingsInited_)
 		InitEncodings();
 	return boost::locale::conv::from_utf(InputStr, consoleEncoding_);
 }
 
-string SmallToolsBox::ConsoleCharsetToUtf8(const string &InputStr)
 //Перекодирует строку из кодировки консоли в utf8
+string SmallToolsBox::ConsoleCharsetToUtf8(const string &InputStr)
 {
 	if (!encodingsInited_)
 		InitEncodings();
 	return boost::locale::conv::to_utf<char>(InputStr, consoleEncoding_);
 }
 
-
-string SmallToolsBox::Utf8ToSystemCharset(const string &InputStr)
 //Перекодирует строку из utf8 в системную кодировку.
+string SmallToolsBox::Utf8ToSystemCharset(const string &InputStr)
 {
 	if (!encodingsInited_)
 		InitEncodings();
 	return boost::locale::conv::from_utf(InputStr, systemEncoding_);
 }
 
-
-string SmallToolsBox::SystemCharsetToUtf8(const string &InputStr)
 //Перекодирует строку из системной кодировки в utf8
+string SmallToolsBox::SystemCharsetToUtf8(const string &InputStr)
 {
 	if (!encodingsInited_)
 		InitEncodings();
 	return boost::locale::conv::to_utf<char>(InputStr, systemEncoding_);
 }
 
-
-string SmallToolsBox::Utf8ToSelectedCharset(const string &InputStr)
 //Перекодирует строку из utf8 в кодировку, выбранную ранее методами SelectCharset*.
+string SmallToolsBox::Utf8ToSelectedCharset(const string &InputStr)
 {
 	if (consoleEncodingIsSelected_)
 		return Utf8ToConsoleCharset(InputStr);
@@ -148,9 +145,8 @@ string SmallToolsBox::Utf8ToSelectedCharset(const string &InputStr)
 		return Utf8ToSystemCharset(InputStr);
 }
 
-
-string SmallToolsBox::SelectedCharsetToUtf8(const string &InputStr)
 //Перекодирует строку из кодировки, выбранной ранее методами SelectCharset* в utf8
+string SmallToolsBox::SelectedCharsetToUtf8(const string &InputStr)
 {
 	if (consoleEncodingIsSelected_)
 		return ConsoleCharsetToUtf8(InputStr);
@@ -158,54 +154,51 @@ string SmallToolsBox::SelectedCharsetToUtf8(const string &InputStr)
 		return SystemCharsetToUtf8(InputStr);
 }
 
-std::string SmallToolsBox::WstringToUtf8(const std::wstring &inputStr)
 //Перекодирует wstring в string в кодировке utf8
+std::string SmallToolsBox::WstringToUtf8(const std::wstring &inputStr)
 {
 	if (!encodingsInited_)
 		InitEncodings();
 	return boost::locale::conv::utf_to_utf<char,wchar_t>(inputStr);
 }
 
-std::wstring SmallToolsBox::Utf8ToWstring(const std::string &inputStr)
 //Перекодирует string в кодировке utf8 в wstring
+std::wstring SmallToolsBox::Utf8ToWstring(const std::string &inputStr)
 {
 	if (!encodingsInited_)
 		InitEncodings();
 	return boost::locale::conv::utf_to_utf<wchar_t,char>(inputStr);
 }
 
-
+//Преобразует double в строку с указанным количеством знаков после запятой.
 std::string SmallToolsBox::DoubleToString(const double &input,
 	const unsigned int &precision) const
-//Преобразует double в строку с указанным количеством знаков после запятой.
 {
 	std::ostringstream stringStream;
 	stringStream << std::fixed << std::setprecision(precision) << input;
 	return stringStream.str();
 }
 
-std::string SmallToolsBox::BoolToString(const bool &input) const
 //Преобразует bool в строку. Потоки или lexical_cast имхо лишнее.
+std::string SmallToolsBox::BoolToString(const bool &input) const
 {
 	return input ? "true" : "false";
 }
 
-
-void SmallToolsBox::Utf8ToLower(const std::string &inputStr, std::string &outputStr) const
 //Перевести в нижний регистр utf8-строку.
+void SmallToolsBox::Utf8ToLower(const std::string &inputStr, std::string &outputStr) const
 {
 	outputStr = boost::locale::to_lower(inputStr, utf8Locale_);
 }
 
-
-void SmallToolsBox::Utf8ToUpper(const std::string &inputStr, std::string &outputStr) const
 //Перевести в верхний регистр utf8-строку.
+void SmallToolsBox::Utf8ToUpper(const std::string &inputStr, std::string &outputStr) const
 {
 	outputStr = boost::locale::to_upper(inputStr, utf8Locale_);
 }
 
-const std::string SmallToolsBox::BytesNumToInfoSizeStr(const unsigned long long &bytesNum) const
 //Преобразовать количество байт в удобную для юзера строку с мегабайтами-гигабайтами.
+const std::string SmallToolsBox::BytesNumToInfoSizeStr(const unsigned long long &bytesNum) const
 {
 	using namespace boost;
 	//Если число меньше килобайта - выводим байты, иначе если меньше мегабайта - выводим
@@ -234,12 +227,12 @@ const std::string SmallToolsBox::BytesNumToInfoSizeStr(const unsigned long long 
 	}
 }
 
-const unsigned long long SmallToolsBox::InfoSizeToBytesNum(const std::string &inputStr, char defaultUnit) const
 //Прочитать количество информации в байтах из строки. Формат не совпадает с форматом,
 //выводимым методом выше. Здесь все символы кроме последнего должны быть беззнаковым
 //целым числом, последний же символ может быть B или b - байты, K или k - килобайты,
 //M или m - мегабайты, G или g - гигабайты, T или t - терабайты. Если символ не указан
 //- применяется символ по умолчанию (второй аргумент, b если не указан).
+const unsigned long long SmallToolsBox::InfoSizeToBytesNum(const std::string &inputStr, char defaultUnit) const
 {
 	unsigned long long result = 0;
 	char lastChar;
@@ -271,8 +264,8 @@ const unsigned long long SmallToolsBox::InfoSizeToBytesNum(const std::string &in
 	return result;
 }
 
-const bool SmallToolsBox::CheckUnsIntStr(const std::string &inputStr) const
 //Проверить содержится ли в строке целое беззнаковое число.
+const bool SmallToolsBox::CheckUnsIntStr(const std::string &inputStr) const
 {
 	if ((inputStr.length() > 0) && ((isdigit((unsigned char)(inputStr[0]))) || (inputStr[0] == '+')) )
 	{
@@ -287,8 +280,8 @@ const bool SmallToolsBox::CheckUnsIntStr(const std::string &inputStr) const
 		return false;
 }
 
-const bool SmallToolsBox::CheckSignedIntStr(const std::string &inputStr) const
 //Проверить содержится ли в строке целое со знаком.
+const bool SmallToolsBox::CheckSignedIntStr(const std::string &inputStr) const
 {
 	istringstream strStream(inputStr);
 	signed long long testVar;
@@ -297,8 +290,8 @@ const bool SmallToolsBox::CheckSignedIntStr(const std::string &inputStr) const
 	return strStream && strStream.eof();
 }
 
-const bool SmallToolsBox::CheckFloatStr(const std::string &inputStr) const
 //Проверить содержится ли в строке число с плавающей запятой
+const bool SmallToolsBox::CheckFloatStr(const std::string &inputStr) const
 {
 	istringstream strStream(inputStr);
 	long double testVar;
@@ -307,9 +300,9 @@ const bool SmallToolsBox::CheckFloatStr(const std::string &inputStr) const
 	return strStream && strStream.eof();
 }
 
-const bool SmallToolsBox::CheckInfoSizeStr(const std::string &inputStr) const
 //Проверить содержится ли в строке размер чего-либо в байтах (формат тот же, что в
 //методе InfoSizeToBytesNum()
+const bool SmallToolsBox::CheckInfoSizeStr(const std::string &inputStr) const
 {
 	//Всё кроме последнего символа должно быть unsigned int.
 	string tempStr = inputStr;
@@ -331,8 +324,8 @@ const bool SmallToolsBox::CheckInfoSizeStr(const std::string &inputStr) const
 	else return true;
 }
 
-const unsigned int SmallToolsBox::GetCpuCoresNumber() const
 //Возвращает число процессорных ядер или 0 если это количество получить не удалось.
+const unsigned int SmallToolsBox::GetCpuCoresNumber() const
 {
 	//Количество ядер умеет узнавать Boost. C++11 тоже умеет, но духи гугла говорят
 	//что буст надёжнее и реже возвращает 0.
@@ -342,8 +335,8 @@ const unsigned int SmallToolsBox::GetCpuCoresNumber() const
 }
 
 #ifdef __linux__
-const unsigned long long GetProcMeminfoField(const std::string &fieldName)
 //Парсим /proc/meminfo и вынимаем нужное нам значение. При ошибке вернём 0.
+const unsigned long long GetProcMeminfoField(const std::string &fieldName)
 {
 	using namespace boost;
 	unsigned long long result = 0;
@@ -399,8 +392,8 @@ const unsigned long long GetProcMeminfoField(const std::string &fieldName)
 	return result;
 }
 
-void FillSysInfoFromProcMeminfo(SysResInfo &infoStruct)
 //Парсим /proc/meminfo и вынимаем сразу все значения из тех, что можно записать в SysResInfo.
+void FillSysInfoFromProcMeminfo(SysResInfo &infoStruct)
 {
 	using namespace boost;
 	char fieldsNum = 2;	//Счётчик прочитанных полей чтобы не продолжать парсить файл когда вся инфа
@@ -466,8 +459,8 @@ void FillSysInfoFromProcMeminfo(SysResInfo &infoStruct)
 }
 #endif // __linux__
 
-const unsigned long long SmallToolsBox::GetSystemMemoryFullSize() const
 //Возвращает общее количество оперативной памяти (без свопа) в системе или 0 при ошибке.
+const unsigned long long SmallToolsBox::GetSystemMemoryFullSize() const
 {
 	unsigned long long result;
 	#ifdef _WIN32
@@ -502,9 +495,8 @@ const unsigned long long SmallToolsBox::GetSystemMemoryFullSize() const
 	return result;
 }
 
-
-const unsigned long long SmallToolsBox::GetSystemMemoryFreeSize() const
 //Возвращает количество свободной оперативной памяти (без свопа) в системе или 0 при ошибке.
+const unsigned long long SmallToolsBox::GetSystemMemoryFreeSize() const
 {
 	unsigned long long result;
 	#ifdef _WIN32
@@ -539,8 +531,8 @@ const unsigned long long SmallToolsBox::GetSystemMemoryFreeSize() const
 	return result;
 }
 
-const unsigned long long SmallToolsBox::GetMaxProcessMemorySize() const
 //Возвращает максимальное количество памяти, которое вообще может потребить данный процесс.
+const unsigned long long SmallToolsBox::GetMaxProcessMemorySize() const
 {
 	unsigned long long result = 0;
 	#ifdef _WIN32
@@ -590,9 +582,9 @@ const unsigned long long SmallToolsBox::GetMaxProcessMemorySize() const
 	return result;
 }
 
-void SmallToolsBox::GetSysResInfo(SysResInfo &infoStruct) const
 //Вернуть информацию о ресурсах системы - то же, что и несколько методов выше, но должно
 //работать быстрее чем последовательный вызов всех этих методов.
+void SmallToolsBox::GetSysResInfo(SysResInfo &infoStruct) const
 {
 	//Количество ядер умеет узнавать Boost. C++11 тоже умеет, но духи гугла говорят
 	//что буст надёжнее и реже возвращает 0.

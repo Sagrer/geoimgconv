@@ -16,7 +16,7 @@
 
 ////////////////////////////////////////////////////////////////////////
 
-//Сборник типов для обработки ошибок.
+//Обработка ошибок.
 
 #include <string>
 
@@ -39,6 +39,7 @@ enum CommonErrors : int
 	CMNERR_UNKNOWN_ERROR = 10
 };
 
+//Текстовое представление для enum CommonErrors
 extern const std::string CommonErrorsTexts[];
 
 class ErrorInfo

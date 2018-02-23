@@ -49,10 +49,10 @@ const MarginType DEFAULT_MARGIN_TYPE = MARGIN_MIRROR_FILLING;
 //       Приватные методы         //
 //--------------------------------//
 
-template <typename CellType>
-bool RealMedianFilterTemplBase<CellType>::PixelStep(int &x, int &y, const PixelDirection direction)
 //Сделать шаг по пиксельным координатам в указанном направлении.
 //Вернёт false если координаты ушли за границы изображения, иначе true.
+template <typename CellType>
+bool RealMedianFilterTemplBase<CellType>::PixelStep(int &x, int &y, const PixelDirection direction)
 {
 	if (direction == PIXEL_DIR_UP)
 	{
@@ -154,10 +154,10 @@ void RealMedianFilterTemplBase<CellType>::GetMirrorPixel(const int &x, const int
 	} while(found==false);
 };
 
+//Заполнять пиксели простым алгоритмом в указанном направлении
 template <typename CellType>
 void RealMedianFilterTemplBase<CellType>::SimpleFiller(const int &x, const int &y,
 	const PixelDirection direction, const int &marginSize)
-//Заполнять пиксели простым алгоритмом в указанном направлении
 {
 	int currX = x;
 	int currY = y;
@@ -185,10 +185,10 @@ void RealMedianFilterTemplBase<CellType>::SimpleFiller(const int &x, const int &
 	}
 }
 
+//Заполнять пиксели зеркальным алгоритмом в указанном направлении
 template <typename CellType>
 void RealMedianFilterTemplBase<CellType>::MirrorFiller(const int &x, const int &y,
 	const PixelDirection direction, const int &marginSize)
-//Заполнять пиксели зеркальным алгоритмом в указанном направлении
 {
 	int currX = x;
 	int currY = y;
@@ -218,10 +218,10 @@ void RealMedianFilterTemplBase<CellType>::MirrorFiller(const int &x, const int &
 	}
 }
 
+//Костяк алгоритма, общий для Simple и Mirror
 template <typename CellType>
 void RealMedianFilterTemplBase<CellType>::FillMargins_PixelBasedAlgo(const TFillerMethod FillerMethod,
 	CallBackBase *callBackObj)
-//Костяк алгоритма, общий для Simple и Mirror
 {
 	//Двигаемся построчно, пока не найдём значимый пиксель. В границы не лезем,
 	//т.к. они значимыми быть не могут.
@@ -263,17 +263,17 @@ void RealMedianFilterTemplBase<CellType>::FillMargins_PixelBasedAlgo(const TFill
 	}
 }
 
+//Заполнить пустые пиксели source-матрицы простым алгоритмом (сплошной цвет).
 template <typename CellType>
 void RealMedianFilterTemplBase<CellType>::FillMargins_Simple(CallBackBase *callBackObj)
-//Заполнить пустые пиксели source-матрицы простым алгоритмом (сплошной цвет).
 {
 	FillMargins_PixelBasedAlgo(&RealMedianFilterTemplBase<CellType>::SimpleFiller,
 		callBackObj);
 }
 
+//Заполнить пустые пиксели source-матрицы зеркальным алгоритмом.
 template <typename CellType>
 void RealMedianFilterTemplBase<CellType>::FillMargins_Mirror(CallBackBase *callBackObj)
-//Заполнить пустые пиксели source-матрицы зеркальным алгоритмом.
 {
 	FillMargins_PixelBasedAlgo(&RealMedianFilterTemplBase<CellType>::MirrorFiller,
 		callBackObj);
@@ -283,11 +283,11 @@ void RealMedianFilterTemplBase<CellType>::FillMargins_Mirror(CallBackBase *callB
 //       Прочий функционал        //
 //--------------------------------//
 
+//Читает изображение в матрицу так чтобы по краям оставалось место для создания граничных
+//пикселей.
 template <typename CellType>
 bool RealMedianFilterTemplBase<CellType>::LoadImage(const std::string &fileName, ErrorInfo *errObj,
 	CallBackBase *callBackObj)
-//Читает изображение в матрицу так чтобы по краям оставалось место для создания граничных
-//пикселей.
 {
 	//Чистим матрицу и грузим в неё файл.
 	bool result;
@@ -299,11 +299,11 @@ bool RealMedianFilterTemplBase<CellType>::LoadImage(const std::string &fileName,
 	return result;
 }
 
-template <typename CellType>
-bool  RealMedianFilterTemplBase<CellType>::SaveImage(const std::string &fileName, ErrorInfo *errObj)
 //Сохраняет матрицу в изображение. За основу берётся ранее загруженная через LoadImage
 //картинка - файл копируется под новым именем и затем в него вносятся изменённые пиксели.
-///В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
+//В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
+template <typename CellType>
+bool  RealMedianFilterTemplBase<CellType>::SaveImage(const std::string &fileName, ErrorInfo *errObj)
 {
 	//Недопилено.
 	filesystem::path destFilePath, sourceFilePath, tempFilePath, basePath;
@@ -373,10 +373,10 @@ bool  RealMedianFilterTemplBase<CellType>::SaveImage(const std::string &fileName
 	return true;
 }
 
-template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::FillMargins(CallBackBase *callBackObj)
 //Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 //выбранным алгоритмом.
+template <typename CellType>
+void RealMedianFilterTemplBase<CellType>::FillMargins(CallBackBase *callBackObj)
 {
 	switch (getOwnerObj().getMarginType())
 	{
@@ -385,9 +385,9 @@ void RealMedianFilterTemplBase<CellType>::FillMargins(CallBackBase *callBackObj)
 	}		
 }
 
+//Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
 template <typename CellType>
 void RealMedianFilterTemplBase<CellType>::ApplyStupidFilter(CallBackBase *callBackObj)
-//Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
 {
 	//Данный метод применяет медианный фильтр "в лоб", т.ч. тупо для каждого пикселя создаёт
 	//массив из всех пикселей, входящих в окно, после чего сортирует массив и медиану подставляет
@@ -453,10 +453,10 @@ void RealMedianFilterTemplBase<CellType>::ApplyStupidFilter(CallBackBase *callBa
 	delete[] medianArr;
 }
 
-template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::ApplyStubFilter(CallBackBase *callBackObj)
 //Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
 //Для отладки. Результат записывает в destMatrix_.
+template <typename CellType>
+void RealMedianFilterTemplBase<CellType>::ApplyStubFilter(CallBackBase *callBackObj)
 {
 	int destX, destY, sourceX, sourceY, marginSize;
 	marginSize = (getOwnerObj().getAperture() - 1) / 2;
@@ -486,27 +486,27 @@ void RealMedianFilterTemplBase<CellType>::ApplyStubFilter(CallBackBase *callBack
 	};
 }
 
+//"Тупая" визуализация матрицы, отправляется прямо в cout.
 template <typename CellType>
 void RealMedianFilterTemplBase<CellType>::SourcePrintStupidVisToCout()
-//"Тупая" визуализация матрицы, отправляется прямо в cout.
 {
 	//Просто проброс вызова в объект матрицы.
 	sourceMatrix_.PrintStupidVisToCout();
 }
 
-template <typename CellType>
-bool RealMedianFilterTemplBase<CellType>::SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
 //Вывод исходной матрицы в csv-файл, который должны понимать всякие картографические
 //программы. Это значит что каждый пиксел - это одна строка в файле.
 //Это "тупой" вариант вывода - метаданные нормально не сохраняются.
+template <typename CellType>
+bool RealMedianFilterTemplBase<CellType>::SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
 {
 	//Просто проброс вызова в объект матрицы.
 	return sourceMatrix_.SaveToCSVFile(fileName, errObj);
 }
 
+//Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 template <typename CellType>
 bool RealMedianFilterTemplBase<CellType>::DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
-//Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 {
 	//Просто проброс вызова в объект матрицы.
 	return destMatrix_.SaveToCSVFile(fileName, errObj);
@@ -535,9 +535,9 @@ MedianFilter::~MedianFilter()
 //     Приватные методы     //
 //--------------------------//
 
-void MedianFilter::CalcMemSizes()
 //Вычислить минимальные размеры блоков памяти, которые нужны для принятия решения о
 //том сколько памяти разрешено использовать медианному фильтру в процессе своей работы.
+void MedianFilter::CalcMemSizes()
 {
 	//Смысл в том, что фильтр обрабатывает картинку, в которой помимо самой картинки содержатся
 	//граничные пиксели - сверху, снизу, слева, справа. Они либо генерируются одним из алгоритмов,
@@ -585,9 +585,9 @@ void MedianFilter::CalcMemSizes()
 //      Прочие методы       //
 //--------------------------//
 
-bool MedianFilter::SelectInputFile(const std::string &fileName, ErrorInfo *errObj)
 //Выбрать исходный файл для дальнейшего чтения и обработки. Получает информацию о параметрах изображения,
 //запоминает её в полях объекта.
+bool MedianFilter::SelectInputFile(const std::string &fileName, ErrorInfo *errObj)
 {
 	//TODO: когда избавлюсь от Load и Save - тут должны будут создаваться объекты GDAL, существующие до
 	//завершения работы с файлом. Чтобы не создавать их постоянно в процессе по-кусочечной обработки
@@ -703,10 +703,9 @@ bool MedianFilter::SelectInputFile(const std::string &fileName, ErrorInfo *errOb
 	}
 }
 
-
-bool MedianFilter::SelectOutputFile(const std::string &fileName, const bool &forceRewrite, ErrorInfo *errObj)
 //Подготовить целевой файл к записи в него результата. Если forceRewrite==false - вернёт ошибку в виде
 //false и кода ошибки в errObj.
+bool MedianFilter::SelectOutputFile(const std::string &fileName, const bool &forceRewrite, ErrorInfo *errObj)
 {
 	//Заглушка.
 	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
@@ -727,10 +726,10 @@ bool MedianFilter::LoadImage(const std::string &fileName, ErrorInfo *errObj,
 	return imageIsLoaded_;
 }
 
-bool MedianFilter::SaveImage(const std::string &fileName, ErrorInfo *errObj)
 //Сохраняет матрицу в изображение. За основу берётся ранее загруженная через LoadImage
 //картинка - файл копируется под новым именем и затем в него вносятся изменённые пиксели.
-///В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
+//В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
+bool MedianFilter::SaveImage(const std::string &fileName, ErrorInfo *errObj)
 {
 	//Тупой проброс вызова.
 	if (imageIsLoaded_)
@@ -744,9 +743,9 @@ bool MedianFilter::SaveImage(const std::string &fileName, ErrorInfo *errObj)
 	}
 }
 
-void MedianFilter::FillMargins(CallBackBase *callBackObj)
 //Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 //выбранным алгоритмом.
+void MedianFilter::FillMargins(CallBackBase *callBackObj)
 {
 	//Проброс вызова.
 	if (imageIsLoaded_)
@@ -755,8 +754,8 @@ void MedianFilter::FillMargins(CallBackBase *callBackObj)
 	}
 }
 
-void MedianFilter::ApplyStupidFilter(CallBackBase *callBackObj)
 //Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
+void MedianFilter::ApplyStupidFilter(CallBackBase *callBackObj)
 {
 	//Проброс вызова
 	if (imageIsLoaded_)
@@ -780,9 +779,9 @@ void MedianFilter::FixAperture()
 	}
 }
 
-void MedianFilter::ApplyStubFilter(CallBackBase *callBackObj)
 //Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
 //Для отладки. Результат записывает в destMatrix_.
+void MedianFilter::ApplyStubFilter(CallBackBase *callBackObj)
 {
 	//Проброс вызова
 	if (imageIsLoaded_)
@@ -791,24 +790,24 @@ void MedianFilter::ApplyStubFilter(CallBackBase *callBackObj)
 	}
 }
 
-void MedianFilter::SourcePrintStupidVisToCout()
 //"Тупая" визуализация матрицы, отправляется прямо в cout.
+void MedianFilter::SourcePrintStupidVisToCout()
 {
 	//Просто проброс вызова в объект матрицы.
 	pFilterObj_->SourcePrintStupidVisToCout();
 }
 
-bool MedianFilter::SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
 //Вывод исходной матрицы в csv-файл, который должны понимать всякие картографические
 //программы. Это значит что каждый пиксел - это одна строка в файле.
 //Это "тупой" вариант вывода - метаданные нормально не сохраняются.
+bool MedianFilter::SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
 {
 	//Просто проброс вызова в объект матрицы.
 	return pFilterObj_->SourceSaveToCSVFile(fileName, errObj);
 }
 
-bool MedianFilter::DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
 //Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
+bool MedianFilter::DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
 {
 	//Просто проброс вызова в объект матрицы.
 	return pFilterObj_->DestSaveToCSVFile(fileName, errObj);

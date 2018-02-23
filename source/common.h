@@ -27,8 +27,8 @@
 namespace geoimgconv
 {
 
-enum MarginType : unsigned char
 //Возможные типы заполнения "пустых" пикселей чтобы можно было обсчитывать краевые пиксели.
+enum MarginType : unsigned char
 {
 	MARGIN_SIMPLE_FILLING = 0,	//- заполняется просто копией краевых пикселей.
 	MARGIN_MIRROR_FILLING = 1,	//- заполняется зеркальным отображением пикселей за краевым на глубину в половину апертуры.
@@ -39,8 +39,8 @@ enum MarginType : unsigned char
 //Текстовое представление элементов MarginType
 extern const std::string MarginTypesTexts[];
 
-enum PixelType
 //Типы пикселей в изображениях, поддерживаемые geoimgeconv.
+enum PixelType
 {
 	PIXEL_UNKNOWN,
 	PIXEL_INT8,
@@ -53,8 +53,8 @@ enum PixelType
 	PIXEL_FLOAT64
 };
 
-enum PixelDirection
 //Направление движения по пикселям
+enum PixelDirection
 {
 	PIXEL_DIR_UP,
 	PIXEL_DIR_DOWN,
@@ -66,8 +66,8 @@ enum PixelDirection
 	PIXEL_DIR_DOWN_LEFT
 };
 
-enum AppMode : unsigned char
 //Режим работы программы, задаваемый при запуске
+enum AppMode : unsigned char
 {
 	APPMODE_MEDIAN = 0,	//Просто медианный фильтр в консоли.
 	APPMODE_MEDIAN_CURSES = 1,	//Медианный фильтр в curses-интерфейсе.
@@ -82,8 +82,8 @@ enum AppMode : unsigned char
 //Текстовое представление для AppMode
 extern const std::string AppModeTexts[];
 
-enum MemoryMode : unsigned char
 //Режим использования памяти программой
+enum MemoryMode : unsigned char
 {
 	MEMORY_MODE_AUTO = 0,		//Выберать режим на своё усмотрение.
 	MEMORY_MODE_LIMIT = 1,		//Занять под рабочее множество не более указанного количества памяти.
@@ -124,13 +124,13 @@ AppMode AppModeStrToEnum(const std::string &inputStr);
 //элементов MarginTypeTexts
 MarginType MarginTypeStrToEnum(const std::string &inputStr);
 
-class CallBackBase
 //Абстрактный класс для организации вызова калбеков. Можно было бы передавать просто
 //ссылки на функцию, но тогда эти функции будут отвязаны от данных потока в котором
 //должны выполняться. Поэтому имхо проще передать вместо ссылки на функцию ссылку на
 //объект, в котором есть и вызываемый метод и привязанные к этому вызову данные.
 //Данный класс - абстрактный, от него нужно унаследовать конкретную реализацию с нужным
 //функционалом.
+class CallBackBase
 {
 	private:
 		unsigned long maxProgress_;	//Значение при котором прогресс считается 100%

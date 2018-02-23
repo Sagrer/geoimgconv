@@ -72,17 +72,17 @@ AppConfig::~AppConfig()
 //       Приватные методы         //
 //--------------------------------//
 
-bool AppConfig::ReadConfigFile_(const std::string &filePath, ErrorInfo *errObj)
 //Прочитать ini-файл по указанному пути. Файл должен существовать.
+bool AppConfig::ReadConfigFile_(const std::string &filePath, ErrorInfo *errObj)
 {
 	//Заглушка
 	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
 	return false;
 };
 
-void AppConfig::FillBasePO_()
 //Заполнить заполнябельные ещё до разбора командной строки объекты
 //program_options. Вызывается конструктором.
+void AppConfig::FillBasePO_()
 {
 	namespace po = boost::program_options;
 	//Извратный синтаксис с перегруженными скобками.
@@ -106,9 +106,9 @@ void AppConfig::FillBasePO_()
 	//TODO: аналогично задать configParamsDesc_
 }
 
-void AppConfig::FillDependentPO_()
 //Заполнить остальные объекты program_options, которые могут быть заполнены
 //только после чтения параметров командной строки и конфига.
+void AppConfig::FillDependentPO_()
 {
 	//Считаем что STB настроен на нужную Selected-кодировку.
 	namespace po = boost::program_options;
@@ -169,10 +169,10 @@ MemoryModeTexts[MEMORY_MODE_AUTO] + ".").c_str())
 	;
 }
 
-void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memMode, unsigned long long &size)
 //Получить MemoryMode из строки, совпадающей без учёта регистра с одним из
 //элементов MemoryModeTexts + прочитать и правильно интерпретировать
 //указанный там размер.
+void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memMode, unsigned long long &size)
 {
 	std::string inpStr;
 	STB.Utf8ToLower(inputStr, inpStr);
@@ -226,8 +226,8 @@ void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memM
 //         Прочие методы          //
 //--------------------------------//
 
-const std::string AppConfig::getHelpMsg()
 //helpMsg (генерируется)
+const std::string AppConfig::getHelpMsg()
 {
 	std::ostringstream tempStream;
 	tempStream << STB.Utf8ToSelectedCharset(
@@ -240,8 +240,8 @@ const std::string AppConfig::getHelpMsg()
 	return tempStream.str();
 }
 
-bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj)
 //Прочитать параметры командной строки.
+bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj)
 {
 	namespace po = boost::program_options;
 	po::options_description desc;
@@ -381,9 +381,9 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 	return true;
 }
 
-bool AppConfig::ReadConfigFile(ErrorInfo *errObj)
 //Прочитать ini-файл с настройками. Файл ищется по стандартным местам
 //где он может быть и имеет стандартное для программы имя.
+bool AppConfig::ReadConfigFile(ErrorInfo *errObj)
 {
 	//Заглушка
 	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
