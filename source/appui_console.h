@@ -27,6 +27,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include "app_config.h"
 #include "small_tools_box.h"
+#include "base_filter.h"
 
 namespace geoimgconv
 {
@@ -100,15 +101,14 @@ private:
 	//количество блоков, которое используемый в данный момент фильтр может одновременно держать
 	//в памяти. Результат пишется в maxMemCanBeUsed_ (количество памяти в байтах) и в
 	//maxBlocksCanBeUsed_ (количество блоков). В случае ошибки туда запишется 0.
-	//minMemSize - реальное минимально допустимое количество памяти, требуемое фильтром
-	//для работы. Если оно не влезет в память вообще никак - метод вернёт false. При этом если
+	//filterObj - объект фильтра, который будет обрабатывать изображение.
+	//Если изображение не влезет в память вообще никак - вернёт false. При этом если
 	//изображение будет способно влезть в память только с попаданием части буфера в своп - метод
 	//самостоятельно спросит у юзверя что именно ему делать если swapMode позволяет.
-	//В minBlockSize содержится размер блока, кратно которому реально выбранный размер
-	//рабочего буфера может быть больше чем минимальный размер.
+	//swapMode - задаёт либо интерактивный режим либо тихий режим работы, в тихом режиме swap может
+	//либо использоваться либо не использоваться в зависимости от выбранного режима.
 	//Перед запуском метода _должен_ был быть выполнен метод DetectSysResInfo()!
-	bool DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize,
-		const unsigned long long &minBlockSize, const SwapMode swapMode = SWAPMODE_ASK,
+	bool DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const SwapMode swapMode = SWAPMODE_ASK,
 		ErrorInfo *errObj = NULL);
 
 	//Задетектить инфу для sysResInfo_

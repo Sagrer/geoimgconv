@@ -69,6 +69,7 @@ add_executable(geoimgconv
 	alt_matrix.h
 	errors.cpp
 	errors.h
+	base_filter.h
 	median_filter.cpp
 	median_filter.h
 	common.cpp

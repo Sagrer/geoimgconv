@@ -571,11 +571,14 @@ void MedianFilter::CalcMemSizes()
 	unsigned long long minSourceBlockSize = (2 * firstLastBlockHeight*blockWidth +
 		blockHeight * blockWidth) * (dataTypeSize_ + 1);
 	//Размер блока с результатом
-	unsigned long long minDestBlockSize = imageSizeX_ * imageSizeY_ * dataTypeSize_;
+	unsigned long long minDestBlockSize = imageSizeX_ * firstLastBlockHeight * dataTypeSize_;
 	//Минимальное допустимое количество памяти.
 	minMemSize_ = (3 * minSourceBlockSize) + minDestBlockSize;
 	//Обобщённый размер "блока", содержащего и исходные данные и результат.
 	minBlockSize_ = minSourceBlockSize + minDestBlockSize;
+	//Общее количество памяти, которое может потребоваться для для работы над изображением.
+	maxMemSize_ = (((2 * minBlockSize_) + (imageSizeX_ * imageSizeY_) + (firstLastBlockHeight * imageSizeY_)) *
+		(dataTypeSize_ + 1)) + (imageSizeX_ * imageSizeY_ * dataTypeSize_);
 }
 
 //--------------------------//

@@ -21,6 +21,7 @@
 #include "alt_matrix.h"
 #include "common.h"
 #include <string>
+#include "base_filter.h"
 
 namespace geoimgconv
 {
@@ -292,7 +293,7 @@ BOOST_STATIC_ASSERT_MSG(sizeof(float) == 4, "float size is not 32 bit! You need 
 
 //Обёртка с общей для всех типов пиксела функциональностью. Работать с фильтром надо именно через
 //этот класс! Не через RealMedianFilter*-ы!
-class MedianFilter
+class MedianFilter : public BaseFilter
 {
 private:
 	//Поля
@@ -315,6 +316,7 @@ private:
 	RealMedianFilterBase *pFilterObj_;	//Сюда будет создаваться объект для нужного типа данных.
 	unsigned long long minBlockSize_;	//Размер минимального блока, которыми обрабатывается файл.
 	unsigned long long minMemSize_;  //Минимальное количество памяти, без которого фильтр вообще не сможет обработать данное изображение.
+	unsigned long long maxMemSize_;  //Максимальное количество памяти, которое может потребоваться для обработки изображения.
 
 	//Приватные методы
 
@@ -353,16 +355,18 @@ public:
 	std::string const& getDestFileName() const { return destFileName_; }
 	//imageSizeX
 	int const& getImageSizeX() const { return imageSizeX_; }
-	void setImageSizeX(const int &imageSizeX) { imageSizeX_ = imageSizeX; }
+	//void setImageSizeX(const int &imageSizeX) { imageSizeX_ = imageSizeX; }
 	//imageSizeY
 	int const& getImageSizeY() const { return imageSizeY_; }
-	void setImageSizeY(const int &imageSizeY) { imageSizeY_ = imageSizeY; }
+	//void setImageSizeY(const int &imageSizeY) { imageSizeY_ = imageSizeY; }
 	//minBlockSize
 	unsigned long long const& getMinBlockSize() const { return minBlockSize_; }
 	//void setMinBlockSize(const unsigned long long &value) { minBlockSize_ = value; }
 	//minMemSize
 	unsigned long long const& getMinMemSize() const { return minMemSize_; }
 	//void setMinMemSize(const unsigned long long &value) { minMemSize_ = value; }
+	//maxMemSize
+	unsigned long long const& getMaxMemSize() const { return maxMemSize_; }
 
 	//Конструкторы-деструкторы
 	MedianFilter();

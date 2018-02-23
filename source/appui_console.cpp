@@ -173,19 +173,19 @@ AppUIConsole::~AppUIConsole()
 //        Приватные методы        //
 //--------------------------------//
 
-bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize,
-	const unsigned long long &minBlockSize, const SwapMode swapMode, ErrorInfo *errObj)
+bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const SwapMode swapMode, 
+	ErrorInfo *errObj)
 	//Задетектить какое максимальное количество памяти можно использовать исходя из
 	//характеристик компьютера и параметров, переданных в командной строке, а также вычислить
 	//количество блоков, которое используемый в данный момент фильтр может одновременно держать
 	//в памяти. Результат пишется в maxMemCanBeUsed_ (количество памяти в байтах) и в
 	//maxBlocksCanBeUsed_ (количество блоков). В случае ошибки туда запишется 0.
-	//minMemSize - реальное минимально допустимое количество памяти, требуемое фильтром
-	//для работы. Если оно не влезет в память вообще никак - метод вернёт false. При этом если
+	//filterObj - объект фильтра, который будет обрабатывать изображение.
+	//Если изображение не влезет в память вообще никак - вернёт false. При этом если
 	//изображение будет способно влезть в память только с попаданием части буфера в своп - метод
 	//самостоятельно спросит у юзверя что именно ему делать если swapMode позволяет.
-	//В minBlockSize содержится размер блока, кратно которому реально выбранный размер
-	//рабочего буфера может быть больше чем минимальный размер.
+	//swapMode - задаёт либо интерактивный режим либо тихий режим работы, в тихом режиме swap может
+	//либо использоваться либо не использоваться в зависимости от выбранного режима.
 	//Перед запуском метода _должен_ был быть выполнен метод DetectSysResInfo()!
 {
 	
@@ -193,6 +193,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 	//методы.
 	
 	maxMemCanBeUsed_ = 0;
+	maxBlocksCanBeUsed_ = 0;
 	//Определим лимит по адресному пространству в 90% от реального т.к. помимо данных фильтра
 	//процесс обязательно сожрал память на что-то ещё. Это должно уменьшить вероятность
 	//ошибок.
@@ -214,7 +215,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 
 	//Смотрим влезет ли указанный минимальный размер в оперативку и в лимит по адресному
 	//пространству (что актуально для 32битной версии)
-	if (minMemSize > sysResInfo_.maxProcessMemorySize)
+	if (filterObj.getMinMemSize() > sysResInfo_.maxProcessMemorySize)
 	{
 		if (errObj)
 			errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", минимальный размер блока, которыми \
@@ -222,20 +223,17 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 воспользоваться 64-битной версией программы.");
 		return false;
 	}
-	if ((swapMode == SWAPMODE_SILENT_NOSWAP) && (minMemSize > sysMemFreeSize))
+	if ((swapMode == SWAPMODE_SILENT_NOSWAP) && (filterObj.getMinMemSize() > sysMemFreeSize))
 	{
 		if (errObj)
 			errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
 		return false;
 	};
 
-	//Теперь всё зависит от режима работы с памятью. Если режим был MEMORY_MODE_ONECHUNK то в
-	//minMemSize у нас указан весь размер картинки и размер блока нам не интересен. Если же
-	//режим какой-то другой - надо будет учитывать minBlockSize и кратно ему подбирать оптимальный
-	//размер.
+	//Теперь всё зависит от режима работы с памятью.
 	if (confObj_->getMemMode() == MEMORY_MODE_ONECHUNK)
 	{
-		if ((swapMode == SWAPMODE_ASK) && (minMemSize > sysMemFreeSize))
+		if ((swapMode == SWAPMODE_ASK) && (filterObj.getMaxMemSize() > sysMemFreeSize))
 		{
 			//Нужно обрабатывать изображение одним куском, в свободную память оно не лезет, но
 			//помещается в максимально доступное адресное пространство. Надо спрашивать юзера.
@@ -248,7 +246,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 				return false;
 			}
 		}
-		maxMemCanBeUsed_ = minMemSize;
+		maxMemCanBeUsed_ = filterObj.getMaxMemSize();
 		maxBlocksCanBeUsed_ = 1;
 	}
 	//Далее - сначала получаем просто предельный лимит в байтах, и только потом единообразно
@@ -302,7 +300,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 
 		//Могло получиться так что минимальный блок не поместится в выбранное пространство.
 		//а лимит тут жёсткий, поэтому:
-		if (maxMemCanBeUsed_ < minMemSize)
+		if (maxMemCanBeUsed_ < filterObj.getMinMemSize())
 		{
 			if (errObj)
 				errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
@@ -324,7 +322,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 
 		//Могло получиться так что минимальный блок не поместится в выбранное пространство.
 		//а лимит тут жёсткий, поэтому:
-		if (maxMemCanBeUsed_ < minMemSize)
+		if (maxMemCanBeUsed_ < filterObj.getMinMemSize())
 		{
 			if (errObj)
 				errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
@@ -345,10 +343,10 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 		};
 		//Если получившийся объём памяти меньше минималки - в зависимости от swapMode
 		//можно попробовать использовать некую долю от реального ОЗУ.
-		if (maxMemCanBeUsed_ < minMemSize)
+		if (maxMemCanBeUsed_ < filterObj.getMinMemSize())
 		{
 			maxMemCanBeUsed_ = maxMemCanBeUsed_ = 90 * (sysMemFreeSize / 100);
-			if (!((maxMemCanBeUsed_ >= minMemSize) && (swapMode == SWAPMODE_ASK)
+			if (!((maxMemCanBeUsed_ >= filterObj.getMinMemSize()) && (swapMode == SWAPMODE_ASK)
 				&& ConsoleAnsweredYes(lexical_cast<string>(confObj_->getMemSize()) + "% \
 свободной памяти недостаточно для работы фильтра. Попробовать взять\n90%?")))
 			{
@@ -357,7 +355,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 			};
 		};
 		//Всё ещё есть вероятность что памяти недостаточно.
-		if (maxMemCanBeUsed_ < minMemSize)
+		if (maxMemCanBeUsed_ < filterObj.getMinMemSize())
 		{
 			if ((swapMode == SWAPMODE_SILENT_USESWAP) || ((swapMode == SWAPMODE_ASK) &&
 				(ConsoleAnsweredYes("Изображение поместится в память только при активном \
@@ -366,8 +364,8 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 				//Пока непонятно сколько точно памяти лучше выделять, остановлюсь либо на 70%
 				//от ОЗУ либо на минимально возможном для работы размере, смотря что больше.
 				maxMemCanBeUsed_ = 70 * (sysMemFullSize / 100);
-				if (maxMemCanBeUsed_ < minMemSize)
-					maxMemCanBeUsed_ = minMemSize;
+				if (maxMemCanBeUsed_ < filterObj.getMinMemSize())
+					maxMemCanBeUsed_ = filterObj.getMinMemSize();
 			}
 			else
 			{
@@ -395,18 +393,18 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const unsigned long long &minMemSize
 	if (!(confObj_->getMemMode() == MEMORY_MODE_ONECHUNK))
 	{
 		//Фиксированная часть памяти, не обязана быть кратной размеру блока. Может быть 0.
-		unsigned long long invariableMemSize = minMemSize - minBlockSize;
+		unsigned long long invariableMemSize = filterObj.getMinMemSize() - filterObj.getMinBlockSize();
 		//Вот эта часть _должна_ быть кратна размеру блока.
 		unsigned long long variableMemSize = maxMemCanBeUsed_ - invariableMemSize;
-		if (minBlockSize > variableMemSize)
+		if (filterObj.getMinBlockSize() > variableMemSize)
 		{
 			if (errObj)
 				errObj->SetError(CMNERR_UNKNOWN_ERROR, ", AppUIConsole::DetectMaxMemoryCanBeUsed() - wrong minBlockSize.");
 			return false;
 		}
 		//Целочисленное деление здесь как раз подходит :).
-		maxBlocksCanBeUsed_ = (variableMemSize / minBlockSize);
-		maxMemCanBeUsed_ = maxBlocksCanBeUsed_ * minBlockSize;
+		maxBlocksCanBeUsed_ = size_t(variableMemSize / filterObj.getMinBlockSize());
+		maxMemCanBeUsed_ = maxBlocksCanBeUsed_ * filterObj.getMinBlockSize();
 	}
 	
 	return true;
@@ -513,8 +511,7 @@ int AppUIConsole::RunApp()
 		return 1;
 	}
 	//Детектим сколько памяти нам нужно
-	if (!DetectMaxMemoryCanBeUsed(medFilter.getMinMemSize(), medFilter.getMinBlockSize(),
-		SWAPMODE_ASK, &errObj))
+	if (!DetectMaxMemoryCanBeUsed(medFilter, SWAPMODE_ASK, &errObj))
 	{
 		ConsolePrintError(errObj);
 		return 1;
@@ -526,8 +523,10 @@ int AppUIConsole::RunApp()
 
 	PrintToConsole("Программа будет обрабатывать файл, используя " +
 		STB.BytesNumToInfoSizeStr(maxMemCanBeUsed_) + " памяти, частями по " +
-		lexical_cast<std::string>(maxBlocksCanBeUsed_) + " блока(ов).\n\
-Размер блока: " + STB.BytesNumToInfoSizeStr(medFilter.getMinBlockSize()) + ".\n\n");
+		lexical_cast<std::string>(maxBlocksCanBeUsed_) + " блока(ов).\n");
+	if (confObj_->getMemMode() != MEMORY_MODE_ONECHUNK)
+		PrintToConsole("Размер блока: " + STB.BytesNumToInfoSizeStr(medFilter.getMinBlockSize()) + ".\n");
+	cout << endl;
 
 	//PrintToConsole("Для дополнительной отладки сохраняю файл: input_source.csv\n");
 	//if (!medFilter.SourceSaveToCSVFile("input_source.csv", &errObj))
