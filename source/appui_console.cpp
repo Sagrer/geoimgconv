@@ -266,6 +266,12 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		{
 			tempLimit = addrSizeLimit;
 		};
+		//Кроме того, нет смысла чтобы оно превышало максимальный размер, какой может потребоваться
+		//для обработки изображения.
+		if (tempLimit > filterObj.getMaxMemSize())
+		{
+			tempLimit = filterObj.getMaxMemSize();
+		};
 		//В любом случае - если оно помещается в свободную память - вопросов нет. Если только
 		//с подкачкой - смотрим на swapMode и при необходимости спрашиваем у юзера.
 		if (tempLimit > sysMemFreeSize)
@@ -304,6 +310,8 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		{
 			if (errObj)
 				errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
+			maxMemCanBeUsed_ = 0;
+			maxBlocksCanBeUsed_ = 0;
 			return false;
 		}
 	}
@@ -326,6 +334,8 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		{
 			if (errObj)
 				errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
+			maxMemCanBeUsed_ = 0;
+			maxBlocksCanBeUsed_ = 0;
 			return false;
 		}
 	}
@@ -340,6 +350,12 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 			break;
 		case MEMORY_MODE_AUTO:
 			maxMemCanBeUsed_ = 80 * (sysResInfo_.systemMemoryFreeSize / 100);
+		};
+		//Нет смысла чтобы оно превышало максимальный размер, какой может потребоваться
+		//для обработки изображения.
+		if (maxMemCanBeUsed_ > filterObj.getMaxMemSize())
+		{
+			maxMemCanBeUsed_ = filterObj.getMaxMemSize();
 		};
 		//Если получившийся объём памяти меньше минималки - в зависимости от swapMode
 		//можно попробовать использовать некую долю от реального ОЗУ.
@@ -371,6 +387,8 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 			{
 				if (errObj)
 					errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
+				maxMemCanBeUsed_ = 0;
+				maxBlocksCanBeUsed_ = 0;
 				return false;
 			}
 		}
@@ -394,12 +412,14 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 	{
 		//Фиксированная часть памяти, не обязана быть кратной размеру блока. Может быть 0.
 		unsigned long long invariableMemSize = filterObj.getMinMemSize() - filterObj.getMinBlockSize();
-		//Вот эта часть _должна_ быть кратна размеру блока.
+		//Вот эта часть _должна_ будет быть кратна размеру блока после выполнения кода ниже.
 		unsigned long long variableMemSize = maxMemCanBeUsed_ - invariableMemSize;
 		if (filterObj.getMinBlockSize() > variableMemSize)
 		{
 			if (errObj)
 				errObj->SetError(CMNERR_UNKNOWN_ERROR, ", AppUIConsole::DetectMaxMemoryCanBeUsed() - wrong minBlockSize.");
+			maxMemCanBeUsed_ = 0;
+			maxBlocksCanBeUsed_ = 0;
 			return false;
 		}
 		//Целочисленное деление здесь как раз подходит :).
