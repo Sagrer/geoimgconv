@@ -20,6 +20,10 @@
 
 #include "errors.h"
 #include "common.h"
+#pragma warning(push)
+#pragma warning(disable:4251)
+#include <gdal_priv.h>
+#pragma warning(pop)
 
 namespace geoimgconv
 {
@@ -92,6 +96,20 @@ public:
 
 	//Загружает матрицу высот из изображения через GDAL. Вернёт true если всё ок.
 	bool LoadFromGDALFile(const std::string &fileName, const int &marginSize = 0, ErrorInfo *errObj = NULL);
+
+	//Загружает из GDALRasterBand кусочек матрицы высот указанного размера, при этом верхние 2 блока
+	//берёт либо из файла либо из нижней чести другой (или из себя если дана ссылка на this) матрицы.
+	//Матрица уже должна иметь достаточный для загрузки размер.
+	//gdalRaster - указатель на объект GDALRasterBand исходного изображения.
+	//yPosition - начальная строка в исходном изображении, начиная с которой надо читать.
+	//yToRead - сколько строк читать.
+	//marginSize - высота блока, совпадающая с размером области граничных пикселей.
+	//marginMode - константа из enum TopMarginMode, определяет откуда будут взяты 2 верхних блока.
+	//sourceMatrix - ссылка на матрицу из которой берутся блоки в режиме TOP_MM_MATR.
+	//errObj - информация об ошибке если она была.
+	bool LoadFromGDALRaster(GDALRasterBand *gdalRaster, const int &yPosition, const int &yToRead,
+		const int &marginSize, TopMarginMode marginMode, AltMatrix<CellType> *sourceMatrix = NULL,
+		ErrorInfo *errObj = NULL);
 
 	//Создаёт в аргументе новую матрицу, вероятно меньшего размера. Старая матрица, если она
 	//там была - удаляется. В созданную матрицу копируется кусок this-матрицы указанного размера.

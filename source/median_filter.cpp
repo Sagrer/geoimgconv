@@ -489,7 +489,7 @@ void RealMedianFilterTemplBase<CellType>::ApplyStubFilter_old(CallBackBase *call
 //Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
 //Для отладки. Результат записывается в выбранный destFile
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::ApplyStubFilter(CallBackBase *callBackObj = NULL)
+void RealMedianFilterTemplBase<CellType>::ApplyStubFilter(CallBackBase *callBackObj)
 {
 	//Новый вариант "никакого" фильтра. Работающий по кускам.
 }

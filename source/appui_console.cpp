@@ -665,6 +665,40 @@ int AppUIConsole::RunTestMode()
 	//PrintToConsole("1t is in bytes: ");
 	//cout << STB.InfoSizeToBytesNum("1t") << "\n";
 
+	////Тестирование AltMatrix<>::LoadFromGDALRaster
+	//GDALRegister_GTiff();	//Регистрация драйвера GDAL.
+	//cout << "Opening input.tif..." << endl;
+	//GDALDataset *inputDataset = (GDALDataset*)GDALOpen("input.tif", GA_ReadOnly);
+	//GDALRasterBand *inputRaster = inputDataset->GetRasterBand(1);
+	//int rasterXSize = inputRaster->GetXSize();
+	//int rasterYSize = inputRaster->GetYSize();
+	//AltMatrix<double> testMatrix(true);
+	//int marginSize = 50;
+	////Читаем первые 150 строк в пустую матрицу, сохраняем что получилось как csv
+	//testMatrix.CreateEmpty(rasterXSize + marginSize * 2, 250);
+	//cout << "Reading first 200 lines..." << endl;
+	//testMatrix.LoadFromGDALRaster(inputRaster, 0, 200, marginSize, TOP_MM_FILE1);
+	//cout << "Saving output01.csv..." << endl;
+	//testMatrix.SaveToCSVFile("output01.csv");
+	////Читаем следующие 150 строк.
+	//cout << "Reading next 150 lines..." << endl;
+	//testMatrix.LoadFromGDALRaster(inputRaster, 200, 150, marginSize, TOP_MM_MATR, &testMatrix);
+	//cout << "Saving output02.csv..." << endl;
+	//testMatrix.SaveToCSVFile("output02.csv");
+	////Читаем следующие 150 строк.
+	//cout << "Reading next 150 lines..." << endl;
+	//testMatrix.LoadFromGDALRaster(inputRaster, 350, 150, marginSize, TOP_MM_MATR, &testMatrix);
+	//cout << "Saving output03.csv..." << endl;
+	//testMatrix.SaveToCSVFile("output03.csv");
+	////Читаем остатки.
+	//cout << "Reading next 92 lines..." << endl;
+	//testMatrix.LoadFromGDALRaster(inputRaster, 500, 92, marginSize, TOP_MM_MATR, &testMatrix);
+	//cout << "Saving output04.csv..." << endl;
+	//testMatrix.SaveToCSVFile("output04.csv");
+	//cout << "Done." << endl;
+	////Главное не забыть закрыть файл!!!
+	//GDALClose(inputDataset);
+
 	//Заглушка, работает когда ничего не тестируется.
 	PrintToConsole("Вы кто такие? Я вас не звал! Никаких тестов в этой версии\n\
 всё равно не выполняется ;).\n");

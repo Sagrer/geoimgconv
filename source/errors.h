@@ -36,7 +36,8 @@ enum CommonErrors : int
 	CMNERR_CMDLINE_PARSE_ERROR = 7,
 	CMNERR_UNKNOWN_IDENTIF = 8,
 	CMNERR_CANT_ALLOC_MEMORY = 9,
-	CMNERR_UNKNOWN_ERROR = 10
+	CMNERR_INTERNAL_ERROR = 10,
+	CMNERR_UNKNOWN_ERROR = 11
 };
 
 //Текстовое представление для enum CommonErrors

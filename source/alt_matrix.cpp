@@ -18,10 +18,6 @@
 
 #include "alt_matrix.h"
 #include <boost/cstdint.hpp>
-#pragma warning(push)
-#pragma warning(disable:4251)
-#include <gdal_priv.h>
-#pragma warning(pop)
 #include <boost/filesystem.hpp>
 #include <typeinfo>
 #include <iostream>
@@ -51,6 +47,7 @@ template <typename CellType> void AntiUnrExtsHelper()
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveToGDALFile);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::LoadFromFile);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::LoadFromGDALFile);
+	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::LoadFromGDALRaster);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveChunkToMatrix);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveChunkToFile);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::Clear);
@@ -131,7 +128,7 @@ bool AltMatrix<CellType>::SaveToFile(const string &fileName, ErrorInfo *errObj) 
 }
 
 //Сохраняет матрицу высот в изображение через GDAL. Изображение уже должно существовать,
-//т.е. мы просто заменяем там указанную часть пикселей. xStart и yStart задают прямоугольник,
+//т.е. мы просто заменяем там указанную часть пикселей. yStart и yStart задают прямоугольник,
 //пикселы из которого будут перезаписаны. T.е. задаёт верхний левый угол в целевом изображении,
 //в который попадёт верхний левый угол записываемого изображения. Размер прямоугольника
 //определяется размером собственно матрицы, размеры целевого изображения должны ему
@@ -272,6 +269,109 @@ bool AltMatrix<CellType>::LoadFromGDALFile(const std::string &fileName,
 	}
 
 	//Ок, всё ок ).
+	return true;
+}
+
+//Загружает из GDALRasterBand кусочек матрицы высот указанного размера, при этом верхние 2 блока
+//берёт либо из файла либо из нижней чести другой (или из себя если дана ссылка на this) матрицы.
+//Матрица уже должна иметь достаточный для загрузки размер.
+//gdalRaster - указатель на объект GDALRasterBand исходного изображения.
+//yPosition - начальная строка в исходном изображении, начиная с которой надо читать.
+//yToRead - сколько строк читать.
+//marginSize - высота блока, совпадающая с размером области граничных пикселей.
+//marginMode - константа из enum TopMarginMode, определяет откуда будут взяты 2 верхних блока.
+//sourceMatrix - ссылка на матрицу из которой берутся блоки в режиме TOP_MM_MATR.
+//errObj - информация об ошибке если она была.
+template <typename CellType>
+bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const int &yPosition, const int &yToRead,
+	const int &marginSize, TopMarginMode marginMode, AltMatrix<CellType> *sourceMatrix, ErrorInfo *errObj)
+{
+	//Первым делом надо или обнулить или скопировать начальную часть матрицы.
+	int yStart = 0;		//Строка матрицы на которую надо будет начинать читать из файла. Может измениться ниже.
+	switch (marginMode)
+	{
+	case TOP_MM_FILE1:
+	{
+		//Надо обнулить.
+		size_t blockSize = xSize_ * marginSize;
+		size_t blockSizeBytes = blockSize * sizeof(CellType);
+		memset(data_, 0, blockSizeBytes);
+		if (useSignData_)
+			memset(signData_, 0, blockSize);
+		yStart = marginSize;
+	}
+		break;
+	case TOP_MM_MATR:
+		//Надо скопировать.
+		if ((sourceMatrix == NULL) ||
+			(sourceMatrix->xSize_ != xSize_) ||
+			(sourceMatrix->ySize_ != ySize_))
+		{
+			if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": AltMatrix<>::LoadFromGDALRaster wrong sourceMatrix");
+			return false;
+		}
+		//Собственно, копируем 2 блока из конца sourceMatrix в начало this.
+		yStart = marginSize * 2;  //это не только yStart но и удвоенная высота блока )). В рассчётах используется и в этом смысле.
+		size_t blocksSize = yStart * xSize_;
+		size_t blocksSizeBytes = blocksSize * sizeof(CellType);
+		size_t sourceOffset = (ySize_ - yStart)*xSize_;
+		size_t sourceOffsetBytes = sourceOffset * sizeof(CellType);
+		memcpy_s(data_, blocksSizeBytes, (char*)sourceMatrix->data_ + sourceOffsetBytes, blocksSizeBytes);
+		if (useSignData_ && sourceMatrix->useSignData_)
+			memcpy_s(signData_, blocksSize, (char*)sourceMatrix->signData_ + sourceOffset, blocksSize);
+		else if (useSignData_)
+			memset(signData_, 0, blocksSize);
+	}
+
+	//Теперь надо прочитать информацию из файла.
+
+	//RasterIO умеет в spacing, поэтому нет необходимости читать картинку построчно для того
+	//чтобы добавлять в начале и конце строк пустоту для marginSize. Всё можно загрузить сразу
+	//одним вызовом, главное не накосячить в рассчётах, иначе картинка превращается
+	//в пиксельное месиво :).
+	CPLErr gdalResult;
+	int rasterXSize = gdalRaster->GetXSize();
+	int rasterYSize = gdalRaster->GetYSize();
+	gdalResult = gdalRaster->RasterIO(GF_Read, 0, yPosition, rasterXSize, yToRead,
+		(void*)((CellType*)(data_)+yStart * xSize_ + marginSize),
+		rasterXSize, yToRead, GICToGDAL_PixelType(pixelType_), 0,
+		(rasterXSize + (marginSize * 2)) * sizeof(CellType), NULL);
+	if (gdalResult != CE_None)
+	{
+		if (errObj) errObj->SetError(CMNERR_READ_ERROR, ": " + GetLastGDALError());
+		return false;
+	}
+
+	//Надо понять последнее ли это чтение.
+	int yProcessed = yStart+yToRead;
+	if (yProcessed <= (ySize_ - marginSize))
+	{
+		//Последнее чтение. Классифицировать придётся меньшую часть пикселей. Для лишней части
+		//вспомогательную и основную матрицы надо будет обнулить т.к. там могли остаться значения
+		//с прошлых проходов.
+		size_t elemsNum = (ySize_ - yProcessed) * xSize_;
+		memset((void*)(matrixArr_[yProcessed]), 0, elemsNum * sizeof(CellType));
+		if (useSignData_)
+			memset((void*)(signMatrixArr_[yProcessed]), 0, elemsNum);
+	}
+
+	//Осталось пробежаться по всем пикселям и отклассифицировать их на значимые и незначимые.
+	//Незначимыми считаем пиксели равные нулю. Граничные пиксели кстати трогать нет смысла.
+	if (useSignData_)
+	{
+		int i, j;
+		for (i = yStart; i < yProcessed; i++)
+		{
+			for (j = marginSize; j < (xSize_ - marginSize); j++)
+			{
+				if (matrixArr_[i][j] != CellType(0))
+					//Это значимый пиксель.
+					signMatrixArr_[i][j] = 1;
+			}
+		}
+	}
+	
+	//Готово.
 	return true;
 }
 

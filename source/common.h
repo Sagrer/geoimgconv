@@ -97,6 +97,14 @@ enum MemoryMode : unsigned char
 //Текстовое представление для MemoryMode (без цифр)
 extern const std::string MemoryModeTexts[];
 
+//Режим чтения верхней граничной части изображения.
+enum TopMarginMode : unsigned char
+{
+	TOP_MM_FILE1 = 0,	//Читать 1 блок из файла (только второй, т.е. ниже самого верхнего).
+	TOP_MM_FILE2 = 1,	//Читать 2 блока из файла.
+	TOP_MM_MATR = 3		//Скопировать 2 блока из конца другой (или той же) матрицы.
+};
+
 //Преобразование типа пикселя из enum-а GDALDataType в PixelType.
 //Важный момент - если тип был PIXEL_INT8 - невозможно просто так понять
 //signed там или unsigned. Для того чтобы отличить одно от другого - надо
