@@ -581,7 +581,7 @@ int AppUIConsole::RunApp()
 	//};
 
 
-	PrintToConsole("Старая реализация фильтра отклоючена. Новая в этой версии пока не работает. Такие дела :(.\n\n");
+	PrintToConsole("Старая реализация фильтра отключена. Новая в этой версии пока не работает. Такие дела :(.\n\n");
 	//PrintToConsole("Готово. Применяю \"тупую\" версию фильтра.\n");
 	//PrintToConsole("Апертура: " + lexical_cast<std::string>(medFilter.getAperture()) +
 	//	"; Порог: " + STB.DoubleToString(medFilter.getThreshold(), 5) + ".\n");

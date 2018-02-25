@@ -727,9 +727,62 @@ bool MedianFilter::OpenInputFile(const std::string &fileName, ErrorInfo *errObj)
 //существующий файл. Иначе вернёт ошибку (false и инфу в errObj). Input-файл уже должен быть открыт.
 bool MedianFilter::OpenOutputFile(const std::string &fileName, const bool &forceRewrite, ErrorInfo *errObj)
 {
-	//Заглушка.
-	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
-	return false;
+	//Этот метод можно вызывать только если исходный файл уже был открыт.
+	if (!sourceIsAttached_)
+	{
+		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  MedianFilter::OpenOutputFile исходный файл не был открыт.");
+		return false;
+	}
+	//И только если файл назначение открыт наоборот ещё не был.
+	if (destIsAttached_)
+	{
+		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  MedianFilter::OpenOutputFile попытка открыть файл назначения при уже открытом файле назначения.");
+		return false;
+	}
+	
+	//Готовим пути.
+	filesystem::path destFilePath, sourceFilePath;
+	destFilePath = STB.Utf8ToWstring(fileName);
+	sourceFilePath = STB.Utf8ToWstring(sourceFileName_);
+
+	//Проверяем есть ли уже такой файл.
+	system::error_code errCode;
+	if (filesystem::exists(destFilePath, errCode))
+	{
+		if (!forceRewrite)
+		{
+			//Запрещено перезаписывать файл, а он существует. Это печально :(.
+			if(errObj) errObj->SetError(CMNERR_FILE_EXISTS_ALREADY, ": "+ fileName);
+			return false;
+		}
+		//Удаляем старый файл.
+		if (!filesystem::remove(destFilePath, errCode))
+		{
+			if (errObj) errObj->SetError(CMNERR_WRITE_ERROR, ": " + errCode.message());
+			return false;
+		}
+	}
+
+	//Всё, файла быть не должно. Копируем исходный файл.
+	filesystem::copy_file(sourceFilePath, destFilePath, errCode);
+	if (errCode.value())
+	{
+		if (errObj) errObj->SetError(CMNERR_WRITE_ERROR, ": " + errCode.message());
+		return false;
+	}
+
+	//Теперь открываем в GDAL то что получилось.
+	gdalDestDataset = (GDALDataset*)GDALOpen(fileName.c_str(), GA_Update);
+	if (!gdalDestDataset)
+	{
+		if (errObj)	errObj->SetError(CMNERR_WRITE_ERROR, ": " + fileName);
+		return false;
+	}
+	gdalDestRaster = gdalDestDataset->GetRasterBand(1);
+
+	//Готово.
+	destIsAttached_ = true;
+	return true;
 }
 
 //Закрыть исходный файл.
