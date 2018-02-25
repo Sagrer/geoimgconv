@@ -528,15 +528,18 @@ MedianFilter::MedianFilter() : aperture_(DEFAULT_APERTURE), threshold_(DEFAULT_T
 marginType_(DEFAULT_MARGIN_TYPE), useMemChunks_(false), blocksInMem_(0), sourceFileName_(""),
 destFileName_(""), imageSizeX_(0), imageSizeY_(0), imageIsLoaded_(false), sourceIsAttached_(false),
 destIsAttached_(false), dataType_(PIXEL_UNKNOWN), dataTypeSize_(0), pFilterObj_(NULL),
-minBlockSize_(0), minMemSize_(0)
+minBlockSize_(0), minMemSize_(0), gdalSourceDataset(NULL), gdalDestDataset(NULL), gdalSourceRaster(NULL),
+gdalDestRaster(NULL), currPositionY_(0)
 {
-
+	
 }
 
 MedianFilter::~MedianFilter()
 {
 	//Возможно создавался объект реального фильтра. Надо удалить.
 	delete pFilterObj_;
+	//Возможно нужно закрыть подключённые файлы и уничтожить объекты GDAL
+	CloseAllFiles();
 }
 
 //--------------------------//
@@ -595,7 +598,7 @@ void MedianFilter::CalcMemSizes()
 
 //Выбрать исходный файл для дальнейшего чтения и обработки. Получает информацию о параметрах изображения,
 //запоминает её в полях объекта.
-bool MedianFilter::SelectInputFile(const std::string &fileName, ErrorInfo *errObj)
+bool MedianFilter::OpenInputFile(const std::string &fileName, ErrorInfo *errObj)
 {
 	//TODO: когда избавлюсь от Load и Save - тут должны будут создаваться объекты GDAL, существующие до
 	//завершения работы с файлом. Чтобы не создавать их постоянно в процессе по-кусочечной обработки
@@ -604,6 +607,13 @@ bool MedianFilter::SelectInputFile(const std::string &fileName, ErrorInfo *errOb
 	//TODO:вот эта проверка временная! Нужна только пока используется load и save!
 	if ((sourceIsAttached_) && (fileName == sourceFileName_))
 		return true;
+
+	if (sourceIsAttached_)
+	{
+		//Нельзя открывать файл если старый не был закрыт.
+		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilter::OpenInputFile() попытка открыть файл при не закрытом старом." );
+		return false;
+	}
 
 	//А был ли файл?
 	filesystem::path filePath = STB.Utf8ToWstring(fileName);
@@ -614,28 +624,31 @@ bool MedianFilter::SelectInputFile(const std::string &fileName, ErrorInfo *errOb
 	}
 
 	//Открываем картинку, определяем тип и размер данных.
-	GDALDataset *inputDataset = (GDALDataset*)GDALOpen(fileName.c_str(), GA_ReadOnly);
-	if (!inputDataset)
+	gdalSourceDataset = (GDALDataset*)GDALOpen(fileName.c_str(), GA_ReadOnly);
+	if (!gdalSourceDataset)
 	{
 		if (errObj) errObj->SetError(CMNERR_READ_ERROR, ": " + fileName);
 		return false;
 	}
-	if (inputDataset->GetRasterCount() != 1)
+	if (gdalSourceDataset->GetRasterCount() != 1)
 	{
 		//Если в картинке слоёв не строго 1 штука - это какая-то непонятная картинка,
 		//т.е. не похожа на карту высот, возможно там RGB или ещё что подобное...
 		//Так что облом и ругаемся.
-		GDALClose(inputDataset);
+		GDALClose(gdalSourceDataset);
+		gdalSourceDataset = NULL;
 		if (errObj) errObj->SetError(CMNERR_UNSUPPORTED_FILE_FORMAT, ": " + fileName);
 		return false;
 	}
-	GDALRasterBand *inputRaster = inputDataset->GetRasterBand(1);
-	dataType_ = GDALToGIC_PixelType(inputRaster->GetRasterDataType());
-	imageSizeX_ = inputRaster->GetXSize();
-	imageSizeY_ = inputRaster->GetYSize();
+	gdalSourceRaster = gdalSourceDataset->GetRasterBand(1);
+	dataType_ = GDALToGIC_PixelType(gdalSourceRaster->GetRasterDataType());
+	imageSizeX_ = gdalSourceRaster->GetXSize();
+	imageSizeY_ = gdalSourceRaster->GetYSize();
 	if (dataType_ == PIXEL_UNKNOWN)
 	{
-		GDALClose(inputDataset);
+		GDALClose(gdalSourceDataset);
+		gdalSourceDataset = NULL;
+		gdalSourceRaster = NULL;
 		if (errObj) errObj->SetError(CMNERR_UNSUPPORTED_FILE_FORMAT, ": " + fileName);
 		return false;
 	}
@@ -644,7 +657,7 @@ bool MedianFilter::SelectInputFile(const std::string &fileName, ErrorInfo *errOb
 	//тип байтов.
 	if (dataType_ == PIXEL_INT8)
 	{
-		const char *tempStr = inputRaster->GetMetadataItem("PIXELTYPE", "IMAGE_STRUCTURE");
+		const char *tempStr = gdalSourceRaster->GetMetadataItem("PIXELTYPE", "IMAGE_STRUCTURE");
 		if ((tempStr == NULL) || strcmp(tempStr, "SIGNEDBYTE"))
 		{
 			//Это явно не signed-байт
@@ -652,11 +665,8 @@ bool MedianFilter::SelectInputFile(const std::string &fileName, ErrorInfo *errOb
 		}
 	}
 
-	//Тип данных определён, надо закрыть картинку, создать вложенный объект нужного типа
-	//и дальше все вызовы транслировать уже в него. Параметры фильтра также важно
-	//не забыть пробросить.
-	GDALClose(inputDataset);
-	inputRaster = NULL;
+	//Тип данных определён, надо создать вложенный объект нужного типа и дальше все вызовы транслировать
+	//уже в него.
 	delete pFilterObj_;
 	switch (dataType_)
 	{
@@ -699,26 +709,60 @@ bool MedianFilter::SelectInputFile(const std::string &fileName, ErrorInfo *errOb
 	if (pFilterObj_)
 	{
 		sourceIsAttached_ = true;
+		currPositionY_ = 0;
 		sourceFileName_ = fileName;
 		CalcMemSizes();
 		return true;
 	}
 	else
 	{
-		if (errObj) errObj->SetError(CMNERR_UNKNOWN_ERROR, "MedianFilter::SelectInputFile() error creating pFilterObj_!",true);
-		sourceIsAttached_ = false;
+		if (errObj) errObj->SetError(CMNERR_UNKNOWN_ERROR, "MedianFilter::OpenInputFile() error creating pFilterObj_!",true);
+		gdalSourceDataset = NULL;
+		gdalSourceRaster = NULL;
 		return false;
 	}
 }
 
-//Подготовить целевой файл к записи в него результата. Если forceRewrite==false - вернёт ошибку в виде
-//false и кода ошибки в errObj.
-bool MedianFilter::SelectOutputFile(const std::string &fileName, const bool &forceRewrite, ErrorInfo *errObj)
+//Подготовить целевой файл к записи в него результата. Если forceRewrite==true - перезапишет уже
+//существующий файл. Иначе вернёт ошибку (false и инфу в errObj). Input-файл уже должен быть открыт.
+bool MedianFilter::OpenOutputFile(const std::string &fileName, const bool &forceRewrite, ErrorInfo *errObj)
 {
 	//Заглушка.
 	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
 	return false;
 }
+
+//Закрыть исходный файл.
+void MedianFilter::CloseInputFile()
+{
+	if (sourceIsAttached_)
+	{
+		GDALClose(gdalSourceDataset);
+		sourceIsAttached_ = false;
+	}
+	gdalSourceDataset = NULL;
+	gdalSourceRaster = NULL;
+}
+
+//Закрыть файл назначения.
+void MedianFilter::CloseOutputFile()
+{
+	if (destIsAttached_)
+	{
+		GDALClose(gdalDestDataset);
+		destIsAttached_ = false;
+	}
+	gdalDestDataset = NULL;
+	gdalDestRaster = NULL;
+}
+
+//Закрыть все файлы.
+void MedianFilter::CloseAllFiles()
+{
+	CloseInputFile();
+	CloseOutputFile();
+}
+
 
 bool MedianFilter::LoadImage(const std::string &fileName, ErrorInfo *errObj,
 	CallBackBase *callBackObj)
@@ -726,7 +770,7 @@ bool MedianFilter::LoadImage(const std::string &fileName, ErrorInfo *errObj,
 	//пикселей.
 {
 	FixAperture();
-	if (SelectInputFile(fileName, errObj))
+	if (OpenInputFile(fileName, errObj))
 	{
 		imageIsLoaded_ = pFilterObj_->LoadImage(fileName, errObj, callBackObj);
 	}

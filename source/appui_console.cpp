@@ -524,8 +524,8 @@ int AppUIConsole::RunApp()
 	medFilter.setAperture(confObj_->getMedfilterAperture());
 	medFilter.setThreshold(confObj_->getMedfilterThreshold());
 	medFilter.setMarginType(confObj_->getMedfilterMarginType());
-	PrintToConsole("Пытаюсь открыть файл:\n" + inputFileName + "\n");
-	if (!medFilter.LoadImage(inputFileName, &errObj))
+	PrintToConsole("Пытаюсь открыть исходный файл:\n" + inputFileName + "\n");
+	if (!medFilter.OpenInputFile(inputFileName, &errObj))
 	{
 		ConsolePrintError(errObj);
 		return 1;
@@ -536,6 +536,13 @@ int AppUIConsole::RunApp()
 		ConsolePrintError(errObj);
 		return 1;
 	}
+	//Открываем файл который будем сохранять.
+	PrintToConsole("Пытаюсь открыть файл назначения:\n" + outputFileName + "\n");
+	if (!medFilter.OpenOutputFile(outputFileName, true, &errObj))
+	{
+		ConsolePrintError(errObj);
+		return 1;
+	};
 
 	//Настраиваем фильтр в соответствии с полученной инфой о памяти.
 	medFilter.setUseMemChunks(maxBlocksCanBeUsed_);
@@ -559,12 +566,12 @@ int AppUIConsole::RunApp()
 	//	return 1;
 	//};
 
-	PrintToConsole("Заполняю краевые области...\n");
-	PrintToConsole("Тип заполнения: " + MarginTypesTexts[medFilter.getMarginType()] + "\n");
-	AppUIConsoleCallBack CallBackObj;
-	CallBackObj.OperationStart();
-	medFilter.FillMargins(&CallBackObj);
-	CallBackObj.OperationEnd();	//Выведет время выполнения.
+	//PrintToConsole("Заполняю краевые области...\n");
+	//PrintToConsole("Тип заполнения: " + MarginTypesTexts[medFilter.getMarginType()] + "\n");
+	//AppUIConsoleCallBack CallBackObj;
+	//CallBackObj.OperationStart();
+	//medFilter.FillMargins(&CallBackObj);
+	//CallBackObj.OperationEnd();	//Выведет время выполнения.
 
 	//PrintToConsole("Для дополнительной отладки сохраняю файл: input_filled.csv\n");
 	//if (!medFilter.SourceSaveToCSVFile("input_filled.csv", &errObj))
@@ -573,13 +580,15 @@ int AppUIConsole::RunApp()
 	//	return 1;
 	//};
 
-	PrintToConsole("Готово. Применяю \"тупую\" версию фильтра.\n");
-	PrintToConsole("Апертура: " + lexical_cast<std::string>(medFilter.getAperture()) +
-		"; Порог: " + STB.DoubleToString(medFilter.getThreshold(), 5) + ".\n");
-	CallBackObj.OperationStart();
-	medFilter.ApplyStupidFilter_old(&CallBackObj);
-	//medFilter.ApplyStubFilter_old(&CallBackObj);	//Отладочный "мгновенный" фильтр - только имитирует фильтрацию.
-	CallBackObj.OperationEnd();   //Выведет время выполнения.
+
+	PrintToConsole("Старая реализация фильтра отклоючена. Новая в этой версии пока не работает. Такие дела :(.\n\n");
+	//PrintToConsole("Готово. Применяю \"тупую\" версию фильтра.\n");
+	//PrintToConsole("Апертура: " + lexical_cast<std::string>(medFilter.getAperture()) +
+	//	"; Порог: " + STB.DoubleToString(medFilter.getThreshold(), 5) + ".\n");
+	//CallBackObj.OperationStart();
+	//medFilter.ApplyStupidFilter_old(&CallBackObj);
+	////medFilter.ApplyStubFilter_old(&CallBackObj);	//Отладочный "мгновенный" фильтр - только имитирует фильтрацию.
+	//CallBackObj.OperationEnd();   //Выведет время выполнения.
 
 	//PrintToConsole("Для дополнительной отладки сохраняю файл: output_stupid.csv\n");
 	//if (!medFilter.DestSaveToCSVFile("output_stupid.csv", &errObj))
@@ -588,13 +597,16 @@ int AppUIConsole::RunApp()
 	//	return 1;
 	//};
 
-	//Вроде всё ок, можно сохранять.
-	PrintToConsole("Готово. Сохраняю файл:\n" + outputFileName + "\n");
-	if (!medFilter.SaveImage(outputFileName, &errObj))
-	{
-		ConsolePrintError(errObj);
-		return 1;
-	};
+	////Вроде всё ок, можно сохранять.
+	//PrintToConsole("Готово. Сохраняю файл:\n" + outputFileName + "\n");
+	//if (!medFilter.SaveImage(outputFileName, &errObj))
+	//{
+	//	ConsolePrintError(errObj);
+	//	return 1;
+	//};
+
+	//Закрываем файлы.
+	medFilter.CloseAllFiles();
 
 	PrintToConsole("Готово.\n");
 

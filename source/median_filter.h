@@ -325,6 +325,11 @@ private:
 	unsigned long long minBlockSize_;	//Размер минимального блока, которыми обрабатывается файл.
 	unsigned long long minMemSize_;  //Минимальное количество памяти, без которого фильтр вообще не сможет обработать данное изображение.
 	unsigned long long maxMemSize_;  //Максимальное количество памяти, которое может потребоваться для обработки изображения.
+	GDALDataset *gdalSourceDataset;	//GDAL-овский датасет с исходным файлом.
+	GDALDataset *gdalDestDataset;	//GDAL-овский датасет с файлом назначения.
+	GDALRasterBand *gdalSourceRaster;	//GDAL-овский объект для работы с пикселами исходного файла.
+	GDALRasterBand *gdalDestRaster;		//GDAL-овский объект для работы с пикселами файла назначения.
+	int currPositionY_;	//Позиция "курсора" при чтении\записи очередных блоков из файла.
 
 	//Приватные методы
 
@@ -384,45 +389,54 @@ public:
 
 	//Выбрать исходный файл для дальнейшего чтения и обработки. Получает информацию о параметрах изображения,
 	//запоминает её в полях объекта.
-	virtual bool SelectInputFile(const std::string &fileName, ErrorInfo *errObj = NULL);
+	bool OpenInputFile(const std::string &fileName, ErrorInfo *errObj = NULL);
 
-	//Подготовить целевой файл к записи в него результата. Если forceRewrite==false - вернёт ошибку в виде
-	//false и кода ошибки в errObj.
-	virtual bool SelectOutputFile(const std::string &fileName, const bool &forceRewrite, ErrorInfo *errObj = NULL);
+	//Подготовить целевой файл к записи в него результата. Если forceRewrite==true - перезапишет уже
+	//существующий файл. Иначе вернёт ошибку (false и инфу в errObj). Input-файл уже должен быть открыт.
+	bool OpenOutputFile(const std::string &fileName, const bool &forceRewrite, ErrorInfo *errObj = NULL);
+
+	//Закрыть исходный файл.
+	void CloseInputFile();
+
+	//Закрыть файл назначения.
+	void CloseOutputFile();
+
+	//Закрыть все файлы.
+	void CloseAllFiles();
 
 	//Читает изображение в матрицу так чтобы по краям оставалось место для создания граничных
 	//пикселей.
-	virtual bool LoadImage(const std::string &fileName, ErrorInfo *errObj = NULL, CallBackBase *callBackObj = NULL);
+	bool LoadImage(const std::string &fileName, ErrorInfo *errObj = NULL, CallBackBase *callBackObj = NULL);
 
 	//Сохраняет матрицу в изображение. За основу берётся ранее загруженная через LoadImage
 	//картинка - файл копируется под новым именем и затем в него вносятся изменённые пиксели.
 	///В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
-	virtual bool SaveImage(const std::string &fileName, ErrorInfo *errObj = NULL);
+	bool SaveImage(const std::string &fileName, ErrorInfo *errObj = NULL);
 
 	//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 	//выбранным алгоритмом.
-	virtual void FillMargins(CallBackBase *callBackObj = NULL);
+	void FillMargins(CallBackBase *callBackObj = NULL);
 
 	//Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
-	virtual void ApplyStupidFilter_old(CallBackBase *callBackObj = NULL);
+	void ApplyStupidFilter_old(CallBackBase *callBackObj = NULL);
 
 	//Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
 	//Для отладки. Результат записывает в destMatrix_.
-	virtual void ApplyStubFilter_old(CallBackBase *callBackObj = NULL);
+	void ApplyStubFilter_old(CallBackBase *callBackObj = NULL);
 
 	//Приводит апертуру к имеющему смысл значению.
 	void FixAperture();
 
 	//"Тупая" визуализация матрицы, отправляется прямо в cout.
-	virtual void SourcePrintStupidVisToCout();
+	void SourcePrintStupidVisToCout();
 
 	//Вывод исходной матрицы в csv-файл, который должны понимать всякие картографические
 	//программы. Это значит что каждый пиксел - это одна строка в файле.
 	//Это "тупой" вариант вывода - метаданные нормально не сохраняются.
-	virtual bool SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
+	bool SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
 
 	//Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
-	virtual bool DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
+	bool DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
 
 };
 
