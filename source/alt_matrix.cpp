@@ -180,6 +180,21 @@ bool AltMatrix<CellType>::SaveToGDALFile(const std::string &fileName, const int 
 	return true;
 }
 
+//Сохраняет в GDALRasterBand кусок матрицы указанного размера и на указанную позицию.
+//gdalRaster - указатель на объект GDALRasterBand записываемого изображения.
+//yPosition - начальная строка в записываемом изображении, начиная с которой надо писать.
+//yToWrite - сколько строк записывать из матрицы.
+//errObj - опциональная ссылка на объект для информации об ошибке.
+//вернёт эту инфу и false если что-то пойдёт не так.
+template <typename CellType>
+bool AltMatrix<CellType>::SaveToGDALRaster(GDALRasterBand *gdalRaster, const int &yPosition,
+	const int &yToWrite, ErrorInfo *errObj = NULL) const
+{
+	//Заглушка
+	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
+	return false;
+}
+
 //Загружает матрицу высот из файла своего формата. Вернёт true если всё ок.
 template <typename CellType>
 bool AltMatrix<CellType>::LoadFromFile(const string &fileName, ErrorInfo *errObj)
@@ -274,6 +289,9 @@ bool AltMatrix<CellType>::LoadFromGDALFile(const std::string &fileName,
 
 //Загружает из GDALRasterBand кусочек матрицы высот указанного размера, при этом верхние 2 блока
 //берёт либо из файла либо из нижней части другой (или из себя если дана ссылка на this) матрицы.
+//Особое отношение к этим блокам т.к. первый из них - возможно был последним в прошлом проходе
+//фильтра а второй - был граничным. В новом проходе первый блок будет граничным, второй будет
+//обрабатываться, и его возможно нет смысла второй раз читать из файла.
 //Матрица уже должна иметь достаточный для загрузки размер. 
 //gdalRaster - указатель на объект GDALRasterBand исходного изображения.
 //yPosition - начальная строка в исходном изображении, начиная с которой надо читать.
