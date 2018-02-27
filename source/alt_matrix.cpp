@@ -193,7 +193,7 @@ bool AltMatrix<CellType>::LoadFromFile(const string &fileName, ErrorInfo *errObj
 template <typename CellType>
 bool AltMatrix<CellType>::LoadFromGDALFile(const std::string &fileName,
 	const int &marginSize, ErrorInfo *errObj)
-{	
+{
 	//Независимо от того удастся ли загрузить файл - данные в объекте
 	//должны быть удалены.
 	if (IsClear()) Clear();
@@ -230,7 +230,7 @@ bool AltMatrix<CellType>::LoadFromGDALFile(const std::string &fileName,
 		if (errObj) errObj->SetError(CMNERR_UNSUPPORTED_FILE_FORMAT, ": " + fileName);
 		return false;
 	}
-	
+
 	//Выделяем память.
 	CreateEmpty(rasterXSize+(marginSize * 2), rasterYSize+(marginSize * 2));
 
@@ -316,9 +316,9 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 		size_t blocksSizeBytes = blocksSize * sizeof(CellType);
 		size_t sourceOffset = (ySize_ - yStart)*xSize_;
 		size_t sourceOffsetBytes = sourceOffset * sizeof(CellType);
-		memcpy_s(data_, blocksSizeBytes, (char*)sourceMatrix->data_ + sourceOffsetBytes, blocksSizeBytes);
+		memcpy(data_, (char*)sourceMatrix->data_ + sourceOffsetBytes, blocksSizeBytes);
 		if (useSignData_ && sourceMatrix->useSignData_)
-			memcpy_s(signData_, blocksSize, (char*)sourceMatrix->signData_ + sourceOffset, blocksSize);
+			memcpy(signData_, (char*)sourceMatrix->signData_ + sourceOffset, blocksSize);
 		else if (useSignData_)
 			memset(signData_, 0, blocksSize);
 	}
@@ -370,7 +370,7 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 			}
 		}
 	}
-	
+
 	//Готово.
 	return true;
 }
@@ -449,7 +449,7 @@ void AltMatrix<CellType>::CreateEmpty(const int &newX, const int &newY)
 			j = i * xSize_;
 			matrixArr_[i] = &((CellType*)data_)[j];
 		}
-	}	
+	}
 }
 
 //Выделить память под пустую матрицу того же размера что и матрица в аргументе, а затем при
@@ -465,7 +465,7 @@ void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatr
 	//Выделим память.
 	CreateEmpty(sourceMatrix_.xSize_-(marginSize * 2),
 		sourceMatrix_.ySize_-(marginSize * 2));
-	
+
 	if (useSignData_)
 	{
 		//Теперь нужно пройтись по всей вспомогательной матрице и скопировать
@@ -484,7 +484,7 @@ void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatr
 			}
 		}
 	}
-	
+
 }
 
 //Очевидно вернёт true если матрица пуста, либо false если там есть значения.
