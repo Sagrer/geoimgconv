@@ -188,7 +188,7 @@ bool AltMatrix<CellType>::SaveToGDALFile(const std::string &fileName, const int 
 //вернёт эту инфу и false если что-то пойдёт не так.
 template <typename CellType>
 bool AltMatrix<CellType>::SaveToGDALRaster(GDALRasterBand *gdalRaster, const int &yPosition,
-	const int &yToWrite, ErrorInfo *errObj = NULL) const
+	const int &yToWrite, ErrorInfo *errObj) const
 {
 	//Среагируем на явные ошибки...
 	if (!gdalRaster)
@@ -466,7 +466,9 @@ template <typename CellType> void AltMatrix<CellType>::Clear()
 	delete[] matrixArr_;
 	delete[] signMatrixArr_;
 	data_ = NULL;
+	signData_ = NULL;
 	matrixArr_ = NULL;
+	signMatrixArr_ = NULL;
 	xSize_ = 0;
 	ySize_ = 0;
 	dataElemsNum_ = 0;
@@ -518,12 +520,29 @@ void AltMatrix<CellType>::CreateEmpty(const int &newX, const int &newY)
 template <typename CellType>
 void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatrix_, const int &marginSize)
 {
-	if (!IsClear()) Clear();
-	if (sourceMatrix_.IsClear()) return;
-	//Выделим память.
-	CreateEmpty(sourceMatrix_.xSize_-(marginSize * 2),
-		sourceMatrix_.ySize_-(marginSize * 2));
-
+	if (sourceMatrix_.IsClear())
+	{
+		if (!IsClear()) Clear();
+		return;
+	}
+	
+	//Если  размеры матриц не совпадают - перевыделим память.
+	int newXSize = sourceMatrix_.xSize_ - (marginSize * 2);
+	int newYSize = sourceMatrix_.ySize_ - (marginSize * 2);
+	if ((newXSize != xSize_) || (newYSize != ySize_))
+	{
+		if (!IsClear()) Clear();
+		CreateEmpty(sourceMatrix_.xSize_ - (marginSize * 2),
+			sourceMatrix_.ySize_ - (marginSize * 2));
+	}
+	else
+	{
+		//Совпадает - значит просто обнулим.
+		memset(data_, 0, dataElemsNum_ * sizeof(CellType));
+		if (useSignData_)
+			memset(signData_, 0, dataElemsNum_);
+	}
+	
 	if (useSignData_)
 	{
 		//Теперь нужно пройтись по всей вспомогательной матрице и скопировать

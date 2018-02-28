@@ -423,7 +423,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 			return false;
 		}
 		//Целочисленное деление здесь как раз подходит :).
-		maxBlocksCanBeUsed_ = size_t(variableMemSize / filterObj.getMinBlockSize());
+		maxBlocksCanBeUsed_ = int(variableMemSize / filterObj.getMinBlockSize());
 		maxMemCanBeUsed_ = maxBlocksCanBeUsed_ * filterObj.getMinBlockSize();
 	}
 	
@@ -545,7 +545,11 @@ int AppUIConsole::RunApp()
 	};
 
 	//Настраиваем фильтр в соответствии с полученной инфой о памяти.
-	medFilter.setUseMemChunks(maxBlocksCanBeUsed_);
+	if (confObj_->getMemMode() == MEMORY_MODE_ONECHUNK)
+		medFilter.setUseMemChunks(false);
+	else
+		medFilter.setUseMemChunks(true);
+	medFilter.setBlocksInMem(maxBlocksCanBeUsed_);
 
 	//PrintToConsole("Открыто. Визуализация значимых пикселей:\n");
 	////medFilter.SourcePrintStupidVisToCout();
@@ -582,6 +586,17 @@ int AppUIConsole::RunApp()
 
 
 	PrintToConsole("Старая реализация фильтра отключена. Новая в этой версии пока не работает. Такие дела :(.\n\n");
+	
+	//Собственно, запуск фильтра.
+	AppUIConsoleCallBack CallBackObj;
+	CallBackObj.OperationStart();
+	if (!medFilter.ApplyStubFilter(&CallBackObj, &errObj))
+	{
+		ConsolePrintError(errObj);
+			return 1;
+	}
+	CallBackObj.OperationEnd();
+	
 	//PrintToConsole("Готово. Применяю \"тупую\" версию фильтра.\n");
 	//PrintToConsole("Апертура: " + lexical_cast<std::string>(medFilter.getAperture()) +
 	//	"; Порог: " + STB.DoubleToString(medFilter.getThreshold(), 5) + ".\n");

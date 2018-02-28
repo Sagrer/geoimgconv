@@ -220,7 +220,7 @@ void RealMedianFilterTemplBase<CellType>::MirrorFiller(const int &x, const int &
 
 //Костяк алгоритма, общий для Simple и Mirror
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::FillMargins_PixelBasedAlgo(const TFillerMethod FillerMethod,
+void RealMedianFilterTemplBase<CellType>::FillMargins_PixelBasedAlgo(const PixFillerMethod FillerMethod,
 	CallBackBase *callBackObj)
 {
 	//Двигаемся построчно, пока не найдём значимый пиксель. В границы не лезем,
@@ -277,6 +277,149 @@ void RealMedianFilterTemplBase<CellType>::FillMargins_Mirror(CallBackBase *callB
 {
 	FillMargins_PixelBasedAlgo(&RealMedianFilterTemplBase<CellType>::MirrorFiller,
 		callBackObj);
+}
+
+//Применит указанный (ссылкой на метод) фильтр к изображению. Входящий и исходящий файлы
+//уже должны быть подключены. Вернёт false и инфу об ошибке если что-то пойдёт не так.
+template <typename CellType>
+bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
+	CallBackBase *callBackObj, ErrorInfo *errObj)
+{
+	//Задаём размер матриц.
+	getOwnerObj().FixAperture();
+	int marginSize = (getOwnerObj().getAperture() - 1) / 2;
+	int sourceYSize, destYSize;
+	if (getOwnerObj().getUseMemChunks())
+	{
+		//Размер по Y зависит от режима использования памяти.
+		sourceYSize = getOwnerObj().getBlocksInMem() * marginSize;
+		destYSize = (getOwnerObj().getBlocksInMem() - 2) * marginSize;
+	}
+	else
+	{
+		sourceYSize = getOwnerObj().getImageSizeY() + (2 * marginSize);
+		destYSize = getOwnerObj().getImageSizeY();
+	}
+	sourceMatrix_.CreateEmpty(getOwnerObj().getImageSizeX() + (2 * marginSize), sourceYSize);
+	//destMatrix будет создаваться и обнуляться уже в процессе, перед запуском очередного прохода фильтра.	
+
+	//Настроим прогрессбар.
+	if (callBackObj)
+		callBackObj->setMaxProgress(getOwnerObj().getImageSizeX() * getOwnerObj().getImageSizeY());
+	
+	//Теперь в цикле надо пройти по всем строкам исходного файла.
+	int currYToProcess;
+	bool needRecalc = true;
+	int currBlocksToProcess = getOwnerObj().getBlocksInMem() - 1;
+	for (int currPositionY = 0; currPositionY < getOwnerObj().getImageSizeY();
+		currPositionY += currYToProcess)
+	{
+		//Если надо - вычислим число строк для обработки.
+		if (needRecalc)
+		{
+			if (currPositionY == 0)
+			{
+				//Это первая итерация.
+				if (getOwnerObj().getUseMemChunks() == false)
+				{
+					//И единственная итерация. Всё обрабатывается одним куском.
+					currYToProcess = getOwnerObj().getImageSizeY();
+				}
+				else
+				{
+					//Вероятно будут ещё итерации. В первый раз читаем на 1 блок больше.
+					currYToProcess = currBlocksToProcess * marginSize;
+					//Но возможно мы сейчас прочитаем всё и итерация всё же последняя.
+					int nextY = currPositionY + currYToProcess;
+					if (nextY >= getOwnerObj().getImageSizeY())
+						currYToProcess = getOwnerObj().getImageSizeY();
+					else
+						//Итерации ещё будут, читать на 1 блок меньше.
+						currBlocksToProcess--;
+				}
+			}
+			else
+			{
+				//Не первая итерация.
+				currYToProcess = currBlocksToProcess * marginSize;
+				int nextY = currPositionY + currYToProcess;
+				if (nextY > getOwnerObj().getImageSizeY())
+				{
+					//Последняя итерация в которой строк будет меньше.
+					currYToProcess -= nextY - getOwnerObj().getImageSizeY();
+				}
+				needRecalc = false;	//Пересчёт в следующей итерации точно не потребуется.
+			}
+		}
+		else
+		{
+			//В этой итерации пересчёт не нужен, но он может потребоваться в следующей.
+			int nextY = currPositionY + currYToProcess;
+			if (nextY > getOwnerObj().getImageSizeY())
+				needRecalc = true;
+		}
+
+		//Теперь надо загрузить новые пиксели в исходную матрицу и обнулить целевую матрицу.
+		TopMarginMode currMM;
+		AltMatrix<CellType> *currMatrix;
+		if (currPositionY == 0)
+		{
+			currMM = TOP_MM_FILE1;
+			currMatrix = NULL;
+		}
+		else
+		{
+			currMM = TOP_MM_MATR;
+			currMatrix = &sourceMatrix_;
+		}
+		if (!sourceMatrix_.LoadFromGDALRaster(getOwnerObj().getGdalSourceRaster(), currPositionY,
+			currYToProcess, marginSize, currMM, currMatrix, errObj))
+		{
+			return false;
+		}
+		destMatrix_.CreateDestMatrix(sourceMatrix_, marginSize);
+
+		//Надо обработать граничные пиксели
+		//TODO.
+
+		//Надо применить фильтр
+		//TODO.
+		(this->*CurrFilter)(callBackObj);
+
+		//Вроде всё, итерация завершена.
+	}
+
+	//Есть значительная вероятность того что в последнем блоке в последней итерации было что-то
+	//значимое. Если это так - надо выполнить ещё одну итерацию, без фактического чтения.
+	if (currYToProcess > ((currBlocksToProcess - 1)*marginSize))
+	{
+		//"читаем" данные в матрицу, на самом деле просто копируем 2 нижних блока наверх.
+		sourceMatrix_.LoadFromGDALRaster(getOwnerObj().getGdalSourceRaster(), 0,
+			0, marginSize, TOP_MM_MATR, &sourceMatrix_, NULL);
+		//Всё ещё надо обработать граничные пиксели
+		//TODO.
+		//Всё ещё надо применить фильтр.
+		//TODO.
+		(this->*CurrFilter)(callBackObj);
+	}
+
+	//Вроде всё ок.
+	return true;
+}
+
+//Метод "тупого" фильтра, который тупо копирует входящую матрицу в исходящую. Нужен для тестирования
+//и отладки.
+template <typename CellType>
+void RealMedianFilterTemplBase<CellType>::StubFilter(CallBackBase *callBackObj)
+{
+	//Заглушка.
+}
+
+//Метод для обработки матрицы "тупым" фильтром, котороый действует практически в лоб.
+template <typename CellType>
+void RealMedianFilterTemplBase<CellType>::StupiudFilter(CallBackBase *callBackObj)
+{
+	//Заглушка.
 }
 
 //--------------------------------//
@@ -489,9 +632,11 @@ void RealMedianFilterTemplBase<CellType>::ApplyStubFilter_old(CallBackBase *call
 //Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
 //Для отладки. Результат записывается в выбранный destFile
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::ApplyStubFilter(CallBackBase *callBackObj)
+bool RealMedianFilterTemplBase<CellType>::ApplyStubFilter(CallBackBase *callBackObj, ErrorInfo *errObj)
 {
-	//Новый вариант "никакого" фильтра. Работающий по кускам.
+	//Новый вариант "никакого" фильтра. Работающий по кускам. Просто вызываем уже готовый
+	//метод, передав ему нужный фильтрующий метод.
+	return ApplyFilter(&RealMedianFilterTemplBase<CellType>::StubFilter, callBackObj, errObj);
 }
 
 //"Тупая" визуализация матрицы, отправляется прямо в cout.
@@ -528,8 +673,8 @@ MedianFilter::MedianFilter() : aperture_(DEFAULT_APERTURE), threshold_(DEFAULT_T
 marginType_(DEFAULT_MARGIN_TYPE), useMemChunks_(false), blocksInMem_(0), sourceFileName_(""),
 destFileName_(""), imageSizeX_(0), imageSizeY_(0), imageIsLoaded_(false), sourceIsAttached_(false),
 destIsAttached_(false), dataType_(PIXEL_UNKNOWN), dataTypeSize_(0), pFilterObj_(NULL),
-minBlockSize_(0), minMemSize_(0), gdalSourceDataset(NULL), gdalDestDataset(NULL), gdalSourceRaster(NULL),
-gdalDestRaster(NULL), currPositionY_(0)
+minBlockSize_(0), minMemSize_(0), gdalSourceDataset_(NULL), gdalDestDataset_(NULL), gdalSourceRaster_(NULL),
+gdalDestRaster_(NULL), currPositionY_(0)
 {
 	
 }
@@ -624,31 +769,31 @@ bool MedianFilter::OpenInputFile(const std::string &fileName, ErrorInfo *errObj)
 	}
 
 	//Открываем картинку, определяем тип и размер данных.
-	gdalSourceDataset = (GDALDataset*)GDALOpen(fileName.c_str(), GA_ReadOnly);
-	if (!gdalSourceDataset)
+	gdalSourceDataset_ = (GDALDataset*)GDALOpen(fileName.c_str(), GA_ReadOnly);
+	if (!gdalSourceDataset_)
 	{
 		if (errObj) errObj->SetError(CMNERR_READ_ERROR, ": " + fileName);
 		return false;
 	}
-	if (gdalSourceDataset->GetRasterCount() != 1)
+	if (gdalSourceDataset_->GetRasterCount() != 1)
 	{
 		//Если в картинке слоёв не строго 1 штука - это какая-то непонятная картинка,
 		//т.е. не похожа на карту высот, возможно там RGB или ещё что подобное...
 		//Так что облом и ругаемся.
-		GDALClose(gdalSourceDataset);
-		gdalSourceDataset = NULL;
+		GDALClose(gdalSourceDataset_);
+		gdalSourceDataset_ = NULL;
 		if (errObj) errObj->SetError(CMNERR_UNSUPPORTED_FILE_FORMAT, ": " + fileName);
 		return false;
 	}
-	gdalSourceRaster = gdalSourceDataset->GetRasterBand(1);
-	dataType_ = GDALToGIC_PixelType(gdalSourceRaster->GetRasterDataType());
-	imageSizeX_ = gdalSourceRaster->GetXSize();
-	imageSizeY_ = gdalSourceRaster->GetYSize();
+	gdalSourceRaster_ = gdalSourceDataset_->GetRasterBand(1);
+	dataType_ = GDALToGIC_PixelType(gdalSourceRaster_->GetRasterDataType());
+	imageSizeX_ = gdalSourceRaster_->GetXSize();
+	imageSizeY_ = gdalSourceRaster_->GetYSize();
 	if (dataType_ == PIXEL_UNKNOWN)
 	{
-		GDALClose(gdalSourceDataset);
-		gdalSourceDataset = NULL;
-		gdalSourceRaster = NULL;
+		GDALClose(gdalSourceDataset_);
+		gdalSourceDataset_ = NULL;
+		gdalSourceRaster_ = NULL;
 		if (errObj) errObj->SetError(CMNERR_UNSUPPORTED_FILE_FORMAT, ": " + fileName);
 		return false;
 	}
@@ -657,7 +802,7 @@ bool MedianFilter::OpenInputFile(const std::string &fileName, ErrorInfo *errObj)
 	//тип байтов.
 	if (dataType_ == PIXEL_INT8)
 	{
-		const char *tempStr = gdalSourceRaster->GetMetadataItem("PIXELTYPE", "IMAGE_STRUCTURE");
+		const char *tempStr = gdalSourceRaster_->GetMetadataItem("PIXELTYPE", "IMAGE_STRUCTURE");
 		if ((tempStr == NULL) || strcmp(tempStr, "SIGNEDBYTE"))
 		{
 			//Это явно не signed-байт
@@ -717,8 +862,8 @@ bool MedianFilter::OpenInputFile(const std::string &fileName, ErrorInfo *errObj)
 	else
 	{
 		if (errObj) errObj->SetError(CMNERR_UNKNOWN_ERROR, "MedianFilter::OpenInputFile() error creating pFilterObj_!",true);
-		gdalSourceDataset = NULL;
-		gdalSourceRaster = NULL;
+		gdalSourceDataset_ = NULL;
+		gdalSourceRaster_ = NULL;
 		return false;
 	}
 }
@@ -772,13 +917,13 @@ bool MedianFilter::OpenOutputFile(const std::string &fileName, const bool &force
 	}
 
 	//Теперь открываем в GDAL то что получилось.
-	gdalDestDataset = (GDALDataset*)GDALOpen(fileName.c_str(), GA_Update);
-	if (!gdalDestDataset)
+	gdalDestDataset_ = (GDALDataset*)GDALOpen(fileName.c_str(), GA_Update);
+	if (!gdalDestDataset_)
 	{
 		if (errObj)	errObj->SetError(CMNERR_WRITE_ERROR, ": " + fileName);
 		return false;
 	}
-	gdalDestRaster = gdalDestDataset->GetRasterBand(1);
+	gdalDestRaster_ = gdalDestDataset_->GetRasterBand(1);
 
 	//Готово.
 	destIsAttached_ = true;
@@ -790,11 +935,11 @@ void MedianFilter::CloseInputFile()
 {
 	if (sourceIsAttached_)
 	{
-		GDALClose(gdalSourceDataset);
+		GDALClose(gdalSourceDataset_);
 		sourceIsAttached_ = false;
 	}
-	gdalSourceDataset = NULL;
-	gdalSourceRaster = NULL;
+	gdalSourceDataset_ = NULL;
+	gdalSourceRaster_ = NULL;
 }
 
 //Закрыть файл назначения.
@@ -802,11 +947,11 @@ void MedianFilter::CloseOutputFile()
 {
 	if (destIsAttached_)
 	{
-		GDALClose(gdalDestDataset);
+		GDALClose(gdalDestDataset_);
 		destIsAttached_ = false;
 	}
-	gdalDestDataset = NULL;
-	gdalDestRaster = NULL;
+	gdalDestDataset_ = NULL;
+	gdalDestRaster_ = NULL;
 }
 
 //Закрыть все файлы.
@@ -892,6 +1037,23 @@ void MedianFilter::ApplyStubFilter_old(CallBackBase *callBackObj)
 	if (imageIsLoaded_)
 	{
 		pFilterObj_->ApplyStubFilter_old(callBackObj);
+	}
+}
+
+//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
+//Для отладки. Результат записывается в выбранный destFile
+bool MedianFilter::ApplyStubFilter(CallBackBase *callBackObj, ErrorInfo *errObj)
+{
+	//Проброс вызова.
+	if (sourceIsAttached_ || destIsAttached_)
+	{
+		return pFilterObj_->ApplyStubFilter(callBackObj, errObj);
+	}
+	else
+	{
+		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilter::ApplyStubFilter no source and\\or dest \
+file(s) were attached.");
+		return false;
 	}
 }
 

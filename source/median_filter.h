@@ -86,7 +86,7 @@ public:
 
 	//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
 	//Для отладки. Результат записывается в выбранный destFile
-	virtual void ApplyStubFilter(CallBackBase *callBackObj = NULL) = 0;
+	virtual bool ApplyStubFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) = 0;
 
 	//"Тупая" визуализация матрицы, отправляется прямо в cout.
 	virtual void SourcePrintStupidVisToCout() = 0;
@@ -112,8 +112,11 @@ private:
 	//Приватные типы
 		
 	//Указатель на метод-заполнитель пикселей
-	typedef void(RealMedianFilterTemplBase<CellType>::*TFillerMethod)(const int &x,
+	typedef void(RealMedianFilterTemplBase<CellType>::*PixFillerMethod)(const int &x,
 		const int &y, const PixelDirection direction, const int &marginSize);
+
+	//Указатель на метод-фильтр
+	typedef void(RealMedianFilterTemplBase<CellType>::*FilterMethod)(CallBackBase *callBackObj);
 		
 	//Приватные методы
 
@@ -135,7 +138,7 @@ private:
 		const int &marginSize);
 		
 	//Костяк алгоритма, общий для Simple и Mirror
-	void FillMargins_PixelBasedAlgo(const TFillerMethod FillerMethod,
+	void FillMargins_PixelBasedAlgo(const PixFillerMethod FillerMethod,
 		CallBackBase *callBackObj = NULL);
 
 	//Заполнить пустые пиксели source-матрицы простым алгоритмом (сплошной цвет).
@@ -152,6 +155,16 @@ private:
 		else return value2-value1;
 	};
 
+	//Применит указанный (ссылкой на метод) фильтр к изображению. Входящий и исходящий файлы
+	//уже должны быть подключены. Вернёт false и инфу об ошибке если что-то пойдёт не так.
+	bool ApplyFilter(FilterMethod CurrFilter, CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
+
+	//Метод "тупого" фильтра, который тупо копирует входящую матрицу в исходящую. Нужен для тестирования
+	//и отладки.
+	void StubFilter(CallBackBase *callBackObj = NULL);
+
+	//Метод для обработки матрицы "тупым" фильтром, котороый действует практически в лоб.
+	void StupiudFilter(CallBackBase *callBackObj = NULL);
 public:
 	//Нельзя создать объект не дав ссылку на MedianFilter
 	RealMedianFilterTemplBase(MedianFilter *ownerObj) : RealMedianFilterBase(ownerObj) {};
@@ -181,7 +194,7 @@ public:
 
 	//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
 	//Для отладки. Результат записывается в выбранный destFile
-	virtual void ApplyStubFilter(CallBackBase *callBackObj = NULL);
+	bool ApplyStubFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
 
 	//"Тупая" визуализация матрицы, отправляется прямо в cout.
 	void SourcePrintStupidVisToCout();
@@ -311,7 +324,7 @@ private:
 	//unsigned int threadsNumber_;	//Количество потоков при многопоточной обработке. 0 - автоопределение. Пока не реализовано.
 	MarginType marginType_;		//Тип заполнения краевых пикселей.
 	bool useMemChunks_;		//Использовать ли режим обработки файла по кускам для экономии памяти.
-	size_t blocksInMem_;	//Количество блоков, которое можно загружать в память. Без учёта первого и последнего блоков (граничные пиксели). 0 - отсутствие лимита.
+	int blocksInMem_;	//Количество блоков, которое можно загружать в память. Граничные верхний и нижний блоки сюда тоже входят.
 	std::string sourceFileName_;	//Имя и путь файла с исходными данными.
 	std::string destFileName_;	//Имя и путь файла назначения.
 	int imageSizeX_;	//Ширина картинки (0 если картинка не подсоединялась)
@@ -325,10 +338,10 @@ private:
 	unsigned long long minBlockSize_;	//Размер минимального блока, которыми обрабатывается файл.
 	unsigned long long minMemSize_;  //Минимальное количество памяти, без которого фильтр вообще не сможет обработать данное изображение.
 	unsigned long long maxMemSize_;  //Максимальное количество памяти, которое может потребоваться для обработки изображения.
-	GDALDataset *gdalSourceDataset;	//GDAL-овский датасет с исходным файлом.
-	GDALDataset *gdalDestDataset;	//GDAL-овский датасет с файлом назначения.
-	GDALRasterBand *gdalSourceRaster;	//GDAL-овский объект для работы с пикселами исходного файла.
-	GDALRasterBand *gdalDestRaster;		//GDAL-овский объект для работы с пикселами файла назначения.
+	GDALDataset *gdalSourceDataset_;	//GDAL-овский датасет с исходным файлом.
+	GDALDataset *gdalDestDataset_;	//GDAL-овский датасет с файлом назначения.
+	GDALRasterBand *gdalSourceRaster_;	//GDAL-овский объект для работы с пикселами исходного файла.
+	GDALRasterBand *gdalDestRaster_;		//GDAL-овский объект для работы с пикселами файла назначения.
 	int currPositionY_;	//Позиция "курсора" при чтении\записи очередных блоков из файла.
 
 	//Приватные методы
@@ -357,9 +370,9 @@ public:
 	//useMemChunks
 	bool const& getUseMemChunks() const { return useMemChunks_; }
 	void setUseMemChunks(const bool &useMemChunks) { useMemChunks_ = useMemChunks; }
-	//maxDataSize
-	size_t const& getMaxDataSize() const { return blocksInMem_; }
-	void setMaxDataSize(const size_t &maxDataSize) { blocksInMem_ = maxDataSize; }
+	//blocksInMem
+	int const& getBlocksInMem() const { return blocksInMem_; }
+	void setBlocksInMem(const int &blocksInMem) { blocksInMem_ = blocksInMem; }
 	//sourceFileName
 	std::string const& getSourceFileName() const { return sourceFileName_; }
 	//TODO setSourceFileName нужен только временно! Убрать после того как уберутся всякие LoadFile!
@@ -380,6 +393,10 @@ public:
 	//void setMinMemSize(const unsigned long long &value) { minMemSize_ = value; }
 	//maxMemSize
 	unsigned long long const& getMaxMemSize() const { return maxMemSize_; }
+	//gdalSourceRaster_
+	GDALRasterBand* getGdalSourceRaster() { return gdalSourceRaster_; }
+	//gdalDestRaster_
+	GDALRasterBand* getGdalDestRaster() { return gdalDestRaster_; }
 
 	//Конструкторы-деструкторы
 	MedianFilter();
@@ -423,6 +440,10 @@ public:
 	//Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
 	//Для отладки. Результат записывает в destMatrix_.
 	void ApplyStubFilter_old(CallBackBase *callBackObj = NULL);
+
+	//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
+	//Для отладки. Результат записывается в выбранный destFile
+	bool ApplyStubFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
 
 	//Приводит апертуру к имеющему смысл значению.
 	void FixAperture();

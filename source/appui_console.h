@@ -92,7 +92,7 @@ private:
 	std::string GDALErrorMsgBuffer;
 	AppConfig *confObj_;
 	unsigned long long maxMemCanBeUsed_;	//сюда детектится количество памяти которое можно занимать
-	size_t maxBlocksCanBeUsed_;	//Сюда детектится максимальное количество блоков, которое можно загружать в память для применяемого сейчас фильтра.
+	int maxBlocksCanBeUsed_;	//Сюда детектится максимальное количество блоков, которое можно загружать в память для применяемого сейчас фильтра.
 	SysResInfo sysResInfo_;		//Характеристики компа.
 
 	//Приватные методы
