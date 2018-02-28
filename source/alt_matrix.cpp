@@ -190,9 +190,32 @@ template <typename CellType>
 bool AltMatrix<CellType>::SaveToGDALRaster(GDALRasterBand *gdalRaster, const int &yPosition,
 	const int &yToWrite, ErrorInfo *errObj = NULL) const
 {
-	//Заглушка
-	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
-	return false;
+	//Среагируем на явные ошибки...
+	if (!gdalRaster)
+	{
+		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  AltMatrix<>::SaveToGDALRaster gdalRaster == NULL");
+		return false;
+	}
+	if ((gdalRaster->GetXSize() != xSize_) || (gdalRaster->getYSize() < (yPosition+ySize_)))
+	{
+		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  AltMatrix<>::SaveToGDALRaster wrong sizes!");
+		return false;
+	}
+
+	//Собсно, запишем информацию в растер.
+	CPLErr gdalResult;
+	gdalResult = gdalRaster->RasterIO(GF_Write, 0, yPosition, xSize_, ySize_,
+		(void*)(data_), xSize_, ySize_, GICToGDAL_PixelType(pixelType_),
+		0, 0, NULL);
+	if (gdalResult != CE_None)
+	{
+		GDALClose(inputDataset);
+		if (errObj) errObj->SetError(CMNERR_READ_ERROR, ": " + GetLastGDALError());
+		return false;
+	}
+	
+	//Всё ок вроде.
+	return true;
 }
 
 //Загружает матрицу высот из файла своего формата. Вернёт true если всё ок.
@@ -305,6 +328,12 @@ template <typename CellType>
 bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const int &yPosition, const int &yToRead,
 	const int &marginSize, TopMarginMode marginMode, AltMatrix<CellType> *sourceMatrix, ErrorInfo *errObj)
 {
+	if (!gdalRaster)
+	{
+		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  AltMatrix<>::LoadFromGDALRaster gdalRaster == NULL");
+		return false;
+	}
+	
 	//Первым делом надо или обнулить или скопировать начальную часть матрицы.
 	int yStart = 0;		//Строка матрицы на которую надо будет начинать читать из файла. Может измениться ниже.
 	switch (marginMode)
