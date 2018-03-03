@@ -423,7 +423,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 			return false;
 		}
 		//Целочисленное деление здесь как раз подходит :).
-		maxBlocksCanBeUsed_ = int(variableMemSize / filterObj.getMinBlockSize());
+		maxBlocksCanBeUsed_ = int(variableMemSize / filterObj.getMinBlockSize())+2;
 		maxMemCanBeUsed_ = maxBlocksCanBeUsed_ * filterObj.getMinBlockSize();
 	}
 	

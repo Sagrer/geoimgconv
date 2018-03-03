@@ -749,13 +749,14 @@ void MedianFilter::CalcMemSizes()
 		blockHeight = imageSizeY_;
 	else
 		blockHeight = firstLastBlockHeight;
-	unsigned long long blockWidth = imageSizeX_ + firstLastBlockHeight;
+	unsigned long long blockWidth = imageSizeX_ + (2 * firstLastBlockHeight);
 	//Размер пиксела в исходного блока в байтах у нас складывается из размера типа
 	//элементов в матрице и размера элемента вспомогательной матрицы (это 1 байт).
 	//
 	//Размер исходного блока.
-	unsigned long long minSourceBlockSize = (2 * firstLastBlockHeight*blockWidth +
-		blockHeight * blockWidth) * (dataTypeSize_ + 1);
+	/*unsigned long long minSourceBlockSize = (2 * firstLastBlockHeight*blockWidth +
+		blockHeight * blockWidth) * (dataTypeSize_ + 1);*/
+	unsigned long long minSourceBlockSize = blockHeight * blockWidth * (dataTypeSize_ + 1);
 	//Размер блока с результатом
 	unsigned long long minDestBlockSize = imageSizeX_ * firstLastBlockHeight * dataTypeSize_;
 	//Минимальное допустимое количество памяти.
@@ -763,8 +764,12 @@ void MedianFilter::CalcMemSizes()
 	//Обобщённый размер "блока", содержащего и исходные данные и результат.
 	minBlockSize_ = minSourceBlockSize + minDestBlockSize;
 	//Общее количество памяти, которое может потребоваться для для работы над изображением.
-	maxMemSize_ = (((2 * minBlockSize_) + (imageSizeX_ * imageSizeY_) + (firstLastBlockHeight * imageSizeY_)) *
-		(dataTypeSize_ + 1)) + (imageSizeX_ * imageSizeY_ * dataTypeSize_);
+	/*maxMemSize_ = (((2 * minBlockSize_) + (imageSizeX_ * imageSizeY_) + (firstLastBlockHeight * imageSizeY_)) *
+		(dataTypeSize_ + 1)) + (imageSizeX_ * imageSizeY_ * dataTypeSize_);*/
+	maxMemSize_ = (2 * minSourceBlockSize) +		//2 граничных source-блока
+		(imageSizeX_ * imageSizeY_ * dataTypeSize_) +	//dest-матрица
+		(blockWidth * imageSizeY_ * (dataTypeSize_ + 1));	//остальная source-матрица.
+
 }
 
 //--------------------------//
