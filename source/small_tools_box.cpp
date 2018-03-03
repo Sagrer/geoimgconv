@@ -185,6 +185,15 @@ std::string SmallToolsBox::BoolToString(const bool &input) const
 	return input ? "true" : "false";
 }
 
+//Преобразовать целое число в строку фиксированного размера с заданным количеством
+//нулей в начале.
+std::string SmallToolsBox::IntToString(const long long value, int width)
+{
+	std::stringstream sStream;
+	sStream << std::setw(width) << std::setfill('0') << value;
+	return sStream.str();
+}
+
 //Перевести в нижний регистр utf8-строку.
 void SmallToolsBox::Utf8ToLower(const std::string &inputStr, std::string &outputStr) const
 {

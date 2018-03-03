@@ -397,6 +397,9 @@ public:
 	GDALRasterBand* getGdalSourceRaster() { return gdalSourceRaster_; }
 	//gdalDestRaster_
 	GDALRasterBand* getGdalDestRaster() { return gdalDestRaster_; }
+	//currPositionY
+	int const& getCurrPositionY() const { return currPositionY_; }
+	void setCurrPositionY(const int &value) { currPositionY_ = value; }
 
 	//Конструкторы-деструкторы
 	MedianFilter();

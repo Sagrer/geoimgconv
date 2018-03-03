@@ -311,13 +311,15 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 	int currYToProcess;
 	bool needRecalc = true;
 	int currBlocksToProcess = getOwnerObj().getBlocksInMem() - 1;
-	for (int currPositionY = 0; currPositionY < getOwnerObj().getImageSizeY();
-		currPositionY += currYToProcess)
+	int debugFileNum = 1;	//Для отладочного сохранения.
+	for (getOwnerObj().setCurrPositionY(0); getOwnerObj().getCurrPositionY()
+		< getOwnerObj().getImageSizeY(); getOwnerObj().setCurrPositionY(
+			getOwnerObj().getCurrPositionY() + currYToProcess))
 	{
 		//Если надо - вычислим число строк для обработки.
 		if (needRecalc)
 		{
-			if (currPositionY == 0)
+			if (getOwnerObj().getCurrPositionY() == 0)
 			{
 				//Это первая итерация.
 				if (getOwnerObj().getUseMemChunks() == false)
@@ -330,7 +332,7 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 					//Вероятно будут ещё итерации. В первый раз читаем на 1 блок больше.
 					currYToProcess = currBlocksToProcess * marginSize;
 					//Но возможно мы сейчас прочитаем всё и итерация всё же последняя.
-					int nextY = currPositionY + currYToProcess;
+					int nextY = getOwnerObj().getCurrPositionY() + currYToProcess;
 					if (nextY >= getOwnerObj().getImageSizeY())
 						currYToProcess = getOwnerObj().getImageSizeY();
 					else
@@ -342,7 +344,7 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 			{
 				//Не первая итерация.
 				currYToProcess = currBlocksToProcess * marginSize;
-				int nextY = currPositionY + currYToProcess;
+				int nextY = getOwnerObj().getCurrPositionY() + currYToProcess;
 				if (nextY > getOwnerObj().getImageSizeY())
 				{
 					//Последняя итерация в которой строк будет меньше.
@@ -354,7 +356,7 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		else
 		{
 			//В этой итерации пересчёт не нужен, но он может потребоваться в следующей.
-			int nextY = currPositionY + currYToProcess;
+			int nextY = getOwnerObj().getCurrPositionY() + currYToProcess;
 			if (nextY > getOwnerObj().getImageSizeY())
 				needRecalc = true;
 		}
@@ -362,7 +364,7 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		//Теперь надо загрузить новые пиксели в исходную матрицу и обнулить целевую матрицу.
 		TopMarginMode currMM;
 		AltMatrix<CellType> *currMatrix;
-		if (currPositionY == 0)
+		if (getOwnerObj().getCurrPositionY() == 0)
 		{
 			currMM = TOP_MM_FILE1;
 			currMatrix = NULL;
@@ -372,8 +374,9 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 			currMM = TOP_MM_MATR;
 			currMatrix = &sourceMatrix_;
 		}
-		if (!sourceMatrix_.LoadFromGDALRaster(getOwnerObj().getGdalSourceRaster(), currPositionY,
-			currYToProcess, marginSize, currMM, currMatrix, errObj))
+		if (!sourceMatrix_.LoadFromGDALRaster(getOwnerObj().getGdalSourceRaster(),
+			getOwnerObj().getCurrPositionY(), currYToProcess, marginSize, currMM,
+			currMatrix, errObj))
 		{
 			return false;
 		}
@@ -385,6 +388,11 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		//Надо применить фильтр
 		//TODO.
 		(this->*CurrFilter)(callBackObj);
+
+		//Для отладки - сохраним содержимое матриц.
+		sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".csv");
+		destMatrix_.SaveToCSVFile("dest" + STB.IntToString(debugFileNum, 5) + ".csv");
+		debugFileNum++;
 
 		//Вроде всё, итерация завершена.
 	}
@@ -412,7 +420,29 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 template <typename CellType>
 void RealMedianFilterTemplBase<CellType>::StubFilter(CallBackBase *callBackObj)
 {
-	//Заглушка.
+	int destX, destY, sourceX, sourceY, marginSize;
+	marginSize = (getOwnerObj().getAperture() - 1) / 2;
+	unsigned long progressPosition = getOwnerObj().getCurrPositionY()*destMatrix_.getXSize();
+
+	//Поехали.
+	for (destY = 0; destY < destMatrix_.getYSize(); destY++)
+	{
+		sourceY = destY + marginSize;
+		for (destX = 0; destX < destMatrix_.getXSize(); destX++)
+		{
+			sourceX = destX + marginSize;
+			progressPosition++;
+			//Незначимые пиксели не трогаем.
+			if (sourceMatrix_.getSignMatrixElem(sourceY, sourceX) != 1) continue;
+
+			//Просто копируем пиксел.
+			destMatrix_.setMatrixElem(destY, destX,
+				sourceMatrix_.getMatrixElem(sourceY, sourceX));
+
+			//Сообщить вызвавшему коду прогресс выполнения.
+			if (callBackObj) callBackObj->CallBack(progressPosition);
+		};
+	};
 }
 
 //Метод для обработки матрицы "тупым" фильтром, котороый действует практически в лоб.

@@ -110,6 +110,10 @@ class SmallToolsBox
 		//Преобразует bool в строку. Потоки или lexical_cast имхо лишнее.
 		std::string BoolToString(const bool &input) const;
 
+		//Преобразовать целое число в строку фиксированного размера с заданным количеством
+		//нулей в начале.
+		std::string IntToString(const long long value, int width);
+
 		//Перевести в нижний регистр utf8-строку.
 		void Utf8ToLower(const std::string &inputStr, std::string &outputStr) const;
 
