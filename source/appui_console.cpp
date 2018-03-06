@@ -50,8 +50,8 @@ const double DEFAULT_PROGRESS_UPDATE_PERIOD = 2.8;	//С какой период�
 //--------------------------------//
 
 AppUIConsoleCallBack::AppUIConsoleCallBack() : skipCounter_(0), skipNumber_(1),
-	isStarted_(false), isNotClean_(false), lastTextSize_(0), pixelsPerSecond_(0.0),
-	updatePeriod_(DEFAULT_PROGRESS_UPDATE_PERIOD)
+	isStarted_(false), isNotClean_(false), isPrinted100_(false), lastTextSize_(0),
+	pixelsPerSecond_(0.0), updatePeriod_(DEFAULT_PROGRESS_UPDATE_PERIOD)
 {
 
 }
@@ -69,12 +69,30 @@ void AppUIConsoleCallBack::Clear()
 		skipNumber_ = 1;
 		isStarted_ = false;
 		isNotClean_ = false;
+		isPrinted100_ = false;
 		lastTextSize_ = 0;
 		pixelsPerSecond_ = 0.0;
 		updatePeriod_ = DEFAULT_PROGRESS_UPDATE_PERIOD;
 	};
 }
 
+//"Перерисовать" "прогрессбар".
+void AppUIConsoleCallBack::UpdateBar(const unsigned long &progressPosition)
+{
+	cout << "\r";	//Переводим вывод на начало текущей строки.
+	text_ = lexical_cast<string>(progressPosition) + "/" + lexical_cast<string>(getMaxProgress()) +
+		" ( " + lexical_cast<string>(progressPosition / (getMaxProgress() / 100)) + "% ) "
+		+ STB.DoubleToString(pixelsPerSecond_, 2) + " пикс/с, skipNumber: "
+		+ lexical_cast<string>(skipNumber_);
+	tempSize_ = text_.size();
+	if (tempSize_ < lastTextSize_)
+	{
+		//Надо добавить пробелов чтобы затереть символы предыдущего вывода
+		text_.append(" ", lastTextSize_ - tempSize_);
+	}
+	lastTextSize_ = tempSize_;
+	cout << STB.Utf8ToConsoleCharset(text_) << std::flush;
+}
 
 //CallBack-метод, который будет выводить в консоль количество и процент уже
 //обработанных пикселей.
@@ -90,42 +108,41 @@ void AppUIConsoleCallBack::CallBack(const unsigned long &progressPosition)
 			return;
 		};
 		//skipCounter_ будет обнулён позже.
-	};
-	//Можно выводить.
-	if (isStarted_)
-	{
-		cout << "\r";	//Переводим вывод на начало текущей строки.
-		//А ещё сейчас надо проверить сколько времени занял предыдущий период вычислений
-		//и если надо - подкрутить skipNumber_. Заодно вычислим количество пикселей в секунду.
-		nowTime_ = microsec_clock::local_time();
-		timeDelta_ = nowTime_ - lastPrintTime_;
-		currMilliseconds_ = timeDelta_.total_milliseconds();
-		//Всегда считаем что операция заняла хоть сколько-то времени. Иначе гроб гроб кладбище...
-		if (!currMilliseconds_) currMilliseconds_ = 10;
-		//И только теперь можно считать скорость и всё прочее.
-		pixelsPerSecond_ = 1000.0 / (double(currMilliseconds_) / double(skipCounter_));
-		if (pixelsPerSecond_ < 1)
-			skipNumber_ = size_t(std::ceil(updatePeriod_ / pixelsPerSecond_));
+
+		//Можно выводить.
+		if (isStarted_)
+		{
+			//Cейчас надо проверить сколько времени занял предыдущий период вычислений
+			//и если надо - подкрутить skipNumber_. Заодно вычислим количество пикселей в секунду.
+			nowTime_ = microsec_clock::local_time();
+			timeDelta_ = nowTime_ - lastPrintTime_;
+			currMilliseconds_ = timeDelta_.total_milliseconds();
+			//Всегда считаем что операция заняла хоть сколько-то времени. Иначе гроб гроб кладбище...
+			if (!currMilliseconds_) currMilliseconds_ = 10;
+			//И только теперь можно считать скорость и всё прочее.
+			pixelsPerSecond_ = 1000.0 / (double(currMilliseconds_) / double(skipCounter_));
+			if (pixelsPerSecond_ < 1)
+				skipNumber_ = size_t(std::ceil(updatePeriod_ / pixelsPerSecond_));
+			else
+				skipNumber_ = size_t(std::ceil(pixelsPerSecond_*updatePeriod_));
+		}
 		else
-			skipNumber_ = size_t(std::ceil(pixelsPerSecond_*updatePeriod_));
+			isStarted_ = true;
+		lastPrintTime_ = microsec_clock::local_time(); //Запомним на будущее :).
+		//Выводим.
+		UpdateBar(progressPosition);
+		//Не забыть обнулить skipCounter_!
+		skipCounter_ = 0;
 	}
 	else
-		isStarted_ = true;
-	lastPrintTime_ = microsec_clock::local_time(); //Запомним на будущее :).
-	text_ = lexical_cast<string>(progressPosition) + "/" + lexical_cast<string>(getMaxProgress()) +
-		" ( " + lexical_cast<string>(progressPosition / (getMaxProgress() / 100)) + "% ) "
-		+ STB.DoubleToString(pixelsPerSecond_,2) + " пикс/с, skipNumber: "
-		+ lexical_cast<string>(skipNumber_);
-	tempSize_ = text_.size();
-	if (tempSize_ < lastTextSize_)
 	{
-		//Надо добавить пробелов чтобы затереть символы предыдущего вывода
-		text_.append(" ", lastTextSize_ - tempSize_);
+		//Почему-то вышли за 100% :(. Один раз напечатаем что выполнено 100% работы.
+		if (!isPrinted100_)
+		{
+			UpdateBar(getMaxProgress());
+			isPrinted100_ = true;
+		}
 	}
-	lastTextSize_ = tempSize_;
-	cout << STB.Utf8ToConsoleCharset(text_) << std::flush;
-	//Не забыть обнулить skipCounter_!
-	skipCounter_ = 0;
 }
 
 //Сообщить объекту о том что операция начинается
@@ -304,6 +321,15 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 			maxMemCanBeUsed_ = tempLimit;
 		};
 
+		//В случае если у нас размер строго равен максимальному для обработки изображения - работаем
+		//в режиме как при обработке одним куском.
+		if (maxMemCanBeUsed_ == filterObj.getMaxMemSize())
+		{
+			confObj_->setMemModeCmd(MEMORY_MODE_ONECHUNK, 0);
+			maxBlocksCanBeUsed_ = 1;
+			return true;
+		};
+
 		//Могло получиться так что минимальный блок не поместится в выбранное пространство.
 		//а лимит тут жёсткий, поэтому:
 		if (maxMemCanBeUsed_ < filterObj.getMinMemSize())
@@ -318,7 +344,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 	else if (confObj_->getMemMode() == MEMORY_MODE_STAYFREE)
 	{
 		//Оставить фиксированное количество места в ОЗУ.
-		if ((confObj_->getMemSize() > sysMemFreeSize))
+		if ((confObj_->getMemSize() > sysResInfo_.systemMemoryFreeSize))
 		{
 			//Не помещаемся никак :(
 			if (errObj)
@@ -326,7 +352,10 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 			return false;
 		};
 
-		maxMemCanBeUsed_ = sysMemFreeSize - confObj_->getMemSize();
+		maxMemCanBeUsed_ = sysResInfo_.systemMemoryFreeSize - confObj_->getMemSize();
+		//Но нельзя превышать размер адресного пространства.
+		if (maxMemCanBeUsed_ > sysMemFreeSize)
+			maxMemCanBeUsed_ = sysMemFreeSize;
 
 		//Могло получиться так что минимальный блок не поместится в выбранное пространство.
 		//а лимит тут жёсткий, поэтому:
@@ -338,6 +367,18 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 			maxBlocksCanBeUsed_ = 0;
 			return false;
 		}
+
+		//Нет смысла чтобы оно превышало максимальный размер, какой может потребоваться
+		//для обработки изображения.
+		if (maxMemCanBeUsed_ > filterObj.getMaxMemSize())
+		{
+			maxMemCanBeUsed_ = filterObj.getMaxMemSize();
+			//И поскольку в память мы влазим - работаем дальше так как будто в командной
+			//строке поставили режим onechunk.
+			confObj_->setMemModeCmd(MEMORY_MODE_ONECHUNK, 0);
+			maxBlocksCanBeUsed_ = 1;
+			return true;
+		};
 	}
 	else if ((confObj_->getMemMode() == MEMORY_MODE_LIMIT_FREEPRC) ||
 		(confObj_->getMemMode() == MEMORY_MODE_AUTO))
@@ -351,17 +392,25 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		case MEMORY_MODE_AUTO:
 			maxMemCanBeUsed_ = 80 * (sysResInfo_.systemMemoryFreeSize / 100);
 		};
+		//Но нельзя превышать размер адресного пространства.
+		if (maxMemCanBeUsed_ > sysMemFreeSize)
+			maxMemCanBeUsed_ = sysMemFreeSize;
 		//Нет смысла чтобы оно превышало максимальный размер, какой может потребоваться
 		//для обработки изображения.
 		if (maxMemCanBeUsed_ > filterObj.getMaxMemSize())
 		{
 			maxMemCanBeUsed_ = filterObj.getMaxMemSize();
+			//И поскольку в память мы влазим - работаем дальше так как будто в командной
+			//строке поставили режим onechunk.
+			confObj_->setMemModeCmd(MEMORY_MODE_ONECHUNK, 0);
+			maxBlocksCanBeUsed_ = 1;
+			return true;
 		};
 		//Если получившийся объём памяти меньше минималки - в зависимости от swapMode
 		//можно попробовать использовать некую долю от реального ОЗУ.
 		if (maxMemCanBeUsed_ < filterObj.getMinMemSize())
 		{
-			maxMemCanBeUsed_ = maxMemCanBeUsed_ = 90 * (sysMemFreeSize / 100);
+			maxMemCanBeUsed_ = 90 * (sysMemFreeSize / 100);
 			if (!((maxMemCanBeUsed_ >= filterObj.getMinMemSize()) && (swapMode == SWAPMODE_ASK)
 				&& ConsoleAnsweredYes(lexical_cast<string>(confObj_->getMemSize()) + "% \
 свободной памяти недостаточно для работы фильтра. Попробовать взять\n90%?")))
@@ -414,6 +463,14 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		unsigned long long invariableMemSize = filterObj.getMinMemSize() - filterObj.getMinBlockSize();
 		//Вот эта часть _должна_ будет быть кратна размеру блока после выполнения кода ниже.
 		unsigned long long variableMemSize = maxMemCanBeUsed_ - invariableMemSize;
+		bool needOneMoreBlock = false;
+		if (variableMemSize % filterObj.getMinBlockSize())
+		{
+			//Не делится нацело на число блоков, нужен будет дополнительный блок.
+			needOneMoreBlock = true;
+			variableMemSize -= filterObj.getMinBlockSize();
+		}
+		//Если места не хватает - гроб гроб кладбище.
 		if (filterObj.getMinBlockSize() > variableMemSize)
 		{
 			if (errObj)
@@ -422,8 +479,9 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 			maxBlocksCanBeUsed_ = 0;
 			return false;
 		}
-		//Целочисленное деление здесь как раз подходит :).
+		//Считаем сколько реально потребуется блоков и памяти.
 		maxBlocksCanBeUsed_ = int(variableMemSize / filterObj.getMinBlockSize())+2;
+		if (needOneMoreBlock) maxBlocksCanBeUsed_++;
 		maxMemCanBeUsed_ = maxBlocksCanBeUsed_ * filterObj.getMinBlockSize();
 	}
 	
@@ -543,6 +601,11 @@ int AppUIConsole::RunApp()
 		ConsolePrintError(errObj);
 		return 1;
 	};
+
+	///////////TEST///////////
+	//confObj_->setMemModeCmd(MEMORY_MODE_AUTO, 0);
+	//maxBlocksCanBeUsed_ = 13;
+	///////////TEST///////////
 
 	//Настраиваем фильтр в соответствии с полученной инфой о памяти.
 	if (confObj_->getMemMode() == MEMORY_MODE_ONECHUNK)

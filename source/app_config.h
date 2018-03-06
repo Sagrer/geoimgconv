@@ -268,6 +268,14 @@ public:
 		memModeCfgIsSaving_ = true;
 		memModeCmdIsSet_ = false;
 	};
+	void setMemModeCmd(const MemoryMode &value, const unsigned long long &memSize)
+	{
+		//Этот параметр может меняться в процессе работы так, как будто он был таким
+		//установлен из командной строки (т.е. имеет приоритет и не потребует сохранения).
+		memModeCmd_ = value;
+		memSizeCmd_ = memSize;
+		memModeCmdIsSet_ = true;
+	}
 	
 	//helpAsked
 	bool const& getHelpAsked() const {return helpAsked_;};

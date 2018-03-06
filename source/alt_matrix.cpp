@@ -45,6 +45,7 @@ template <typename CellType> void AntiUnrExtsHelper()
 	typedef void(AltMatrix<CellType>::*MethodPointer)(...);
 	MethodPointer pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveToFile);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveToGDALFile);
+	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveToGDALRaster);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::LoadFromFile);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::LoadFromGDALFile);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::LoadFromGDALRaster);
@@ -196,7 +197,7 @@ bool AltMatrix<CellType>::SaveToGDALRaster(GDALRasterBand *gdalRaster, const int
 		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  AltMatrix<>::SaveToGDALRaster gdalRaster == NULL");
 		return false;
 	}
-	if ((gdalRaster->GetXSize() != xSize_) || (gdalRaster->getYSize() < (yPosition+ySize_)))
+	if ((gdalRaster->GetXSize() != xSize_) || (gdalRaster->GetYSize() < (yPosition+ yToWrite)))
 	{
 		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  AltMatrix<>::SaveToGDALRaster wrong sizes!");
 		return false;
@@ -204,12 +205,11 @@ bool AltMatrix<CellType>::SaveToGDALRaster(GDALRasterBand *gdalRaster, const int
 
 	//Собсно, запишем информацию в растер.
 	CPLErr gdalResult;
-	gdalResult = gdalRaster->RasterIO(GF_Write, 0, yPosition, xSize_, ySize_,
-		(void*)(data_), xSize_, ySize_, GICToGDAL_PixelType(pixelType_),
+	gdalResult = gdalRaster->RasterIO(GF_Write, 0, yPosition, xSize_, yToWrite,
+		(void*)(data_), xSize_, yToWrite, GICToGDAL_PixelType(pixelType_),
 		0, 0, NULL);
 	if (gdalResult != CE_None)
 	{
-		GDALClose(inputDataset);
 		if (errObj) errObj->SetError(CMNERR_READ_ERROR, ": " + GetLastGDALError());
 		return false;
 	}
@@ -392,7 +392,7 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 
 	//Надо понять последнее ли это чтение.
 	int yProcessed = yStart+yToRead;
-	if (yProcessed <= (ySize_ - marginSize))
+	if (yProcessed <= ySize_)
 	{
 		//Последнее чтение. Классифицировать придётся меньшую часть пикселей. Для лишней части
 		//вспомогательную и основную матрицы надо будет обнулить т.к. там могли остаться значения

@@ -308,10 +308,11 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		callBackObj->setMaxProgress(getOwnerObj().getImageSizeX() * getOwnerObj().getImageSizeY());
 	
 	//Теперь в цикле надо пройти по всем строкам исходного файла.
-	int currYToProcess;
+	int currYToProcess, filterYToProcess;
 	bool needRecalc = true;
 	int currBlocksToProcess = getOwnerObj().getBlocksInMem() - 1;
-	int debugFileNum = 1;	//Для отладочного сохранения.
+	//int debugFileNum = 1;	//Для отладочного сохранения.
+	int writeYPosition = 0;
 	for (getOwnerObj().setCurrPositionY(0); getOwnerObj().getCurrPositionY()
 		< getOwnerObj().getImageSizeY(); getOwnerObj().setCurrPositionY(
 			getOwnerObj().getCurrPositionY() + currYToProcess))
@@ -326,6 +327,7 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 				{
 					//И единственная итерация. Всё обрабатывается одним куском.
 					currYToProcess = getOwnerObj().getImageSizeY();
+					filterYToProcess = currYToProcess;
 				}
 				else
 				{
@@ -335,28 +337,38 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 					int nextY = getOwnerObj().getCurrPositionY() + currYToProcess;
 					if (nextY >= getOwnerObj().getImageSizeY())
 						currYToProcess = getOwnerObj().getImageSizeY();
-					else
-						//Итерации ещё будут, читать на 1 блок меньше.
-						currBlocksToProcess--;
+					//В любом случае читать дальше на 1 блок меньше.
+					currBlocksToProcess--;
+					filterYToProcess = currBlocksToProcess * marginSize;;
 				}
 			}
 			else
 			{
 				//Не первая итерация.
 				currYToProcess = currBlocksToProcess * marginSize;
+				filterYToProcess = currYToProcess;
 				int nextY = getOwnerObj().getCurrPositionY() + currYToProcess;
 				if (nextY > getOwnerObj().getImageSizeY())
 				{
 					//Последняя итерация в которой строк будет меньше.
 					currYToProcess -= nextY - getOwnerObj().getImageSizeY();
+					//Количество строк для обработки возможно тоже надо уменьшить если разница
+					//превышает 1 блок - именно на эту разницу.
+					if ((filterYToProcess - currYToProcess) > marginSize)
+						filterYToProcess -= (filterYToProcess - currYToProcess) - marginSize;
 				}
-				needRecalc = false;	//Пересчёт в следующей итерации точно не потребуется.
+				//Проверим нужен ли в следующей итерации пересчёт.
+				nextY += currYToProcess;
+				if (nextY > getOwnerObj().getImageSizeY())
+					needRecalc = true;
+				else
+					needRecalc = false;	//Пересчёт в следующей итерации точно не потребуется.
 			}
 		}
 		else
 		{
 			//В этой итерации пересчёт не нужен, но он может потребоваться в следующей.
-			int nextY = getOwnerObj().getCurrPositionY() + currYToProcess;
+			int nextY = getOwnerObj().getCurrPositionY() + currYToProcess*2;
 			if (nextY > getOwnerObj().getImageSizeY())
 				needRecalc = true;
 		}
@@ -387,28 +399,54 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 
 		//Надо применить фильтр
 		//TODO.
-		(this->*CurrFilter)(callBackObj);
+		(this->*CurrFilter)(filterYToProcess,callBackObj);
+
+		//Сохраняем то что получилось.
+		if (!destMatrix_.SaveToGDALRaster(getOwnerObj().getGdalDestRaster(),
+			writeYPosition, filterYToProcess, errObj))
+		{
+			return false;
+		}
 
 		//Для отладки - сохраним содержимое матриц.
-		sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".csv");
-		destMatrix_.SaveToCSVFile("dest" + STB.IntToString(debugFileNum, 5) + ".csv");
-		debugFileNum++;
+		//sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".csv");
+		//destMatrix_.SaveToCSVFile("dest" + STB.IntToString(debugFileNum, 5) + ".csv");
+		//debugFileNum++;
 
 		//Вроде всё, итерация завершена.
+		writeYPosition += filterYToProcess;
 	}
 
-	//Есть значительная вероятность того что в последнем блоке в последней итерации было что-то
+	//Есть вероятность того что в последнем блоке в последней итерации было что-то
 	//значимое. Если это так - надо выполнить ещё одну итерацию, без фактического чтения.
-	if (currYToProcess > ((currBlocksToProcess - 1)*marginSize))
+	if ((getOwnerObj().getCurrPositionY() - currYToProcess) == 0)
 	{
+		//Если была единственная итерация - надо скорректировать число блоков.
+		currBlocksToProcess++;
+	}
+	if ((getOwnerObj().getUseMemChunks()) && (currYToProcess > ((currBlocksToProcess - 1)*marginSize)))
+	{
+		filterYToProcess = currYToProcess - ((currBlocksToProcess - 1)*marginSize);
 		//"читаем" данные в матрицу, на самом деле просто копируем 2 нижних блока наверх.
 		sourceMatrix_.LoadFromGDALRaster(getOwnerObj().getGdalSourceRaster(), 0,
 			0, marginSize, TOP_MM_MATR, &sourceMatrix_, NULL);
+		destMatrix_.CreateDestMatrix(sourceMatrix_, marginSize);
 		//Всё ещё надо обработать граничные пиксели
 		//TODO.
 		//Всё ещё надо применить фильтр.
 		//TODO.
-		(this->*CurrFilter)(callBackObj);
+		(this->*CurrFilter)(filterYToProcess,callBackObj);
+
+		//Сохраняем то что получилось.
+		if (!destMatrix_.SaveToGDALRaster(getOwnerObj().getGdalDestRaster(),
+			writeYPosition, filterYToProcess, errObj))
+		{
+			return false;
+		}
+
+		//Для отладки - сохраним содержимое матриц.
+		//sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
+		//destMatrix_.SaveToCSVFile("dest" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
 	}
 
 	//Вроде всё ок.
@@ -416,16 +454,17 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 }
 
 //Метод "тупого" фильтра, который тупо копирует входящую матрицу в исходящую. Нужен для тестирования
-//и отладки.
+//и отладки. Первый аргумент указывает количество строк матрицы для реальной обработки.
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::StubFilter(CallBackBase *callBackObj)
+void RealMedianFilterTemplBase<CellType>::StubFilter(const int &currYToProcess,
+	CallBackBase *callBackObj)
 {
 	int destX, destY, sourceX, sourceY, marginSize;
 	marginSize = (getOwnerObj().getAperture() - 1) / 2;
 	unsigned long progressPosition = getOwnerObj().getCurrPositionY()*destMatrix_.getXSize();
 
 	//Поехали.
-	for (destY = 0; destY < destMatrix_.getYSize(); destY++)
+	for (destY = 0; destY < currYToProcess; destY++)
 	{
 		sourceY = destY + marginSize;
 		for (destX = 0; destX < destMatrix_.getXSize(); destX++)
@@ -446,8 +485,10 @@ void RealMedianFilterTemplBase<CellType>::StubFilter(CallBackBase *callBackObj)
 }
 
 //Метод для обработки матрицы "тупым" фильтром, котороый действует практически в лоб.
+//Первый аргумент указывает количество строк матрицы для реальной обработки.
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::StupiudFilter(CallBackBase *callBackObj)
+void RealMedianFilterTemplBase<CellType>::StupiudFilter(const int &currYToProcess,
+	CallBackBase *callBackObj)
 {
 	//Заглушка.
 }

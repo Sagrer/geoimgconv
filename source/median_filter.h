@@ -116,7 +116,8 @@ private:
 		const int &y, const PixelDirection direction, const int &marginSize);
 
 	//Указатель на метод-фильтр
-	typedef void(RealMedianFilterTemplBase<CellType>::*FilterMethod)(CallBackBase *callBackObj);
+	typedef void(RealMedianFilterTemplBase<CellType>::*FilterMethod)(const int &currYToProcess,
+		CallBackBase *callBackObj);
 		
 	//Приватные методы
 
@@ -160,11 +161,12 @@ private:
 	bool ApplyFilter(FilterMethod CurrFilter, CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
 
 	//Метод "тупого" фильтра, который тупо копирует входящую матрицу в исходящую. Нужен для тестирования
-	//и отладки.
-	void StubFilter(CallBackBase *callBackObj = NULL);
+	//и отладки. Первый аргумент указывает количество строк матрицы для реальной обработки.
+	void StubFilter(const int &currYToProcess, CallBackBase *callBackObj = NULL);
 
 	//Метод для обработки матрицы "тупым" фильтром, котороый действует практически в лоб.
-	void StupiudFilter(CallBackBase *callBackObj = NULL);
+	//Первый аргумент указывает количество строк матрицы для реальной обработки.
+	void StupiudFilter(const int &currYToProcess, CallBackBase *callBackObj = NULL);
 public:
 	//Нельзя создать объект не дав ссылку на MedianFilter
 	RealMedianFilterTemplBase(MedianFilter *ownerObj) : RealMedianFilterBase(ownerObj) {};

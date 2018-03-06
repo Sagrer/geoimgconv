@@ -42,6 +42,7 @@ private:
 	size_t skipNumber_;	//По сколько пикселов пропускать до следующего пересчёта.
 	bool isStarted_;		//Признак того что текст с инфой был уже выведен хотя бы раз.
 	bool isNotClean_;	//Clear() очистит объект только если здесь true.
+	bool isPrinted100_;	//Признак того что 100% уже напечатано.
 	std::string text_;	//Строка для вывода в консоль
 	std::string::size_type lastTextSize_;	//Длина текста, выведенная в прошлый раз.
 	std::string::size_type tempSize_;
@@ -54,6 +55,8 @@ private:
 	boost::posix_time::time_duration::tick_type currMilliseconds_;
 	double updatePeriod_;		//Настройка. Раз в сколько секунд обновлять информацию.
 
+	//"Перерисовать" "прогрессбар".
+	void UpdateBar(const unsigned long &progressPosition);
 public:
 
 	//Доступ к полям.
