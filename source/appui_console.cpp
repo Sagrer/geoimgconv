@@ -211,10 +211,45 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 	
 	maxMemCanBeUsed_ = 0;
 	maxBlocksCanBeUsed_ = 0;
-	//Определим лимит по адресному пространству в 90% от реального т.к. помимо данных фильтра
-	//процесс обязательно сожрал память на что-то ещё. Это должно уменьшить вероятность
-	//ошибок.
-	unsigned long long addrSizeLimit = 90 * (sysResInfo_.maxProcessMemorySize / 100);
+
+	//С лимитом по адресному пространству - всё сложно. Для эффективной работы нужны непрерывные блоки
+	//большого размера. Но по адресному пространству размазаны dll-ки что не позволяет иметь непрерывные
+	//блоки больше примерно 900 мегабайт один блок и 400 мегабайт второй в 32-битной версии под вендами
+	//при якобы 2-гиговом адресном пространстве. В прочем, я буду собирать программу с флагом
+	// /LARGEADDRESSAWARE благодаря которому по крайней мере при запуске в 64-битной венде программа
+	//увидит дополнительную пустую непрерывную область размером в 2 гига. Хотя запуск 32-битной версии
+	//программы на 64-битной системе весьма бессмысленен, но юзеры - такие юзеры, всякое бывает.
+	//Итак - если мы видим менее 2100 и более 900 мегабайт лимита по адресному пространству - лимит будет
+	//установлен в 900 мегабайт. Если мы видим более 2100 и менее 4100 - лимит будет установлен в 2000
+	//мегабайт. Такие дела.
+
+	unsigned long long addrSizeLimit;
+	//константы для размера в байтах:
+	const unsigned long long size2100m = 2202009600;
+	const unsigned long long size900m = 943718400;
+	const unsigned long long size4100m = 4299161600;
+	const unsigned long long size2000m = 2097152000;
+	//принимаем решение:
+	if ((sysResInfo_.maxProcessMemorySize < size2100m) && (sysResInfo_.maxProcessMemorySize > size900m))
+	{
+		addrSizeLimit = size900m;
+	}
+	else if ((sysResInfo_.maxProcessMemorySize < size4100m) && (sysResInfo_.maxProcessMemorySize > size2100m))
+	{
+		addrSizeLimit = size2000m;
+	}
+	else if (sysResInfo_.maxProcessMemorySize > size4100m)
+	{
+		//Раньше, до осознания проблемы фрагментации лимит выбирался как 90% от реального. Теперь
+		//так делается только если его больше 4,1 гигабайт, т.е. это скорее всего какая-то 64-битная система.
+		addrSizeLimit = 90 * (sysResInfo_.maxProcessMemorySize / 100);
+	}
+	else
+	{
+		//В крайнем случае - попробуем просто взять 40% от заявленного размера адресного пространства.
+		addrSizeLimit = 40 * (sysResInfo_.maxProcessMemorySize / 100);
+	}
+
 	//Нельзя выходить за пределы доступного адресного пространства, поэтому придётся обращаться
 	//не к sysResInfo_ напрямую а к локальным переменным.
 	unsigned long long sysMemFreeSize;
@@ -788,6 +823,20 @@ int AppUIConsole::RunTestMode()
 	//cout << "Done." << endl;
 	////Главное не забыть закрыть файл!!!
 	//GDALClose(inputDataset);
+
+	////Тест выделения больших (сравнимых с размером адресного пространства) блоков в памяти.
+	//string tempStr;
+	//cout << endl << "Ready to start. Enter string to continue... > ";
+	//cin >> tempStr;
+	//cout << endl << "getting 900m..." << endl;
+	//unsigned long long memSize = STB.InfoSizeToBytesNum("900m");
+	//char *testArr = new char[(unsigned int)(memSize)];
+	//cout << "OK!" << endl;
+	//cout << endl << "getting more 200m..." << endl;
+	//unsigned long long memSize2 = STB.InfoSizeToBytesNum("300m");
+	//char *testArr2 = new char[(unsigned int)(memSize2)];
+	//cout << "OK!" << endl;
+	//cin >> tempStr;
 
 	//Заглушка, работает когда ничего не тестируется.
 	PrintToConsole("Вы кто такие? Я вас не звал! Никаких тестов в этой версии\n\

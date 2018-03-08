@@ -115,3 +115,12 @@ target_link_libraries(geoimgconv ${ICU_LIBRARIES})
 find_package(GDAL REQUIRED)
 include_directories(${GDAL_INCLUDE_DIR})
 target_link_libraries(geoimgconv ${GDAL_LIBRARY})
+
+#При сборке 32-битной версии под студию включим использование более 2гигов памяти.
+if(WIN32)
+	if(NOT "${CMAKE_GENERATOR}" MATCHES "(Win64|IA64)")
+		if(MSVC)
+			SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
+		endif()
+	endif()
+endif()
