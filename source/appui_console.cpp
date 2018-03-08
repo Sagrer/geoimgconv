@@ -498,13 +498,6 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		unsigned long long invariableMemSize = filterObj.getMinMemSize() - filterObj.getMinBlockSize();
 		//Вот эта часть _должна_ будет быть кратна размеру блока после выполнения кода ниже.
 		unsigned long long variableMemSize = maxMemCanBeUsed_ - invariableMemSize;
-		bool needOneMoreBlock = false;
-		if (variableMemSize % filterObj.getMinBlockSize())
-		{
-			//Не делится нацело на число блоков, нужен будет дополнительный блок.
-			needOneMoreBlock = true;
-			variableMemSize -= filterObj.getMinBlockSize();
-		}
 		//Если места не хватает - гроб гроб кладбище.
 		if (filterObj.getMinBlockSize() > variableMemSize)
 		{
@@ -516,8 +509,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		}
 		//Считаем сколько реально потребуется блоков и памяти.
 		maxBlocksCanBeUsed_ = int(variableMemSize / filterObj.getMinBlockSize())+2;
-		if (needOneMoreBlock) maxBlocksCanBeUsed_++;
-		maxMemCanBeUsed_ = maxBlocksCanBeUsed_ * filterObj.getMinBlockSize();
+		maxMemCanBeUsed_ = (maxBlocksCanBeUsed_ * filterObj.getMinBlockSize())-invariableMemSize;
 	}
 	
 	return true;
