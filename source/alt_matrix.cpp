@@ -532,6 +532,7 @@ void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatr
 	if ((newXSize != xSize_) || (newYSize != ySize_))
 	{
 		if (!IsClear()) Clear();
+		useSignData_ = false;	//dest-матрице не нужен вспомогательный массив!
 		CreateEmpty(sourceMatrix_.xSize_ - (marginSize * 2),
 			sourceMatrix_.ySize_ - (marginSize * 2));
 	}
