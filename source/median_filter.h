@@ -88,6 +88,9 @@ public:
 	//Для отладки. Результат записывает в destMatrix_.
 	virtual void ApplyStubFilter_old(CallBackBase *callBackObj = NULL) = 0;
 
+	//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
+	virtual bool ApplyStupidFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) = 0;
+
 	//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
 	//Для отладки. Результат записывается в выбранный destFile
 	virtual bool ApplyStubFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) = 0;
@@ -174,7 +177,7 @@ private:
 
 	//Метод для обработки матрицы "тупым" фильтром, котороый действует практически в лоб.
 	//Первый аргумент указывает количество строк матрицы для реальной обработки.
-	void StupiudFilter(const int &currYToProcess, CallBackBase *callBackObj = NULL);
+	void StupidFilter(const int &currYToProcess, CallBackBase *callBackObj = NULL);
 public:
 	//Нельзя создать объект не дав ссылку на MedianFilter
 	RealMedianFilterTemplBase(MedianFilter *ownerObj) : RealMedianFilterBase(ownerObj) {};
@@ -205,6 +208,9 @@ public:
 	//Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
 	//Для отладки. Результат записывает в destMatrix_.
 	void ApplyStubFilter_old(CallBackBase *callBackObj = NULL);
+
+	//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
+	bool ApplyStupidFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
 
 	//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
 	//Для отладки. Результат записывается в выбранный destFile
@@ -457,6 +463,9 @@ public:
 	//Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
 	//Для отладки. Результат записывает в destMatrix_.
 	void ApplyStubFilter_old(CallBackBase *callBackObj = NULL);
+
+	//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
+	bool ApplyStupidFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
 
 	//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
 	//Для отладки. Результат записывается в выбранный destFile

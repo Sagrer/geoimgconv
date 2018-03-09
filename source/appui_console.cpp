@@ -675,12 +675,12 @@ int AppUIConsole::RunApp()
 	//};
 
 
-	PrintToConsole("Старая реализация фильтра отключена. Новая в этой версии пока не работает. Такие дела :(.\n\n");
+	//PrintToConsole("Старая реализация фильтра отключена. Новая в этой версии пока не работает. Такие дела :(.\n\n");
 	
 	//Собственно, запуск фильтра.
 	AppUIConsoleCallBack CallBackObj;
 	CallBackObj.OperationStart();
-	if (!medFilter.ApplyStubFilter(&CallBackObj, &errObj))
+	if (!medFilter.ApplyStupidFilter(&CallBackObj, &errObj))
 	{
 		ConsolePrintError(errObj);
 			return 1;

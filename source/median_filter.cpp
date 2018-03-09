@@ -508,10 +508,66 @@ void RealMedianFilterTemplBase<CellType>::StubFilter(const int &currYToProcess,
 //Метод для обработки матрицы "тупым" фильтром, котороый действует практически в лоб.
 //Первый аргумент указывает количество строк матрицы для реальной обработки.
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::StupiudFilter(const int &currYToProcess,
+void RealMedianFilterTemplBase<CellType>::StupidFilter(const int &currYToProcess,
 	CallBackBase *callBackObj)
 {
-	//Заглушка.
+	//Данный метод применяет медианный фильтр "в лоб", т.ч. тупо для каждого пикселя создаёт
+	//массив из всех пикселей, входящих в окно, после чего сортирует массив и медиану подставляет
+	//на место пикселя в dest-матрице.
+	int destX, destY, windowX, windowY, sourceX, sourceY, marginSize, medianArrPos;
+	marginSize = (getOwnerObj().getAperture() - 1) / 2;
+	//Сразу вычислим индексы и указатели чтобы не считать в цикле.
+	//И выделим память под массив для пикселей окна, в котором ищем медиану.
+	int medianArrSize = getOwnerObj().getAperture() * getOwnerObj().getAperture();
+	CellType *medianArr = new CellType[medianArrSize];
+	//Целочисленное деление, неточностью пренебрегаем ибо ожидаем окно со
+	//стороной в десятки пикселей.
+	CellType *medianPos = medianArr + (medianArrSize / 2);
+	CellType *medianArrEnd = medianArr + medianArrSize;	//Элемент за последним в массиве.
+	unsigned long progressPosition = getOwnerObj().getCurrPositionY()*destMatrix_.getXSize();
+
+	//Поехали.
+	for (destY = 0; destY < currYToProcess; destY++)
+	{
+		sourceY = destY + marginSize;
+		for (destX = 0; destX < destMatrix_.getXSize(); destX++)
+		{
+			sourceX = destX + marginSize;
+			progressPosition++;
+			//Незначимые пиксели не трогаем.
+			if (sourceMatrix_.getSignMatrixElem(sourceY, sourceX) != 1) continue;
+			//Теперь надо пройти по каждому пикселю окна чтобы составить массив
+			//и сортировкой получить медиану. Наверное самый неэффективны способ.
+			medianArrPos = 0;
+			for (windowY = destY; windowY<(sourceY + marginSize); windowY++)
+			{
+				for (windowX = destX; windowX<(sourceX + marginSize); windowX++)
+				{
+					medianArr[medianArrPos] = sourceMatrix_.getMatrixElem(windowY, windowX);
+					medianArrPos++;
+				}
+			}
+			//Сортируем, берём медиану из середины. Точностью поиска середины не
+			//заморачиваемся т.к. окна будут большие, в десятки пикселов.
+			std::nth_element(medianArr, medianPos, medianArrEnd);
+			if (GetDelta(*medianPos, sourceMatrix_.getMatrixElem(sourceY, sourceX))
+				< getOwnerObj().getThreshold())
+			{
+				//Отличие от медианы меньше порогового. Просто копируем пиксел.
+				destMatrix_.setMatrixElem(destY, destX,
+					sourceMatrix_.getMatrixElem(sourceY, sourceX));
+			}
+			else
+			{
+				//Отличие больше порогового - записываем в dest-пиксель медиану.
+				destMatrix_.setMatrixElem(destY, destX, *medianPos);
+			};
+			//Сообщить вызвавшему коду прогресс выполнения.
+			if (callBackObj) callBackObj->CallBack(progressPosition);
+		};
+	};
+	//Не забыть delete! ))
+	delete[] medianArr;
 }
 
 //--------------------------------//
@@ -736,6 +792,15 @@ void RealMedianFilterTemplBase<CellType>::ApplyStubFilter_old(CallBackBase *call
 			if (callBackObj) callBackObj->CallBack(progressPosition);
 		};
 	};
+}
+
+//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
+template <typename CellType>
+bool RealMedianFilterTemplBase<CellType>::ApplyStupidFilter(CallBackBase *callBackObj,
+	ErrorInfo *errObj)
+{
+	//Просто вызываем уже готовый метод, передав ему нужный фильтрующий метод.
+	return ApplyFilter(&RealMedianFilterTemplBase<CellType>::StupidFilter, callBackObj, errObj);
 }
 
 //Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
@@ -1151,6 +1216,22 @@ void MedianFilter::ApplyStubFilter_old(CallBackBase *callBackObj)
 	if (imageIsLoaded_)
 	{
 		pFilterObj_->ApplyStubFilter_old(callBackObj);
+	}
+}
+
+//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
+bool MedianFilter::ApplyStupidFilter(CallBackBase *callBackObj, ErrorInfo *errObj)
+{
+	//Проброс вызова.
+	if (sourceIsAttached_ || destIsAttached_)
+	{
+		return pFilterObj_->ApplyStupidFilter(callBackObj, errObj);
+	}
+	else
+	{
+		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilter::ApplyStubFilter no source and\\or dest \
+file(s) were attached.");
+		return false;
 	}
 }
 
