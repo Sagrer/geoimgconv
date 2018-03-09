@@ -566,16 +566,6 @@ int AppUIConsole::RunApp()
 	PrintToConsole("\nПриветствую! Это geoimgconv v."+ APP_VERSION+"\n");
 	PrintToConsole("Данная программа предназначена для преобразования геокартинок.\n");
 	PrintToConsole("Это прототип. Не ждите от него многого.\n");
-	//PrintToConsole("Программа запущена по пути: "+ getAppPath() + "\n");
-	//PrintToConsole("Текущий рабочий путь: "+getCurrPath() + "\n");
-	PrintToConsole("\nОбнаружено ядер процессора: " +
-		lexical_cast<string>(sysResInfo_.cpuCoresNumber) + "\n");
-	PrintToConsole("Всего ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo_.systemMemoryFullSize) + ".\n");
-	PrintToConsole("Доступно ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo_.systemMemoryFreeSize) + ".\n");
-	PrintToConsole("Процесс может адресовать памяти: " + STB.BytesNumToInfoSizeStr(sysResInfo_.maxProcessMemorySize) + ".\n");
-	PrintToConsole("Выбран режим работы с памятью: " + MemoryModeTexts[confObj_->getMemMode()] + "\n");
-	PrintToConsole("Размер, указанный для режима работы с памятью: " +
-		lexical_cast<string>(confObj_->getMemSize()) + "\n\n");
 
 	//Выдать больше инфы если не было передано никаких опций командной строки.
 	if (confObj_->getArgc() == 1)
@@ -598,6 +588,18 @@ int AppUIConsole::RunApp()
 		//Версия и так выводится, поэтому просто делаем ничего.
 		return 0;
 	};
+
+	//Выведем немного инфы о системе, где мы запущены.
+	//PrintToConsole("Программа запущена по пути: "+ getAppPath() + "\n");
+	//PrintToConsole("Текущий рабочий путь: "+getCurrPath() + "\n");
+	/*PrintToConsole("\nОбнаружено ядер процессора: " +
+	lexical_cast<string>(sysResInfo_.cpuCoresNumber) + "\n");*/
+	PrintToConsole("Всего ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo_.systemMemoryFullSize) + ".\n");
+	PrintToConsole("Доступно ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo_.systemMemoryFreeSize) + ".\n");
+	PrintToConsole("Процесс может адресовать памяти: " + STB.BytesNumToInfoSizeStr(sysResInfo_.maxProcessMemorySize) + ".\n");
+	PrintToConsole("Выбран режим работы с памятью: " + MemoryModeTexts[confObj_->getMemMode()] + "\n");
+	/*PrintToConsole("Размер, указанный для режима работы с памятью: " +
+	lexical_cast<string>(confObj_->getMemSize()) + "\n\n");*/
 
 	//Всё-таки нужно обработать картинку. Настраиваем медианный фильтр и пути к файлам.
 	filesystem::path inputFilePath = filesystem::absolute(STB.Utf8ToWstring(confObj_->getInputFileName()), STB.Utf8ToWstring(getCurrPath()));
@@ -630,6 +632,7 @@ int AppUIConsole::RunApp()
 	};
 
 	///////////TEST///////////
+	//Тут удобно руками менять параметры чтобы проверять работу на всяких граничных значениях.
 	//confObj_->setMemModeCmd(MEMORY_MODE_AUTO, 0);
 	//maxBlocksCanBeUsed_ = 13;
 	///////////TEST///////////
@@ -647,35 +650,11 @@ int AppUIConsole::RunApp()
 	PrintToConsole("Открыто.\n\n");
 
 	PrintToConsole("Программа будет обрабатывать файл, используя " +
-		STB.BytesNumToInfoSizeStr(maxMemCanBeUsed_) + " памяти, частями по " +
+		STB.BytesNumToInfoSizeStr(maxMemCanBeUsed_) + " памяти, частями по\n" +
 		lexical_cast<std::string>(maxBlocksCanBeUsed_) + " блока(ов).\n");
 	if (confObj_->getMemMode() != MEMORY_MODE_ONECHUNK)
 		PrintToConsole("Размер блока: " + STB.BytesNumToInfoSizeStr(medFilter.getMinBlockSize()) + ".\n");
 	cout << endl;
-
-	//PrintToConsole("Для дополнительной отладки сохраняю файл: input_source.csv\n");
-	//if (!medFilter.SourceSaveToCSVFile("input_source.csv", &errObj))
-	//{
-	//	ConsolePrintError(errObj);
-	//	return 1;
-	//};
-
-	//PrintToConsole("Заполняю краевые области...\n");
-	//PrintToConsole("Тип заполнения: " + MarginTypesTexts[medFilter.getMarginType()] + "\n");
-	//AppUIConsoleCallBack CallBackObj;
-	//CallBackObj.OperationStart();
-	//medFilter.FillMargins(&CallBackObj);
-	//CallBackObj.OperationEnd();	//Выведет время выполнения.
-
-	//PrintToConsole("Для дополнительной отладки сохраняю файл: input_filled.csv\n");
-	//if (!medFilter.SourceSaveToCSVFile("input_filled.csv", &errObj))
-	//{
-	//	ConsolePrintError(errObj);
-	//	return 1;
-	//};
-
-
-	//PrintToConsole("Старая реализация фильтра отключена. Новая в этой версии пока не работает. Такие дела :(.\n\n");
 	
 	//Собственно, запуск фильтра.
 	AppUIConsoleCallBack CallBackObj;
@@ -686,29 +665,6 @@ int AppUIConsole::RunApp()
 			return 1;
 	}
 	CallBackObj.OperationEnd();
-	
-	//PrintToConsole("Готово. Применяю \"тупую\" версию фильтра.\n");
-	//PrintToConsole("Апертура: " + lexical_cast<std::string>(medFilter.getAperture()) +
-	//	"; Порог: " + STB.DoubleToString(medFilter.getThreshold(), 5) + ".\n");
-	//CallBackObj.OperationStart();
-	//medFilter.ApplyStupidFilter_old(&CallBackObj);
-	////medFilter.ApplyStubFilter_old(&CallBackObj);	//Отладочный "мгновенный" фильтр - только имитирует фильтрацию.
-	//CallBackObj.OperationEnd();   //Выведет время выполнения.
-
-	//PrintToConsole("Для дополнительной отладки сохраняю файл: output_stupid.csv\n");
-	//if (!medFilter.DestSaveToCSVFile("output_stupid.csv", &errObj))
-	//{
-	//	ConsolePrintError(errObj);
-	//	return 1;
-	//};
-
-	////Вроде всё ок, можно сохранять.
-	//PrintToConsole("Готово. Сохраняю файл:\n" + outputFileName + "\n");
-	//if (!medFilter.SaveImage(outputFileName, &errObj))
-	//{
-	//	ConsolePrintError(errObj);
-	//	return 1;
-	//};
 
 	//Закрываем файлы.
 	medFilter.CloseAllFiles();

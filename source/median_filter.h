@@ -77,17 +77,6 @@ public:
 	//выбранным алгоритмом.
 	virtual void FillMargins(const int yStart, const int yToProcess, CallBackBase *callBackObj = NULL) = 0;
 
-	//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
-	//выбранным алгоритмом. Обёртка для старых методов.
-	virtual void FillMargins(CallBackBase *callBackObj = NULL) = 0;
-
-	//Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
-	virtual void ApplyStupidFilter_old(CallBackBase *callBackObj = NULL) = 0;
-
-	//Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
-	//Для отладки. Результат записывает в destMatrix_.
-	virtual void ApplyStubFilter_old(CallBackBase *callBackObj = NULL) = 0;
-
 	//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
 	virtual bool ApplyStupidFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) = 0;
 
@@ -148,10 +137,6 @@ private:
 	//Костяк алгоритма, общий для Simple и Mirror
 	void FillMargins_PixelBasedAlgo(const PixFillerMethod FillerMethod, const int yStart,
 		const int yToProcess, CallBackBase *callBackObj = NULL);
-		
-	//Костяк алгоритма, общий для Simple и Mirror. Обёртка для старых методов.
-	void FillMargins_PixelBasedAlgo(const PixFillerMethod FillerMethod,
-		CallBackBase *callBackObj = NULL);
 
 	//Заполнить пустые пиксели source-матрицы простым алгоритмом (сплошной цвет).
 	void FillMargins_Simple(CallBackBase *callBackObj = NULL);
@@ -197,17 +182,6 @@ public:
 	//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 	//выбранным алгоритмом.
 	void FillMargins(const int yStart, const int yToProcess, CallBackBase *callBackObj = NULL);
-
-	//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
-	//выбранным алгоритмом. Обёртка для старых методов.
-	void FillMargins(CallBackBase *callBackObj = NULL);
-		
-	//Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
-	void ApplyStupidFilter_old(CallBackBase *callBackObj = NULL);
-
-	//Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
-	//Для отладки. Результат записывает в destMatrix_.
-	void ApplyStubFilter_old(CallBackBase *callBackObj = NULL);
 
 	//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
 	bool ApplyStupidFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
@@ -452,17 +426,6 @@ public:
 	//картинка - файл копируется под новым именем и затем в него вносятся изменённые пиксели.
 	///В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
 	bool SaveImage(const std::string &fileName, ErrorInfo *errObj = NULL);
-
-	//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
-	//выбранным алгоритмом.
-	void FillMargins(CallBackBase *callBackObj = NULL);
-
-	//Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
-	void ApplyStupidFilter_old(CallBackBase *callBackObj = NULL);
-
-	//Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
-	//Для отладки. Результат записывает в destMatrix_.
-	void ApplyStubFilter_old(CallBackBase *callBackObj = NULL);
 
 	//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
 	bool ApplyStupidFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);

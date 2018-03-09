@@ -263,16 +263,6 @@ void RealMedianFilterTemplBase<CellType>::FillMargins_PixelBasedAlgo(const PixFi
 	}
 }
 
-//Костяк алгоритма, общий для Simple и Mirror. Обёртка для старых методов.
-template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::FillMargins_PixelBasedAlgo(const PixFillerMethod FillerMethod,
-	CallBackBase *callBackObj)
-{
-	int marginSize = (getOwnerObj().getAperture() - 1) / 2;
-	FillMargins_PixelBasedAlgo(FillerMethod, marginSize,
-		(sourceMatrix_.getYSize() - (2 * marginSize)), callBackObj);
-}
-
 //Заполнить пустые пиксели source-матрицы простым алгоритмом (сплошной цвет).
 template <typename CellType>
 void RealMedianFilterTemplBase<CellType>::FillMargins_Simple(CallBackBase *callBackObj)
@@ -683,117 +673,6 @@ void RealMedianFilterTemplBase<CellType>::FillMargins(const int yStart, const in
 	}
 }
 
-//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
-//выбранным алгоритмом. Обёртка для старых методов.
-template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::FillMargins(CallBackBase *callBackObj)
-{
-	//Просто пробросим вызов в реально работающий метод.
-	int marginSize = (getOwnerObj().getAperture() - 1) / 2;
-	FillMargins(marginSize, (sourceMatrix_.getYSize() - (2 * marginSize)), callBackObj);
-}
-
-//Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
-template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::ApplyStupidFilter_old(CallBackBase *callBackObj)
-{
-	//Данный метод применяет медианный фильтр "в лоб", т.ч. тупо для каждого пикселя создаёт
-	//массив из всех пикселей, входящих в окно, после чего сортирует массив и медиану подставляет
-	//на место пикселя в dest-матрице. Применять имеет смысл разве что в тестовых целях и для
-	//сравнения с оптимизированными алгоритмами.
-	int destX, destY, windowX, windowY, sourceX, sourceY, marginSize, medianArrPos;
-	marginSize = (getOwnerObj().getAperture() - 1) / 2;
-	destMatrix_.CreateDestMatrix(sourceMatrix_,marginSize);
-	//Сразу вычислим индексы и указатели чтобы не считать в цикле.
-	//И выделим память под массив для пикселей окна, в котором ищем медиану.
-	int medianArrSize = getOwnerObj().getAperture() * getOwnerObj().getAperture();
-	CellType *medianArr = new CellType[medianArrSize];
-	//Целочисленное деление, неточностью пренебрегаем ибо ожидаем окно со
-	//стороной в десятки пикселей.
-	CellType *medianPos = medianArr+(medianArrSize/2);
-	CellType *medianArrEnd = medianArr+medianArrSize; //Элемент за последним в массиве!
-	//Настроим объект, выводящий информацию о прогрессе обработки.
-	if (callBackObj)
-		callBackObj->setMaxProgress(destMatrix_.getXSize() * destMatrix_.getYSize());
-	unsigned long progressPosition = 0;
-	
-	//Поехали.
-	for (destY = 0; destY < destMatrix_.getYSize(); destY++)
-	{
-		sourceY=destY+marginSize;
-		for (destX = 0; destX < destMatrix_.getXSize(); destX++)
-		{
-			sourceX=destX+marginSize;
-			progressPosition++;
-			//Незначимые пиксели не трогаем.
-			if (sourceMatrix_.getSignMatrixElem(sourceY,sourceX) !=1) continue;
-			//Теперь надо пройти по каждому пикселю окна чтобы составить массив
-			//и сортировкой получить медиану. Наверное самый неэффективны способ.
-			medianArrPos = 0;
-			for (windowY=destY; windowY<(sourceY+marginSize); windowY++)
-			{
-				for (windowX=destX; windowX<(sourceX+marginSize); windowX++)
-				{
-					medianArr[medianArrPos]=sourceMatrix_.getMatrixElem(windowY,windowX);
-					medianArrPos++;
-				}
-			}
-			//Сортируем, берём медиану из середины. Точностью поиска середины не
-			//заморачиваемся т.к. окна будут большие, в десятки пикселов.
-			std::nth_element(medianArr,medianPos,medianArrEnd);
-			if (GetDelta(*medianPos,sourceMatrix_.getMatrixElem(sourceY,sourceX))
-				< getOwnerObj().getThreshold())
-			{
-				//Отличие от медианы меньше порогового. Просто копируем пиксел.
-				destMatrix_.setMatrixElem(destY,destX,
-					sourceMatrix_.getMatrixElem(sourceY,sourceX));
-			}
-			else
-			{
-				//Отличие больше порогового - записываем в dest-пиксель медиану.
-				destMatrix_.setMatrixElem(destY,destX,*medianPos);
-			};
-			//Сообщить вызвавшему коду прогресс выполнения.
-			if (callBackObj) callBackObj->CallBack(progressPosition);
-		};
-	};
-	//Не забыть delete! ))
-	delete[] medianArr;
-}
-
-//Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
-//Для отладки. Результат записывает в destMatrix_.
-template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::ApplyStubFilter_old(CallBackBase *callBackObj)
-{
-	int destX, destY, sourceX, sourceY, marginSize;
-	marginSize = (getOwnerObj().getAperture() - 1) / 2;
-	destMatrix_.CreateDestMatrix(sourceMatrix_, marginSize);
-	if (callBackObj)
-		callBackObj->setMaxProgress(destMatrix_.getXSize() * destMatrix_.getYSize());
-	unsigned long progressPosition = 0;
-
-	//Поехали.
-	for (destY = 0; destY < destMatrix_.getYSize(); destY++)
-	{
-		sourceY = destY + marginSize;
-		for (destX = 0; destX < destMatrix_.getXSize(); destX++)
-		{
-			sourceX = destX + marginSize;
-			progressPosition++;
-			//Незначимые пиксели не трогаем.
-			if (sourceMatrix_.getSignMatrixElem(sourceY,sourceX) != 1) continue;
-
-			//Просто копируем пиксел.
-			destMatrix_.setMatrixElem(destY,destX,
-				sourceMatrix_.getMatrixElem(sourceY,sourceX));
-
-			//Сообщить вызвавшему коду прогресс выполнения.
-			if (callBackObj) callBackObj->CallBack(progressPosition);
-		};
-	};
-}
-
 //Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
 template <typename CellType>
 bool RealMedianFilterTemplBase<CellType>::ApplyStupidFilter(CallBackBase *callBackObj,
@@ -1172,27 +1051,6 @@ bool MedianFilter::SaveImage(const std::string &fileName, ErrorInfo *errObj)
 	}
 }
 
-//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
-//выбранным алгоритмом.
-void MedianFilter::FillMargins(CallBackBase *callBackObj)
-{
-	//Проброс вызова.
-	if (imageIsLoaded_)
-	{
-		pFilterObj_->FillMargins(callBackObj);
-	}
-}
-
-//Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
-void MedianFilter::ApplyStupidFilter_old(CallBackBase *callBackObj)
-{
-	//Проброс вызова
-	if (imageIsLoaded_)
-	{
-		pFilterObj_->ApplyStupidFilter_old(callBackObj);
-	}
-}
-
 //Приводит апертуру (длина стороны окна фильтра) к имеющему смысл значению.
 void MedianFilter::FixAperture()
 {
@@ -1205,17 +1063,6 @@ void MedianFilter::FixAperture()
 	{
 		if ((aperture_ % 2) == 0)
 			aperture_++;
-	}
-}
-
-//Обрабатывает матрицу sourceMatrix_ "никаким" фильтром. По сути просто копирование.
-//Для отладки. Результат записывает в destMatrix_.
-void MedianFilter::ApplyStubFilter_old(CallBackBase *callBackObj)
-{
-	//Проброс вызова
-	if (imageIsLoaded_)
-	{
-		pFilterObj_->ApplyStubFilter_old(callBackObj);
 	}
 }
 
