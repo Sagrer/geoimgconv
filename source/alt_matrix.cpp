@@ -371,6 +371,13 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 			memset(signData_, 0, blocksSize);
 	}
 
+	//В любом случае надо обнулить информацию в следующих блоках.
+	size_t blocksToNullSize = (ySize_ - yStart) * xSize_;
+	size_t blocksToNullSizeBytes = blocksToNullSize * sizeof(CellType);
+	memset(matrixArr_[yStart], 0, blocksToNullSizeBytes);
+	if (useSignData_)
+		memset(signMatrixArr_[yStart], 0, blocksToNullSize);
+
 	//Теперь надо прочитать информацию из файла.
 
 	//RasterIO умеет в spacing, поэтому нет необходимости читать картинку построчно для того

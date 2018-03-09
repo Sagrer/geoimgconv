@@ -221,7 +221,7 @@ void RealMedianFilterTemplBase<CellType>::MirrorFiller(const int &x, const int &
 //Костяк алгоритма, общий для Simple и Mirror
 template <typename CellType>
 void RealMedianFilterTemplBase<CellType>::FillMargins_PixelBasedAlgo(const PixFillerMethod FillerMethod,
-	CallBackBase *callBackObj)
+	const int yStart, const int yToProcess, CallBackBase *callBackObj)
 {
 	//Двигаемся построчно, пока не найдём значимый пиксель. В границы не лезем,
 	//т.к. они значимыми быть не могут.
@@ -229,16 +229,16 @@ void RealMedianFilterTemplBase<CellType>::FillMargins_PixelBasedAlgo(const PixFi
 	marginSize = (getOwnerObj().getAperture() - 1) / 2;
 	//Настроим объект, выводящий информацию о прогрессе обработки.
 	if (callBackObj)
-		callBackObj->setMaxProgress((sourceMatrix_.getXSize() - marginSize*2) *
+		callBackObj->setMaxProgress((sourceMatrix_.getXSize() - marginSize * 2) *
 			(sourceMatrix_.getYSize() - marginSize*2));
 	unsigned long progressPosition = 0;
 	//Поехали.
-	for (y = marginSize; y < (sourceMatrix_.getYSize() - marginSize); y++)
+	for (y = yStart; y < (yStart + yToProcess); y++)
 	{
 		for (x = marginSize; x < (sourceMatrix_.getXSize() - marginSize); x++)
 		{
 			progressPosition++;
-			if (sourceMatrix_.getSignMatrixElem(y,x) == 1)
+			if (sourceMatrix_.getSignMatrixElem(y, x) == 1)
 			{
 				//Теперь будем проверять значимы ли пикселы вверху, внизу, справа, слева и
 				//по всем диагоналям. Если незначимы (независимо от фактической заполненности)
@@ -247,7 +247,7 @@ void RealMedianFilterTemplBase<CellType>::FillMargins_PixelBasedAlgo(const PixFi
 				//значимый пиксель. При этом вертикальное и горизонтальное заполнение имеет
 				//приоритет над диагональным, т.е. диагональные пикселы будут перезаписаны если
 				//встретятся на пути. Поехали.
-				
+
 				(this->*FillerMethod)(x, y, PIXEL_DIR_UP, marginSize);
 				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN, marginSize);
 				(this->*FillerMethod)(x, y, PIXEL_DIR_RIGHT, marginSize);
@@ -261,6 +261,16 @@ void RealMedianFilterTemplBase<CellType>::FillMargins_PixelBasedAlgo(const PixFi
 			}
 		}
 	}
+}
+
+//Костяк алгоритма, общий для Simple и Mirror. Обёртка для старых методов.
+template <typename CellType>
+void RealMedianFilterTemplBase<CellType>::FillMargins_PixelBasedAlgo(const PixFillerMethod FillerMethod,
+	CallBackBase *callBackObj)
+{
+	int marginSize = (getOwnerObj().getAperture() - 1) / 2;
+	FillMargins_PixelBasedAlgo(FillerMethod, marginSize,
+		(sourceMatrix_.getYSize() - (2 * marginSize)), callBackObj);
 }
 
 //Заполнить пустые пиксели source-матрицы простым алгоритмом (сплошной цвет).
@@ -394,11 +404,23 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		}
 		destMatrix_.CreateDestMatrix(sourceMatrix_, marginSize);
 
-		//Надо обработать граничные пиксели
-		//TODO.
+		//Надо обработать граничные пиксели. Начальная позиция для обработки может быть разной в зависимости
+		//от того как обрабатывается текущий кусок.
+		int fillerYStart, fillerYToProcess;
+		if (currMM == TOP_MM_FILE2)
+		{
+			fillerYStart = 0;
+			fillerYToProcess = filterYToProcess + 2*marginSize;
+		}
+		else
+		{
+			fillerYStart = marginSize;
+			fillerYToProcess = filterYToProcess + marginSize;
+		}
+		//Прогрессбар не используем пока там не будет реализована обработка нескольких баров в одном.
+		FillMargins(fillerYStart, fillerYToProcess, NULL);
 
 		//Надо применить фильтр
-		//TODO.
 		(this->*CurrFilter)(filterYToProcess,callBackObj);
 
 		//Сохраняем то что получилось.
@@ -432,9 +454,8 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 			0, marginSize, TOP_MM_MATR, &sourceMatrix_, NULL);
 		destMatrix_.CreateDestMatrix(sourceMatrix_, marginSize);
 		//Всё ещё надо обработать граничные пиксели
-		//TODO.
+		this->FillMargins(marginSize, filterYToProcess, NULL);
 		//Всё ещё надо применить фильтр.
-		//TODO.
 		(this->*CurrFilter)(filterYToProcess,callBackObj);
 
 		//Сохраняем то что получилось.
@@ -590,13 +611,30 @@ bool  RealMedianFilterTemplBase<CellType>::SaveImage(const std::string &fileName
 //Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 //выбранным алгоритмом.
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::FillMargins(CallBackBase *callBackObj)
+void RealMedianFilterTemplBase<CellType>::FillMargins(const int yStart, const int yToProcess,
+	CallBackBase *callBackObj)
 {
+	//Просто пробросим вызов в реально работающий метод, правильно указав метод-заполнитель.
 	switch (getOwnerObj().getMarginType())
 	{
-	case MARGIN_SIMPLE_FILLING: FillMargins_Simple(callBackObj); break;
-	case MARGIN_MIRROR_FILLING: FillMargins_Mirror(callBackObj);
-	}		
+	case MARGIN_SIMPLE_FILLING: 
+		FillMargins_PixelBasedAlgo(&RealMedianFilterTemplBase<CellType>::SimpleFiller, yStart, yToProcess,
+		callBackObj);
+		break;
+	case MARGIN_MIRROR_FILLING:
+		FillMargins_PixelBasedAlgo(&RealMedianFilterTemplBase<CellType>::MirrorFiller, yStart, yToProcess,
+			callBackObj);
+	}
+}
+
+//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
+//выбранным алгоритмом. Обёртка для старых методов.
+template <typename CellType>
+void RealMedianFilterTemplBase<CellType>::FillMargins(CallBackBase *callBackObj)
+{
+	//Просто пробросим вызов в реально работающий метод.
+	int marginSize = (getOwnerObj().getAperture() - 1) / 2;
+	FillMargins(marginSize, (sourceMatrix_.getYSize() - (2 * marginSize)), callBackObj);
 }
 
 //Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.

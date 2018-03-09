@@ -75,6 +75,10 @@ public:
 
 	//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 	//выбранным алгоритмом.
+	virtual void FillMargins(const int yStart, const int yToProcess, CallBackBase *callBackObj = NULL) = 0;
+
+	//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
+	//выбранным алгоритмом. Обёртка для старых методов.
 	virtual void FillMargins(CallBackBase *callBackObj = NULL) = 0;
 
 	//Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.
@@ -137,8 +141,12 @@ private:
 	//Заполнять пиксели зеркальным алгоритмом в указанном направлении
 	void MirrorFiller(const int &x, const int &y, PixelDirection direction,
 		const int &marginSize);
-		
+
 	//Костяк алгоритма, общий для Simple и Mirror
+	void FillMargins_PixelBasedAlgo(const PixFillerMethod FillerMethod, const int yStart,
+		const int yToProcess, CallBackBase *callBackObj = NULL);
+		
+	//Костяк алгоритма, общий для Simple и Mirror. Обёртка для старых методов.
 	void FillMargins_PixelBasedAlgo(const PixFillerMethod FillerMethod,
 		CallBackBase *callBackObj = NULL);
 
@@ -185,6 +193,10 @@ public:
 
 	//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 	//выбранным алгоритмом.
+	void FillMargins(const int yStart, const int yToProcess, CallBackBase *callBackObj = NULL);
+
+	//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
+	//выбранным алгоритмом. Обёртка для старых методов.
 	void FillMargins(CallBackBase *callBackObj = NULL);
 		
 	//Обрабатывает матрицу sourceMatrix_ "тупым" фильтром. Результат записывает в destMatrix_.

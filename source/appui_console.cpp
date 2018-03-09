@@ -622,7 +622,7 @@ int AppUIConsole::RunApp()
 		return 1;
 	}
 	//Открываем файл который будем сохранять.
-	PrintToConsole("Пытаюсь открыть файл назначения:\n" + outputFileName + "\n");
+	PrintToConsole("Создаю файл назначения и занимаю под него место:\n" + outputFileName + "\n");
 	if (!medFilter.OpenOutputFile(outputFileName, true, &errObj))
 	{
 		ConsolePrintError(errObj);
