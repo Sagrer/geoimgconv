@@ -1,0 +1,21 @@
+ = Скриншоты =
+
+Почти все картинки кликабельны (для увеличения).
+ 
+Программа консольная. В процессе работы выглядит примерно так:
+
+[[Image(htdocs:img/Interf_01.png, title="Внешний вид программы")]]
+
+Для настройки можно либо вручную задать опции командной строки, либо (под Windows) отредактировать один из идущих в комплекте файлов:
+
+[[Image(htdocs:img/BatEdit.png, title="bat-файл")]]
+
+Пример работы фильтра, до и после:
+
+[[Image(htdocs:img/Before_01_mini.jpg, link=htdocs:img/Before_01.png, title="До фильтра")]]
+
+[[Image(htdocs:img/After_01_mini.jpg, link=htdocs:img/After_01.png, title="После фильтра")]]
+
+Программа работает и в linux:
+
+[[Image(htdocs:img/Linux_01_mini.jpg, link=htdocs:img/Linux_01.jpg, title="geoimgconv под linux")]]
