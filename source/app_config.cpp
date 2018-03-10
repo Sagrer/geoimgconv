@@ -91,6 +91,7 @@ void AppConfig::FillBasePO_()
 	//Описание пустое т.к. хелп генерится не здесь.
 	cmdLineParamsDesc_.add_options()
 		("help,h","")
+		("help?,?", "")	//Полускрытая опция. В справке говорится только о -?. А help? - костыль для boost.
 		("version,v","")
 		("input", po::value<std::string>(), "" )
 		("output", po::value<std::string>(), "" )
@@ -142,6 +143,7 @@ void AppConfig::FillDependentPO_()
 	helpParamsDesc_->add_options()
 		("help,h",STB.Utf8ToSelectedCharset("Вывести справку по опциям (ту, которую \
 Вы сейчас читаете).").c_str())
+		(",?", STB.Utf8ToSelectedCharset("То же, что и -h").c_str())
 		("version,v",STB.Utf8ToSelectedCharset("Вывести информацию о версии программы \
 и не выполнять никаких других действий.").c_str())
 		//("input", po::value<std::string>,STB.Utf8ToSelectedCharset("Скрытая опция, \
@@ -339,6 +341,8 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 			appModeCmdIsSet_ = true;
 		}
 		if (poVarMap_.count("help"))
+			helpAsked_ = true;
+		if (poVarMap_.count("help?"))	//Скрытая опция для -?
 			helpAsked_ = true;
 		if (poVarMap_.count("version"))
 			versionAsked_ = true;
