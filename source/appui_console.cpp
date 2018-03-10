@@ -82,8 +82,8 @@ void AppUIConsoleCallBack::UpdateBar(const unsigned long &progressPosition)
 	cout << "\r";	//Переводим вывод на начало текущей строки.
 	text_ = lexical_cast<string>(progressPosition) + "/" + lexical_cast<string>(getMaxProgress()) +
 		" ( " + lexical_cast<string>(progressPosition / (getMaxProgress() / 100)) + "% ) "
-		+ STB.DoubleToString(pixelsPerSecond_, 2) + " пикс/с, skipNumber: "
-		+ lexical_cast<string>(skipNumber_);
+		+ STB.DoubleToString(pixelsPerSecond_, 2) + " пикс/с, до завершения: "
+		+ to_simple_string(timeLeft_);
 	tempSize_ = text_.size();
 	if (tempSize_ < lastTextSize_)
 	{
@@ -121,6 +121,7 @@ void AppUIConsoleCallBack::CallBack(const unsigned long &progressPosition)
 			if (!currMilliseconds_) currMilliseconds_ = 10;
 			//И только теперь можно считать скорость и всё прочее.
 			pixelsPerSecond_ = 1000.0 / (double(currMilliseconds_) / double(skipCounter_));
+			timeLeft_ = seconds(long(double((getMaxProgress() - progressPosition)) / pixelsPerSecond_));
 			if (pixelsPerSecond_ < 1)
 				skipNumber_ = size_t(std::ceil(updatePeriod_ / pixelsPerSecond_));
 			else
@@ -647,7 +648,7 @@ int AppUIConsole::RunApp()
 	//PrintToConsole("Открыто. Визуализация значимых пикселей:\n");
 	////medFilter.SourcePrintStupidVisToCout();
 	//PrintToConsole("Устарела и пока не работает :(\n\n");
-	PrintToConsole("Открыто.\n\n");
+	PrintToConsole("Готово. Начинаю обработку...\n\n");
 
 	PrintToConsole("Программа будет обрабатывать файл, используя " +
 		STB.BytesNumToInfoSizeStr(maxMemCanBeUsed_) + " памяти, частями по\n" +

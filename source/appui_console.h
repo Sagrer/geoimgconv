@@ -49,6 +49,7 @@ private:
 	boost::posix_time::ptime lastPrintTime_;	//Для калибровки skipNumber_ чтобы вывод был раз в 2 секунды примерно.
 	boost::posix_time::ptime nowTime_;	//---""---
 	boost::posix_time::time_duration timeDelta_;		//---""---
+	boost::posix_time::time_duration timeLeft_;		//Приблизительное время, оставшееся до конца обработки.
 	boost::posix_time::ptime startTime_;		//Время начала...
 	boost::posix_time::ptime endTime_;		//... и завершения выполнения.
 	double pixelsPerSecond_;	//Может быть дробным, что логично ).
