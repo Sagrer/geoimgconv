@@ -601,7 +601,8 @@ bool  RealMedianFilterTemplBase<CellType>::SaveImage(const std::string &fileName
 			if (!filesystem::create_directories(basePath, errCode))
 			{
 				//Нет директории для файла и не удалось её создать. Облом :(.
-				if (errObj) errObj->SetError(CMNERR_WRITE_ERROR, ": " + errCode.message());
+				if (errObj) errObj->SetError(CMNERR_WRITE_ERROR, ": " + 
+					STB.SystemCharsetToUtf8((errCode.message())));
 				return false;
 			}
 		}
@@ -961,7 +962,8 @@ bool MedianFilter::OpenOutputFile(const std::string &fileName, const bool &force
 		//Удаляем старый файл.
 		if (!filesystem::remove(destFilePath, errCode))
 		{
-			if (errObj) errObj->SetError(CMNERR_WRITE_ERROR, ": " + errCode.message());
+			if (errObj) errObj->SetError(CMNERR_WRITE_ERROR, ": " +
+				STB.SystemCharsetToUtf8(errCode.message()));
 			return false;
 		}
 	}
@@ -970,7 +972,8 @@ bool MedianFilter::OpenOutputFile(const std::string &fileName, const bool &force
 	filesystem::copy_file(sourceFilePath, destFilePath, errCode);
 	if (errCode.value())
 	{
-		if (errObj) errObj->SetError(CMNERR_WRITE_ERROR, ": " + errCode.message());
+		if (errObj) errObj->SetError(CMNERR_WRITE_ERROR, ": " + 
+			STB.SystemCharsetToUtf8(errCode.message()));
 		return false;
 	}
 
