@@ -126,7 +126,7 @@ void AppConfig::FillDependentPO_()
 		unsigned short currLength;
 		if ((STB.GetConsoleEncoding() == "utf8") || (STB.GetConsoleEncoding() == "utf-8"))
 		{
-			currLength = (unsigned short)(helpLineLength_ * 1.4);
+			currLength = (unsigned short)(helpLineLength_ * 1.3);
 		}
 		else
 		{
