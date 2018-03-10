@@ -122,13 +122,23 @@ void AppConfig::FillDependentPO_()
 	}
 	if (helpLineLength_)
 	{
+		//Возможно нужно применить костыль для нормального отображения кириллицы в utf8.
+		unsigned short currLength;
+		if ((STB.GetConsoleEncoding() == "utf8") || (STB.GetConsoleEncoding() == "utf-8"))
+		{
+			currLength = (unsigned short)(helpLineLength_ * 1.4);
+		}
+		else
+		{
+			currLength = helpLineLength_;
+		}
 		helpParamsDesc_ = new po::options_description(STB.Utf8ToSelectedCharset("Опции командной строки"),
-			helpLineLength_);
-	}		
+			currLength);
+	}
 	else
 	{
 		helpParamsDesc_ = new po::options_description(STB.Utf8ToSelectedCharset("Опции командной строки"));
-	}		
+	}
 	helpParamsDesc_->add_options()
 		("help,h",STB.Utf8ToSelectedCharset("Вывести справку по опциям (ту, которую \
 Вы сейчас читаете).").c_str())
@@ -163,7 +173,7 @@ void AppConfig::FillDependentPO_()
 		("memmode", po::value<std::string>(), STB.Utf8ToSelectedCharset("Режим использования \
 памяти. Позволяет ограничить количество памяти, которое программа может использовать для загрузки \
 обрабатываемого изображения. Если изображение не поместится в эту ограниченную область целиком то \
-оно будет обрабатываться по частям. Возможно указать один из следующих режимов:\n    " + 
+оно будет обрабатываться по частям. Возможно указать один из следующих режимов:\n    " +
 MemoryModeTexts[MEMORY_MODE_AUTO] + " - оставить решение о режиме работы с памятью на усмотрение \
 программы;\n    " + MemoryModeTexts[MEMORY_MODE_LIMIT] + " - явно задать максимальное количество \
 используемой памяти в байтах. Сразу после имени режима без пробела нужно указать это количество. \
@@ -174,7 +184,7 @@ MemoryModeTexts[MEMORY_MODE_STAYFREE] + " - явно задать количес
 работы над изображением. Размер указывается без пробела сразу за именем режима, точно так же как и для \
 режима " + MemoryModeTexts[MEMORY_MODE_LIMIT] + ";\n    " + MemoryModeTexts[MEMORY_MODE_LIMIT_FREEPRC] +
 " - задать количество памяти в процентах от свободного ОЗУ в момент начала работы. Сразу после имени \
-режима без пробела должно быть указано целое число от 0 до 100;\n    " + 
+режима без пробела должно быть указано целое число от 0 до 100;\n    " +
 MemoryModeTexts[MEMORY_MODE_LIMIT_FULLPRC] + " - задать количество памяти в процентах от общего \
 количества ОЗУ. Сразу после имени режима без пробела должно быть указано целое число от 0 до 100;\n    " +
 MemoryModeTexts[MEMORY_MODE_ONECHUNK] + " - заставить программу попытаться обработать изображение одним \
@@ -259,11 +269,11 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 {
 	namespace po = boost::program_options;
 	po::options_description desc;
-	
+
 	//argc и argv могут потребоваться пользователям объекта. Их надо запомнить.
 	argc_ = argc;
 	argv_ = argv;
-	
+
 	//Задетектить пути
 	boost::filesystem::path p(argv[0]);
 	//make_preferred - чтобы поправить кривые пути типа C:/somedir\blabla\loolz.txt
@@ -300,8 +310,8 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 		//Все остальные исключения считаем неожиданными, не обрабатываем и либо падаем с ними,
 		//либо их обработают где-то наверху стека вызовов.
 	};
-	
-	
+
+
 	//Я не стал пользоваться фичей автоматической загрузки значений по проставленным в
 	//cmdLineParamsDesc_ ссылкам т.к. всё равно нужно просматривать poVarMap_ на предмет
 	//того, какие именно параметры вообще были переданы в командной строке. Что сейчас и

@@ -69,6 +69,7 @@ class SmallToolsBox
 
 		//Геттеры-сеттеры.
 		std::string const& GetConsoleEncoding() const { return consoleEncoding_; };
+		std::string const& GetSystemEncoding() const { return systemEncoding_; };
 
 		//Остальные методы.
 
@@ -82,10 +83,10 @@ class SmallToolsBox
 
 		//Выбрать системную кодировку для работы с SelectedCharset
 		inline void SelectSystemEncoding() { consoleEncodingIsSelected_ = false; };
-		
+
 		//Перекодирует строку из utf8 в кодировку, подходящую для вывода в консоль.
 		std::string Utf8ToConsoleCharset(const std::string &InputStr);
-		
+
 		//Перекодирует строку из кодировки консоли в utf8
 		std::string ConsoleCharsetToUtf8(const std::string &InputStr);
 
@@ -106,7 +107,7 @@ class SmallToolsBox
 
 		//Перекодирует string в кодировке utf8 в wstring
 		std::wstring Utf8ToWstring(const std::string &inputStr);
-		
+
 		//Преобразует double в строку с указанным количеством знаков после запятой.
 		std::string DoubleToString(const double &input, const unsigned int &precision) const;
 
