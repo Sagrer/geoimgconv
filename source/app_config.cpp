@@ -20,20 +20,14 @@
 #include "small_tools_box.h"
 #include <boost/filesystem.hpp>
 #include <sstream>
+#include "common.h"
 
 using namespace std;
 
 namespace geoimgconv
 {
 
-//Константы со значениями полей по умолчанию.
-const string DEFAULT_INPUT_FILE_NAME = "input.tif";
-const string DEFAULT_OUTPUT_FILE_NAME = "output.tif";
-const size_t DEFAULT_MEDFILTER_APERTURE = 101;
-const double DEFAULT_MEDFILTER_THRESHOLD = 0.5;
-const MarginType DEFAULT_MEDFILTER_MARGIN_TYPE = MARGIN_MIRROR_FILLING;
-const AppMode DEFAULT_APP_MODE = APPMODE_MEDIAN;
-const MemoryMode DEFAULT_MEM_MODE = MEMORY_MODE_AUTO;
+//Константы со значениями полей по умолчанию см. в common.cpp
 
 //////////////////////////////////
 //        Класс AppConfig       //

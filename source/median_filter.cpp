@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include "small_tools_box.h"
+#include "common.h"
 
 using namespace boost;
 using namespace std;
@@ -33,13 +34,7 @@ using namespace std;
 namespace geoimgconv
 {
 
-//Константы для возможной подкрутки параметров.
-//TODO: избавиться от дублирования констант в разных файлах!
-//Как минимум есть проблема с апертурой.
-const size_t DEFAULT_APERTURE = 101;
-const double DEFAULT_THRESHOLD = 0.5;
-//const MarginType DEFAULT_MARGIN_TYPE = MARGIN_SIMPLE_FILLING;
-const MarginType DEFAULT_MARGIN_TYPE = MARGIN_MIRROR_FILLING;
+//Константы со значениями по умолчанию см. в common.cpp
 
 ////////////////////////////////////////////
 //       RealMedianFilterTemplBase        //
@@ -723,8 +718,8 @@ bool RealMedianFilterTemplBase<CellType>::DestSaveToCSVFile(const std::string &f
 //          MedianFilter          //
 ////////////////////////////////////
 
-MedianFilter::MedianFilter() : aperture_(DEFAULT_APERTURE), threshold_(DEFAULT_THRESHOLD),
-marginType_(DEFAULT_MARGIN_TYPE), useMemChunks_(false), blocksInMem_(0), sourceFileName_(""),
+MedianFilter::MedianFilter() : aperture_(DEFAULT_MEDFILTER_APERTURE), threshold_(DEFAULT_MEDFILTER_THRESHOLD),
+marginType_(DEFAULT_MEDFILTER_MARGIN_TYPE), useMemChunks_(false), blocksInMem_(0), sourceFileName_(""),
 destFileName_(""), imageSizeX_(0), imageSizeY_(0), imageIsLoaded_(false), sourceIsAttached_(false),
 destIsAttached_(false), dataType_(PIXEL_UNKNOWN), dataTypeSize_(0), pFilterObj_(NULL),
 minBlockSize_(0), minMemSize_(0), gdalSourceDataset_(NULL), gdalDestDataset_(NULL), gdalSourceRaster_(NULL),

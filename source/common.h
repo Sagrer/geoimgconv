@@ -105,6 +105,31 @@ enum TopMarginMode : unsigned char
 	TOP_MM_MATR = 3		//Скопировать 2 блока из конца другой (или той же) матрицы.
 };
 
+//Константы со всякими разными значениями по умолчанию. Значения см. в common.cpp
+
+//Временно версия будет вот так. Но нет ничего более постоянного, чем временное!
+extern const std::string APP_VERSION;
+//С какой периодичностью выводить прогресс в консоль во избежание тормозов от вывода. 
+//В секундах.
+extern const double DEFAULT_PROGRESS_UPDATE_PERIOD;
+//Имя входящего файла
+extern const std::string DEFAULT_INPUT_FILE_NAME;
+//Имя исходящего файла
+extern const std::string DEFAULT_OUTPUT_FILE_NAME;
+//Апертура медианного фильтра
+extern const size_t DEFAULT_MEDFILTER_APERTURE;
+//Порог медианного фильтра
+extern const double DEFAULT_MEDFILTER_THRESHOLD;
+//Какой тип заполнения граничных пикселей применяется по умолчанию
+extern const MarginType DEFAULT_MEDFILTER_MARGIN_TYPE;
+//Режим работы программы
+extern const AppMode DEFAULT_APP_MODE;
+//Режим использования памяти
+extern const MemoryMode DEFAULT_MEM_MODE;
+
+//Функции всякие, но такие что нельзя засунуть в small_tools_box т.к. специфичны
+//для данной конкретной программы.
+
 //Преобразование типа пикселя из enum-а GDALDataType в PixelType.
 //Важный момент - если тип был PIXEL_INT8 - невозможно просто так понять
 //signed там или unsigned. Для того чтобы отличить одно от другого - надо

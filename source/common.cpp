@@ -24,6 +24,28 @@
 namespace geoimgconv
 {
 
+//Константы со всякими разными значениями по умолчанию.
+
+//Временно версия будет вот так. Но нет ничего более постоянного, чем временное!
+const std::string APP_VERSION = "0.3.0.0a";
+//С какой периодичностью выводить прогресс в консоль во избежание тормозов от вывода. 
+//В секундах.
+const double DEFAULT_PROGRESS_UPDATE_PERIOD = 2.8;
+//Имя входящего файла
+const std::string DEFAULT_INPUT_FILE_NAME = "input.tif";
+//Имя исходящего файла
+const std::string DEFAULT_OUTPUT_FILE_NAME = "output.tif";
+//Апертура медианного фильтра
+const size_t DEFAULT_MEDFILTER_APERTURE = 101;
+//Порог медианного фильтра
+const double DEFAULT_MEDFILTER_THRESHOLD = 0.5;
+//Какой тип заполнения граничных пикселей применяется по умолчанию
+const MarginType DEFAULT_MEDFILTER_MARGIN_TYPE = MARGIN_MIRROR_FILLING;
+//Режим работы программы
+const AppMode DEFAULT_APP_MODE = APPMODE_MEDIAN;
+//Режим использования памяти
+const MemoryMode DEFAULT_MEM_MODE = MEMORY_MODE_AUTO;
+
 //Текстовое представление для AppMode
 const std::string AppModeTexts[] = {"median",	//0
 			"mediancurses",		//1

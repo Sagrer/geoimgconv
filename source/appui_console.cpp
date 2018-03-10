@@ -31,15 +31,13 @@
 #include "median_filter.h"
 #include <boost/lexical_cast.hpp>
 #include <cmath>
+#include "common.h"
 
 using namespace boost;
 using namespace std;
 
 namespace geoimgconv
 {
-
-const std::string APP_VERSION = "0.3.0.0a";	//Временно версия будет вот так. Но нет ничего более постоянного, чем временное!
-const double DEFAULT_PROGRESS_UPDATE_PERIOD = 2.8;	//С какой периодичностью выводить прогресс в консоль во избежание тормозов от вывода. В секундах.
 
 ///////////////////////////////////////
 //    Класс AppUIConsoleCallBack     //
