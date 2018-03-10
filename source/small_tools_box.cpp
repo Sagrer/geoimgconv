@@ -41,6 +41,7 @@
 	#include <sys/param.h>
 	#include <sys/time.h>
 	#include <sys/resource.h>
+	#include <sys/ioctl.h>
 	//В разных операционках константа с размером страницы может называться по разному или
 	//может вообще отсутствовать. Приводим всё к единому знаменателю - _SC_PAGE_SIZE.
 	#if (!defined(_SC_PAGE_SIZE) && defined(_SC_PAGESIZE))
@@ -669,6 +670,36 @@ void SmallToolsBox::GetSysResInfo(SysResInfo &infoStruct) const
 	#elif BOOST_ARCH_X86_64
 	if (infoStruct.maxProcessMemorySize == 0)
 		infoStruct.maxProcessMemorySize = 8796093022208;	//8 терабайт. Больше система может и не уметь.
+	#endif
+}
+
+//Узнать текущую ширину консоли. Вернёт 0 в случае ошибки.
+unsigned short SmallToolsBox::GetConsoleWidth() const
+{
+	#ifdef _WIN32
+		HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+		CONSOLE_SCREEN_BUFFER_INFO consInfo;
+		if (!GetConsoleScreenBufferInfo(hStdOut, &consInfo))
+		{
+			return 0;
+		}
+		else
+		{
+			return consInfo.dwSize.X;
+		}
+	#elif (defined(unix) || defined(__unix__) || defined(__unix))
+		struct winsize consSize;
+		if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &consSize) == 0)
+		{
+			return consSize.ws_col;
+		}
+		else
+		{
+			return 0;
+		}
+	#else
+		//#error Unknown target OS. Cant preprocess console width detecting code :(
+		return 0;
 	#endif
 }
 

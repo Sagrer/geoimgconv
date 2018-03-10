@@ -45,7 +45,9 @@ const MemoryMode DEFAULT_MEM_MODE = MEMORY_MODE_AUTO;
 
 //Конструктор по умолчанию просто проставляет умолчальные собственно значения туда,
 //где это вообще может иметь смысл.
-AppConfig::AppConfig() : inputFileNameCfg_(DEFAULT_INPUT_FILE_NAME),
+//helpLineLength если равно 0 то ширина генерируемой справки остаётся на усмотрение объекта, если
+//же там некое число колонок - то ширина справки будет ему соответствовать.
+AppConfig::AppConfig(unsigned short helpLineLength) : inputFileNameCfg_(DEFAULT_INPUT_FILE_NAME),
 	inputFileNameCfgIsSaving_(false), inputFileNameCmdIsSet_(false),
 	outputFileNameCfg_(DEFAULT_OUTPUT_FILE_NAME), outputFileNameCfgIsSaving_(false),
 	outputFileNameCmdIsSet_(false), medfilterApertureCfg_(DEFAULT_MEDFILTER_APERTURE),
@@ -56,7 +58,7 @@ AppConfig::AppConfig() : inputFileNameCfg_(DEFAULT_INPUT_FILE_NAME),
 	appModeCfg_(DEFAULT_APP_MODE), appModeCfgIsSaving_(false), appModeCmdIsSet_(false),
 	memModeCfg_(DEFAULT_MEM_MODE), memSizeCfg_(0), memModeCfgIsSaving_(false),
 	memModeCmdIsSet_(false), helpAsked_(false), versionAsked_(false), argc_(0), argv_(NULL),
-	appPath_(""), currPath_(""), helpParamsDesc_(NULL)
+	appPath_(""), currPath_(""), helpParamsDesc_(NULL), helpLineLength_(helpLineLength)
 {
 	//Надо сразу заполнить базовые объекты program_options
 	FillBasePO_();
@@ -114,7 +116,19 @@ void AppConfig::FillDependentPO_()
 	namespace po = boost::program_options;
 	//Заполняем desc, который единственное что делает - генерирует текст
 	//справки по опциям.
-	helpParamsDesc_ = new po::options_description(STB.Utf8ToSelectedCharset("Опции командной строки"));
+	if (helpParamsDesc_)
+	{
+		delete helpParamsDesc_;
+	}
+	if (helpLineLength_)
+	{
+		helpParamsDesc_ = new po::options_description(STB.Utf8ToSelectedCharset("Опции командной строки"),
+			helpLineLength_);
+	}		
+	else
+	{
+		helpParamsDesc_ = new po::options_description(STB.Utf8ToSelectedCharset("Опции командной строки"));
+	}		
 	helpParamsDesc_->add_options()
 		("help,h",STB.Utf8ToSelectedCharset("Вывести справку по опциям (ту, которую \
 Вы сейчас читаете).").c_str())

@@ -34,7 +34,7 @@ int main(int argc, char** argv)
 	//Мы не знаем заранее в каком режиме будем работать, поэтому сначала разбираем
 	//настройки и командную строку и только потом создаём и передаём управление объекту
 	//приложения нужного типа.
-	AppConfig confObj;
+	AppConfig confObj(STB.GetConsoleWidth());
 	ErrorInfo errObj;
 	STB.InitEncodings();
 	if (!confObj.ParseCommandLine(argc,argv,&errObj))

@@ -97,6 +97,7 @@ private:
 	char **argv_;	//--"--
 	std::string appPath_;	//Путь к исполнимому бинарнику и теущий путь.
 	std::string currPath_;	//--"--
+	unsigned short helpLineLength_;	//Ширина генерируемой справки.
 	
 	//Объекты для вывода справки и чтения\записи настроек.
 	//Инициализируются частично в конструкторе и частично отдельным
@@ -122,8 +123,10 @@ private:
 	//указанный там размер.
 	void ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memMode, unsigned long long &size);
 public:
-	//Конструкторы-деструкторы
-	AppConfig();
+	//Конструктор. helpLineLength если равно 0 то ширина генерируемой справки остаётся на усмотрение
+	//объекта, если же там некое число колонок - то ширина справки будет ему соответствовать.
+	AppConfig(unsigned short helpLineLength = 0);
+	//Деструктор
 	~AppConfig();
 	
 	//Методы доступа.
@@ -291,6 +294,17 @@ public:
 	std::string const& getCurrPath() const {return currPath_;};
 	//helpMsg (генерируется)
 	const std::string getHelpMsg();
+	//helpLineLength
+	void setHelpLineLength(const unsigned short &helpLineLength)
+	{
+		helpLineLength_ = helpLineLength;
+		if (helpParamsDesc_)
+		{
+			delete helpParamsDesc_;
+			FillDependentPO_();
+		}			
+	}
+	unsigned short const& getHelpLineLength() { return helpLineLength_; }
 	
 	//Остальные методы, т.е. чтение и запись настроек.
 	
