@@ -561,7 +561,7 @@ void RealMedianFilterTemplBase<CellType>::StupidFilter(const int &currYToProcess
 
 //Читает изображение в матрицу так чтобы по краям оставалось место для создания граничных
 //пикселей.
-template <typename CellType>
+/*template <typename CellType>
 bool RealMedianFilterTemplBase<CellType>::LoadImage(const std::string &fileName, ErrorInfo *errObj,
 	CallBackBase *callBackObj)
 {
@@ -573,12 +573,12 @@ bool RealMedianFilterTemplBase<CellType>::LoadImage(const std::string &fileName,
 	if (result)
 		getOwnerObj().setSourceFileName(fileName);
 	return result;
-}
+}*/
 
 //Сохраняет матрицу в изображение. За основу берётся ранее загруженная через LoadImage
 //картинка - файл копируется под новым именем и затем в него вносятся изменённые пиксели.
 //В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
-template <typename CellType>
+/*template <typename CellType>
 bool  RealMedianFilterTemplBase<CellType>::SaveImage(const std::string &fileName, ErrorInfo *errObj)
 {
 	//Недопилено.
@@ -648,7 +648,7 @@ bool  RealMedianFilterTemplBase<CellType>::SaveImage(const std::string &fileName
 
 	//Всё ок вроде
 	return true;
-}
+}*/
 
 //Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 //выбранным алгоритмом.
@@ -1018,7 +1018,7 @@ void MedianFilter::CloseAllFiles()
 }
 
 
-bool MedianFilter::LoadImage(const std::string &fileName, ErrorInfo *errObj,
+/*bool MedianFilter::LoadImage(const std::string &fileName, ErrorInfo *errObj,
 	CallBackBase *callBackObj)
 	//Читает изображение в матрицу так чтобы по краям оставалось место для создания граничных
 	//пикселей.
@@ -1030,12 +1030,12 @@ bool MedianFilter::LoadImage(const std::string &fileName, ErrorInfo *errObj,
 	}
 	
 	return imageIsLoaded_;
-}
+}*/
 
 //Сохраняет матрицу в изображение. За основу берётся ранее загруженная через LoadImage
 //картинка - файл копируется под новым именем и затем в него вносятся изменённые пиксели.
 //В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
-bool MedianFilter::SaveImage(const std::string &fileName, ErrorInfo *errObj)
+/*bool MedianFilter::SaveImage(const std::string &fileName, ErrorInfo *errObj)
 {
 	//Тупой проброс вызова.
 	if (imageIsLoaded_)
@@ -1047,7 +1047,7 @@ bool MedianFilter::SaveImage(const std::string &fileName, ErrorInfo *errObj)
 		if (errObj) errObj->SetError(CMNERR_FILE_NOT_LOADED);
 		return false;
 	}
-}
+}*/
 
 //Приводит апертуру (длина стороны окна фильтра) к имеющему смысл значению.
 void MedianFilter::FixAperture()

@@ -24,6 +24,7 @@
 #pragma warning(disable:4251)
 #include <gdal_priv.h>
 #pragma warning(pop)
+#include <boost/cstdint.hpp>
 
 namespace geoimgconv
 {
@@ -39,15 +40,22 @@ private:
 						//заполнен значением для нормальной работы фильтра, но сам по себе незначим и после
 						//завершения фильтрации должен быть опустошён. За пустой незначимый пиксел принимаются
 						//пикселы с нулевым значением (в data_ а не в signData_!).
+	boost::uint16_t *quantedData_;	//Ссылка на данные "квантованных" пикселей, нужных для работы алгоритма
+									//Хуанга. Для 1 и 2-байтных типов пикселя использование этого массива
+									//вероятно будет не оптимально, но преждевременная оптимизация тоже
+									//не есть хорошо, так что пока я не городил изврат с ещё бОльшим количеством
+									//шаблонов и этот массив создаётся в т.ч для матриц с однобайтовыми ячейками.
 	int xSize_;	//Размер матрицы по X и Y
 	int ySize_;	//--''--
 	CellType **matrixArr_;	//Двумерный массив для произвольного доступа к элементам по X и Y.
 	char **signMatrixArr_;	//то же для произвольного доступа к signData_.
+	boost::uint16_t ** quantedMatrixArr_;  //то же для произвольного доступа к quantedData_.
 	PixelType pixelType_;	//Конструктор запишет сюда значение исходя из типа CellType.
 	bool useSignData_;	//Использовать ли вспомогательную матрицу. Если false - память под неё не выделяется.
+	bool useQuantedData_;  //Аналогично использовать ли quantedData_.
 public:
 	//Конструкторы-деструкторы.
-	AltMatrix(const bool useSignData = true);
+	AltMatrix(const bool useSignData = true, const bool useQuantedData = false);
 	~AltMatrix();
 
 	//Доступ к приватным полям.
@@ -76,6 +84,16 @@ public:
 	{
 		signMatrixArr_[yCoord][xCoord] = value;
 	}
+	//quantedMatrixArr
+	boost::uint16_t const& getQuantedMatrixElem(const int &yCoord, const int &xCoord) const
+	{
+		return quantedMatrixArr_[yCoord][xCoord];
+	}
+	void setQuantedMatrixElem(const int &yCoord, const int &xCoord,
+		const boost::uint16_t &value)
+	{
+		quantedMatrixArr_[yCoord][xCoord] = value;
+	}
 
 	//Методы всякие.
 
@@ -88,8 +106,8 @@ public:
 	//в который попадёт верхний левый угол записываемого изображения. Размер прямоугольника
 	//определяется размером собственно матрицы, размеры целевого изображения должны ему
 	//соответствовать. Вернёт true если всё ок.
-	bool SaveToGDALFile(const std::string &fileName, const int &xStart, const int &yStart,
-		ErrorInfo *errObj = NULL) const;
+	/*bool SaveToGDALFile(const std::string &fileName, const int &xStart, const int &yStart,
+		ErrorInfo *errObj = NULL) const;*/
 
 	//Сохраняет в GDALRasterBand кусок матрицы указанного размера и на указанную позицию.
 	//gdalRaster - указатель на объект GDALRasterBand записываемого изображения.
@@ -104,7 +122,7 @@ public:
 	bool LoadFromFile(const std::string &fileName, ErrorInfo *errObj = NULL);
 
 	//Загружает матрицу высот из изображения через GDAL. Вернёт true если всё ок.
-	bool LoadFromGDALFile(const std::string &fileName, const int &marginSize = 0, ErrorInfo *errObj = NULL);
+	//bool LoadFromGDALFile(const std::string &fileName, const int &marginSize = 0, ErrorInfo *errObj = NULL);
 
 	//Загружает из GDALRasterBand кусочек матрицы высот указанного размера, при этом верхние 2 блока
 	//берёт либо из файла либо из нижней части другой (или из себя если дана ссылка на this) матрицы.

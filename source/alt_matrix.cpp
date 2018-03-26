@@ -44,10 +44,10 @@ template <typename CellType> void AntiUnrExtsHelper()
 	AltMatrix<CellType> temp;
 	typedef void(AltMatrix<CellType>::*MethodPointer)(...);
 	MethodPointer pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveToFile);
-	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveToGDALFile);
+	//pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveToGDALFile);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveToGDALRaster);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::LoadFromFile);
-	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::LoadFromGDALFile);
+	//pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::LoadFromGDALFile);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::LoadFromGDALRaster);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveChunkToMatrix);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveChunkToFile);
@@ -82,9 +82,10 @@ void AntiUnresolvedExternals()
 //   Конструкторы-деструкторы     //
 //--------------------------------//
 
-template <typename CellType> AltMatrix<CellType>::AltMatrix(const bool useSignData) : data_(NULL),
-signData_(NULL), xSize_(0), ySize_(0), matrixArr_(NULL), signMatrixArr_(NULL), dataElemsNum_(0),
-useSignData_(useSignData)
+template <typename CellType> AltMatrix<CellType>::AltMatrix(const bool useSignData,
+	const bool useQuantedData) : data_(NULL), signData_(NULL), quantedData_(NULL),
+xSize_(0), ySize_(0), matrixArr_(NULL), signMatrixArr_(NULL), quantedMatrixArr_(NULL),
+dataElemsNum_(0), useSignData_(useSignData), useQuantedData_(NULL)
 {
 	//Объект должен точно знать какого типа у него пиксели.
 	if (typeid(CellType) == typeid(double))
@@ -108,11 +109,14 @@ useSignData_(useSignData)
 
 template <typename CellType> AltMatrix<CellType>::~AltMatrix()
 {
-	//new нет в конструкторе, но он мог быть в других методах
+	//new нет в конструкторе, но он мог быть в других методах.
+	//Если new не было то там NULL и ничего страшного не случится.
 	delete[] (CellType*)data_;
 	delete[] signData_;
+	delete[] quantedData_;
 	delete[] matrixArr_;
 	delete[] signMatrixArr_;
+	delete[] quantedMatrixArr_;
 }
 
 //--------------------------------//
@@ -134,7 +138,7 @@ bool AltMatrix<CellType>::SaveToFile(const string &fileName, ErrorInfo *errObj) 
 //в который попадёт верхний левый угол записываемого изображения. Размер прямоугольника
 //определяется размером собственно матрицы, размеры целевого изображения должны ему
 //соответствовать. Вернёт true если всё ок.
-template <typename CellType>
+/*template <typename CellType>
 bool AltMatrix<CellType>::SaveToGDALFile(const std::string &fileName, const int &xStart,
 	const int &yStart, ErrorInfo *errObj) const
 {
@@ -179,7 +183,7 @@ bool AltMatrix<CellType>::SaveToGDALFile(const std::string &fileName, const int 
 	//Записали вроде.
 	GDALClose(inputDataset);
 	return true;
-}
+}*/
 
 //Сохраняет в GDALRasterBand кусок матрицы указанного размера и на указанную позицию.
 //gdalRaster - указатель на объект GDALRasterBand записываемого изображения.
@@ -227,7 +231,7 @@ bool AltMatrix<CellType>::LoadFromFile(const string &fileName, ErrorInfo *errObj
 	return false;
 }
 
-//Загружает матрицу высот из изображения через GDAL. Вернёт true если всё ок.
+/*//Загружает матрицу высот из изображения через GDAL. Вернёт true если всё ок.
 template <typename CellType>
 bool AltMatrix<CellType>::LoadFromGDALFile(const std::string &fileName,
 	const int &marginSize, ErrorInfo *errObj)
@@ -308,7 +312,7 @@ bool AltMatrix<CellType>::LoadFromGDALFile(const std::string &fileName,
 
 	//Ок, всё ок ).
 	return true;
-}
+}*/
 
 //Загружает из GDALRasterBand кусочек матрицы высот указанного размера, при этом верхние 2 блока
 //берёт либо из файла либо из нижней части другой (или из себя если дана ссылка на this) матрицы.
@@ -346,6 +350,8 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 		memset(data_, 0, blockSizeBytes);
 		if (useSignData_)
 			memset(signData_, 0, blockSize);
+		if (useQuantedData_)
+			memset(quantedData_, 0, blockSize * sizeof(boost::uint16_t));
 		yStart = marginSize;
 	}
 		break;
@@ -362,6 +368,9 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 		yStart = marginSize * 2;  //это не только yStart но и удвоенная высота блока )). В рассчётах используется и в этом смысле.
 		size_t blocksSize = yStart * xSize_;
 		size_t blocksSizeBytes = blocksSize * sizeof(CellType);
+		size_t blocksQuantedBytes;
+		if (useQuantedData_)
+			blocksQuantedBytes = blocksSize * sizeof(boost::uint16_t);
 		size_t sourceOffset = (ySize_ - yStart)*xSize_;
 		size_t sourceOffsetBytes = sourceOffset * sizeof(CellType);
 		memcpy(data_, (char*)sourceMatrix->data_ + sourceOffsetBytes, blocksSizeBytes);
@@ -369,6 +378,11 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 			memcpy(signData_, (char*)sourceMatrix->signData_ + sourceOffset, blocksSize);
 		else if (useSignData_)
 			memset(signData_, 0, blocksSize);
+		if (useQuantedData_ && sourceMatrix->useQuantedData_)
+			memcpy(quantedData_, (boost::uint16_t*)sourceMatrix->signData_ + sourceOffset,
+				blocksQuantedBytes);
+		else if (useQuantedData_)
+			memset(quantedData_, 0, blocksQuantedBytes);
 	}
 
 	//В любом случае надо обнулить информацию в следующих блоках.
@@ -377,6 +391,8 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 	memset(matrixArr_[yStart], 0, blocksToNullSizeBytes);
 	if (useSignData_)
 		memset(signMatrixArr_[yStart], 0, blocksToNullSize);
+	if (useQuantedData_)
+		memset(quantedMatrixArr_[yStart], 0, blocksToNullSize*sizeof(boost::uint16_t));
 
 	//Теперь надо прочитать информацию из файла.
 
@@ -408,6 +424,8 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 		memset((void*)(matrixArr_[yProcessed]), 0, elemsNum * sizeof(CellType));
 		if (useSignData_)
 			memset((void*)(signMatrixArr_[yProcessed]), 0, elemsNum);
+		if (useQuantedData_)
+			memset((void*)(quantedMatrixArr_[yProcessed]), 0, elemsNum*sizeof(boost::uint16_t));
 	}
 
 	//Осталось пробежаться по всем пикселям и отклассифицировать их на значимые и незначимые.
@@ -470,12 +488,16 @@ template <typename CellType> void AltMatrix<CellType>::Clear()
 {
 	delete[] (CellType*)data_;
 	delete[] signData_;
+	delete[] quantedData_;
 	delete[] matrixArr_;
 	delete[] signMatrixArr_;
+	delete[] quantedMatrixArr_;
 	data_ = NULL;
 	signData_ = NULL;
+	quantedData_ = NULL;
 	matrixArr_ = NULL;
 	signMatrixArr_ = NULL;
+	quantedMatrixArr_ = NULL;
 	xSize_ = 0;
 	ySize_ = 0;
 	dataElemsNum_ = 0;
@@ -490,31 +512,40 @@ void AltMatrix<CellType>::CreateEmpty(const int &newX, const int &newY)
 	ySize_ = newY;
 	dataElemsNum_ = xSize_ * ySize_;
 	//size_t debugElemSize = sizeof(CellType);	//Для отладки (т.к. что тут за CellType в отладчике не видно).
+
+	//Выделяю память под данные, в т.ч. опциональные, расставляю ссылки на строки для быстрого
+	//доступа по X и Y.
+	//Основные данные.
 	data_ = (void*) new CellType[dataElemsNum_]();	//явно инициализовано нулями!
-	//Массивы указателей для быстрого доступа по координатам X и Y.
 	matrixArr_ = new CellType*[ySize_];
+	int i, j;
+	for (i = 0; i < ySize_; i++)
+	{
+		j = i * xSize_;
+		matrixArr_[i] = &((CellType*)data_)[j];
+	}
+
+	//Матрица признаков значимости пикселей.
 	if (useSignData_)
 	{
-		//Почти совпадающий код внутри веток if - чтобы не делать кучу проверок
-		//useSignData_ в цикле. Так быстрее. Фиг знает отоптимизировал ли бы это компиллятор.
 		signData_ = new char[dataElemsNum_]();
 		signMatrixArr_ = new char*[ySize_];
-		int i, j;
 		for (i = 0; i < ySize_; i++)
 		{
 			j = i * xSize_;
-			matrixArr_[i] = &((CellType*)data_)[j];
 			signMatrixArr_[i] = &signData_[j];
 		}
 	}
-	else
+
+	//Матрица для алгоритма Хуанга.
+	if (useQuantedData_)
 	{
-		signMatrixArr_ = new char*[ySize_];
-		int i, j;
+		quantedData_ = new boost::uint16_t[dataElemsNum_]();
+		quantedMatrixArr_ = new boost::uint16_t*[ySize_];
 		for (i = 0; i < ySize_; i++)
 		{
 			j = i * xSize_;
-			matrixArr_[i] = &((CellType*)data_)[j];
+			quantedMatrixArr_[i] = &quantedData_[j];
 		}
 	}
 }
@@ -540,6 +571,7 @@ void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatr
 	{
 		if (!IsClear()) Clear();
 		useSignData_ = false;	//dest-матрице не нужен вспомогательный массив!
+		useQuantedData_ = false;  //квантованная матрица тоже не нужна.
 		CreateEmpty(sourceMatrix_.xSize_ - (marginSize * 2),
 			sourceMatrix_.ySize_ - (marginSize * 2));
 	}
@@ -548,28 +580,24 @@ void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatr
 		//Совпадает - значит просто обнулим.
 		memset(data_, 0, dataElemsNum_ * sizeof(CellType));
 		if (useSignData_)
-			memset(signData_, 0, dataElemsNum_);
-	}
-	
-	if (useSignData_)
-	{
-		//Теперь нужно пройтись по всей вспомогательной матрице и скопировать
-		//все равные единице элементы.
-		int x, y, sourceX, sourceY;
-		for (y = 0; y < ySize_; y++)
 		{
-			sourceY = y + marginSize;
-			for (x = 0; x < xSize_; x++)
-			{
-				sourceX = x + marginSize;
-				if (sourceMatrix_.signMatrixArr_[sourceY][sourceX] == 1)
-				{
-					signMatrixArr_[y][x] = 1;
-				}
-			}
+			//Скрипач не нужен
+			useSignData_ = false;
+			delete[] signData_;
+			signData_ = NULL;
+			delete[] signMatrixArr_;
+			signMatrixArr_ = NULL;
+		}
+		if (useQuantedData_)
+		{
+			//Аналогично
+			useQuantedData_ = false;
+			delete[] quantedData_;
+			quantedData_ = NULL;
+			delete[] quantedMatrixArr_;
+			quantedMatrixArr_ = NULL;
 		}
 	}
-
 }
 
 //Очевидно вернёт true если матрица пуста, либо false если там есть значения.
