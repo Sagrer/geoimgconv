@@ -1,5 +1,5 @@
 GeoImageConverter
-v 0.3.0a
+v 0.4.0a
 
 Copyright © 2017-2018 Александр (Sagrer) Гриднев
 sagrer@yandex.ru
