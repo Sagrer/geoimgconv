@@ -75,6 +75,18 @@ private:
 	MarginType medfilterMarginTypeCmd_;
 	bool medfilterMarginTypeCfgIsSaving_;
 	bool medfilterMarginTypeCmdIsSet_;
+
+	//Режим работы медианного фильтра.
+	MedfilterAlgo medfilterAlgoCfg_;
+	MedfilterAlgo medfilterAlgoCmd_;
+	bool medfilterAlgoCfgIsSaving_;
+	bool medfilterAlgoCmdIsSet_;
+
+	//Количество уровней квантования для алгоритма Хуанга (медианный фильтр).
+	boost::uint16_t medfilterHuangLevelsNumCfg_;
+	boost::uint16_t medfilterHuangLevelsNumCmd_;
+	bool medfilterHuangLevelsNumCfgIsSaving_;
+	bool medfilterHuangLevelsNumCmdIsSet_;
 	
 	//Режим работы программы.
 	AppMode appModeCfg_;
@@ -219,6 +231,50 @@ public:
 		medfilterMarginTypeCfg_ = value;
 		medfilterMarginTypeCfgIsSaving_ = true;
 		medfilterMarginTypeCmdIsSet_ = false;
+	};
+
+	//medfilterAlgo
+	MedfilterAlgo const& getMedfilterAlgo() const
+	{
+		if (medfilterAlgoCmdIsSet_)
+			return medfilterAlgoCmd_;
+		else return medfilterAlgoCfg_;
+	};
+	MedfilterAlgo const& getMedfilterAlgoCfg() const
+	{
+		return medfilterAlgoCfg_;
+	};
+	bool const& getMedfilterAlgoIsSaving() const
+	{
+		return medfilterAlgoCfgIsSaving_;
+	};
+	void setMedfilterAlgo(const MedfilterAlgo &value)
+	{
+		medfilterAlgoCfg_ = value;
+		medfilterAlgoCfgIsSaving_ = true;
+		medfilterAlgoCmdIsSet_ = false;
+	};
+
+	//medfilterHuangLevelsNum
+	boost::uint16_t const& getMedfilterHuangLevelsNum() const
+	{
+		if (medfilterHuangLevelsNumCmdIsSet_)
+			return medfilterHuangLevelsNumCmd_;
+		else return medfilterHuangLevelsNumCfg_;
+	};
+	boost::uint16_t const& getMedfilterHuangLevelsNumCfg() const
+	{
+		return medfilterHuangLevelsNumCfg_;
+	};
+	bool const& getMedfilterHuangLevelsNumIsSaving() const
+	{
+		return medfilterHuangLevelsNumCfgIsSaving_;
+	};
+	void setMedfilterHuangLevelsNum(const boost::uint16_t &value)
+	{
+		medfilterHuangLevelsNumCfg_ = value;
+		medfilterHuangLevelsNumCfgIsSaving_ = true;
+		medfilterHuangLevelsNumCmdIsSet_ = false;
 	};
 	
 	//appMode

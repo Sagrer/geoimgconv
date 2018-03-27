@@ -23,6 +23,7 @@
 #pragma warning(disable:4251)
 #include <gdal_priv.h>
 #pragma warning(pop)
+#include <boost/cstdint.hpp>
 
 namespace geoimgconv
 {
@@ -82,6 +83,18 @@ enum AppMode : unsigned char
 //Текстовое представление для AppMode
 extern const std::string AppModeTexts[];
 
+//Режим работы медианного фильтра (используемый алгоритм)
+enum MedfilterAlgo : unsigned char
+{
+	MEDFILTER_ALGO_STUB = 0,	//Фильтр делает ничего, просто копирует пиксели.
+	MEDFILTER_ALGO_STUPID = 1,	//Фильтр работает "в лоб", без особых заморочек и оптимизаций. Без потери точности.
+	MEDFILTER_ALGO_HUANG = 2,	//Фильтр работает по алгоритму быстрой медианной фильтрации Хуанга. Возможна потеря точности в связи с квантованием изображения по уровням.
+	MEDFILTER_ALGO_UNKNOWN = 3	//Неизвестно что. Должно быть последним по номеру в списке enum-а!
+};
+
+//Текстовое представление для MedfilterAlgo
+extern const std::string MedfilterAlgoTexts[];
+
 //Режим использования памяти программой
 enum MemoryMode : unsigned char
 {
@@ -126,6 +139,12 @@ extern const MarginType DEFAULT_MEDFILTER_MARGIN_TYPE;
 extern const AppMode DEFAULT_APP_MODE;
 //Режим использования памяти
 extern const MemoryMode DEFAULT_MEM_MODE;
+//Режим медианного фильтра по умолчанию.
+extern const MedfilterAlgo DEFAULT_MEDFILTER_ALGO;
+//Количество уровней квантования для алгоритма Хуанга по умолчанию
+extern const boost::uint16_t DEFAULT_HUANG_LEVELS_NUM;
+//Максимально возможное количество уровней квантования для алгоритма Хуанга.
+extern const boost::uint16_t HUANG_MAX_LEVELS_NUM;
 
 //Функции всякие, но такие что нельзя засунуть в small_tools_box т.к. специфичны
 //для данной конкретной программы.
@@ -156,6 +175,10 @@ AppMode AppModeStrToEnum(const std::string &inputStr);
 //Получить MarginType из строки, совпадающей без учёта регистра с одним из
 //элементов MarginTypeTexts
 MarginType MarginTypeStrToEnum(const std::string &inputStr);
+
+//Получить MedfilterAlgo из строки, совпадающей без учёта регистра с одним из
+//элементов MedfilterAlgoTexts
+MedfilterAlgo MedfilterAlgoStrToEnum(const std::string &inputStr);
 
 //Абстрактный класс для организации вызова калбеков. Можно было бы передавать просто
 //ссылки на функцию, но тогда эти функции будут отвязаны от данных потока в котором

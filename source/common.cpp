@@ -45,6 +45,12 @@ const MarginType DEFAULT_MEDFILTER_MARGIN_TYPE = MARGIN_MIRROR_FILLING;
 const AppMode DEFAULT_APP_MODE = APPMODE_MEDIAN;
 //Режим использования памяти
 const MemoryMode DEFAULT_MEM_MODE = MEMORY_MODE_AUTO;
+//Режим медианного фильтра по умолчанию.
+const MedfilterAlgo DEFAULT_MEDFILTER_ALGO = MEDFILTER_ALGO_STUPID;
+//Количество уровней квантования для алгоритма Хуанга по умолчанию
+const boost::uint16_t DEFAULT_HUANG_LEVELS_NUM = 255;
+//Максимально возможное количество уровней квантования для алгоритма Хуанга.
+const boost::uint16_t HUANG_MAX_LEVELS_NUM = -1; //65535
 
 //Текстовое представление для AppMode
 const std::string AppModeTexts[] = {"median",	//0
@@ -53,6 +59,13 @@ const std::string AppModeTexts[] = {"median",	//0
 			"mediangui",	//3
 			"interactivegui",	//4
 			"unknown"	//5
+};
+
+//Текстовое представление для MedfilterAlgo
+const std::string MedfilterAlgoTexts[] = { "stub",	//0
+			"stupid",		//1
+			"huang",		//2
+			"unknown"		//3
 };
 
 //Текстовое представление элементов MarginType
@@ -150,6 +163,20 @@ MarginType MarginTypeStrToEnum(const std::string &inputStr)
 			return MarginType(i);
 	}
 	return MARGIN_UNKNOWN_FILLING;
+}
+
+//Получить MedfilterAlgo из строки, совпадающей без учёта регистра с одним из
+//элементов MedfilterAlgoTexts
+MedfilterAlgo MedfilterAlgoStrToEnum(const std::string &inputStr)
+{
+	std::string inpStr;
+	STB.Utf8ToLower(inputStr, inpStr);
+	for (unsigned char i = 0; i <= MEDFILTER_ALGO_UNKNOWN; i++)
+	{
+		if (inpStr == MedfilterAlgoTexts[i])
+			return MedfilterAlgo(i);
+	}
+	return MEDFILTER_ALGO_UNKNOWN;
 }
 
 }		//namespace geoimgconv

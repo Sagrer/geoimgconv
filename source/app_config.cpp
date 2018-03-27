@@ -49,6 +49,9 @@ AppConfig::AppConfig(unsigned short helpLineLength) : inputFileNameCfg_(DEFAULT_
 	medfilterThresholdCfg_(DEFAULT_MEDFILTER_THRESHOLD), medfilterThresholdCfgIsSaving_(false),
 	medfilterThresholdCmdIsSet_(false), medfilterMarginTypeCfg_(DEFAULT_MEDFILTER_MARGIN_TYPE),
 	medfilterMarginTypeCfgIsSaving_(false), medfilterMarginTypeCmdIsSet_(false),
+	medfilterAlgoCfg_(DEFAULT_MEDFILTER_ALGO), medfilterAlgoCfgIsSaving_(false),
+	medfilterAlgoCmdIsSet_(false), medfilterHuangLevelsNumCfg_(DEFAULT_HUANG_LEVELS_NUM),
+	medfilterHuangLevelsNumCfgIsSaving_(false), medfilterHuangLevelsNumCmdIsSet_(false),
 	appModeCfg_(DEFAULT_APP_MODE), appModeCfgIsSaving_(false), appModeCmdIsSet_(false),
 	memModeCfg_(DEFAULT_MEM_MODE), memSizeCfg_(0), memModeCfgIsSaving_(false),
 	memModeCmdIsSet_(false), helpAsked_(false), versionAsked_(false), argc_(0), argv_(NULL),
@@ -92,6 +95,8 @@ void AppConfig::FillBasePO_()
 		("medfilter.aperture", po::value<int>(), "" )
 		("medfilter.threshold", po::value<double>(), "")
 		("medfilter.margintype", po::value<std::string>(), "")
+		("medfilter.algo", po::value<std::string>(), "")
+		("medfilter.huanglevels", po::value<boost::uint16_t>(), "")
 		("appmode", po::value<std::string>(), "")
 		("memmode", po::value<std::string>(), "")
 		("test","")	//Не документировать эту опцию в справку юзера! Только для разработки.
@@ -164,6 +169,23 @@ void AppConfig::FillDependentPO_()
 отражением изображения, расположенного в противоположную сторону от краевого пикселя. \
 Работает медленно, но при достаточном размере окна позволяет например избежать появления \
 холмов на месте леса при фильтрации.").c_str())
+		("medfilter.algo", po::value<std::string>(), STB.Utf8ToSelectedCharset(
+"Алгоритм медианного фильтра. Возможные варианты:\n    " + MedfilterAlgoTexts[MEDFILTER_ALGO_STUB]
++ " - пустой алгоритм. Ничего не делает, исходный файл просто копируется.\n    "
++ MedfilterAlgoTexts[MEDFILTER_ALGO_STUPID] + " - алгоритм, обрабатывающий изображение \
+\"в лоб\", т.е. на каждой итерации берутся все пиксели апертуры, сортируются, берётся медиана. \
+Этот алгоритм работает медленно, но медиана вычисляется без вызванной к примеру квантованием по \
+уровням потери точности. Это вариант по умолчанию (т.е применяется если опция не была указана).\n\
+    " + MedfilterAlgoTexts[MEDFILTER_ALGO_HUANG] + " - алгоритм быстрой медианной фильтрации, \
+предложенный Хуангом и соавторами. Реализован с незначительными модификациями, призванными \
+немного ускорить обработку \"неровных\" изображений. Работает значительно быстрее чем обработка \
+изображения \"в лоб\", т.к на каждом следующем пикселе используется часть информации, полученной при \
+обработке предыдущего.").c_str())
+		("medfilter.huanglevels", po::value<boost::uint16_t>(), STB.Utf8ToSelectedCharset(
+"Количество уровней квантования для медианной фильтрации алгоритмом Хуанга. По умолчанию этот \
+параметр равен " + boost::lexical_cast<std::string>(DEFAULT_HUANG_LEVELS_NUM) + ". Максимально \
+возможное значение этого параметра: " + boost::lexical_cast<std::string>
+(HUANG_MAX_LEVELS_NUM) + ".").c_str())
 //		("appmode", po::value<std::string>(),STB.Utf8ToSelectedCharset("Режим работы \
 //программы. На данный момент единственный работающий вариант - median.").c_str())
 		("memmode", po::value<std::string>(), STB.Utf8ToSelectedCharset("Режим использования \
@@ -376,6 +398,31 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 				return false;
 			};
 			medfilterMarginTypeCmdIsSet_ = true;
+		};
+		if (poVarMap_.count("medfilter.algo"))
+		{
+			medfilterAlgoCmd_ = MedfilterAlgoStrToEnum(poVarMap_[
+				"medfilter.algo"].as<std::string>());
+			if (medfilterAlgoCmd_ == MEDFILTER_ALGO_UNKNOWN)
+			{
+				//Неизвестный или пока не реализованный вариант.
+				if (errObj) errObj->SetError(CMNERR_UNKNOWN_IDENTIF, ": " +
+					poVarMap_["medfilter.algo"].as<std::string>());
+				return false;
+			};
+			medfilterAlgoCmdIsSet_ = true;
+		};
+		if (poVarMap_.count("medfilter.huanglevels"))
+		{
+			medfilterHuangLevelsNumCmd_ = poVarMap_["medfilter.huanglevels"].as<boost::uint16_t>();
+			if (medfilterHuangLevelsNumCmd_ < 3)
+			{
+				//Нельзя использовать совсем уж мало уровней.
+				if (errObj) errObj->SetError(CMNERR_CMDLINE_PARSE_ERROR, ": параметр \
+medfilter.huanglevels не может иметь значение меньше чем 3.");
+				return false;
+			}
+			medfilterHuangLevelsNumCmdIsSet_ = true;
 		};
 		if (poVarMap_.count("memmode"))
 		{
