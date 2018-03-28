@@ -64,15 +64,6 @@ public:
 
 	//Абстрактные методы
 
-	//Читает изображение в матрицу так чтобы по краям оставалось место для создания граничных
-	//пикселей.
-	//virtual bool LoadImage(const std::string &fileName, ErrorInfo *errObj = NULL, CallBackBase *callBackObj = NULL) = 0;
-
-	//Сохраняет матрицу в изображение. За основу берётся ранее загруженная через LoadImage
-	//картинка - файл копируется под новым именем и затем в него вносятся изменённые пиксели.
-	///В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
-	//virtual bool SaveImage(const std::string &fileName, ErrorInfo *errObj = NULL) = 0;
-
 	//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 	//выбранным алгоритмом.
 	virtual void FillMargins(const int yStart, const int yToProcess, CallBackBase *callBackObj = NULL) = 0;
@@ -169,15 +160,6 @@ public:
 	//~RealMedianFilterTemplBase() {}; //Пустой. Хватит по умолчанию.
 
 	//Прочий функционал
-
-	//Читает изображение в матрицу так чтобы по краям оставалось место для создания граничных
-	//пикселей.
-	//bool LoadImage(const std::string &fileName, ErrorInfo *errObj = NULL, CallBackBase *callBackObj = NULL);
-		
-	//Сохраняет матрицу в изображение. За основу берётся ранее загруженная через LoadImage
-	//картинка - файл копируется под новым именем и затем в него вносятся изменённые пиксели.
-	///В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
-	//bool SaveImage(const std::string &fileName, ErrorInfo *errObj = NULL);
 
 	//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 	//выбранным алгоритмом.
@@ -417,15 +399,6 @@ public:
 
 	//Закрыть все файлы.
 	void CloseAllFiles();
-
-	//Читает изображение в матрицу так чтобы по краям оставалось место для создания граничных
-	//пикселей.
-	//bool LoadImage(const std::string &fileName, ErrorInfo *errObj = NULL, CallBackBase *callBackObj = NULL);
-
-	//Сохраняет матрицу в изображение. За основу берётся ранее загруженная через LoadImage
-	//картинка - файл копируется под новым именем и затем в него вносятся изменённые пиксели.
-	///В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
-	//bool SaveImage(const std::string &fileName, ErrorInfo *errObj = NULL);
 
 	//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
 	bool ApplyStupidFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);

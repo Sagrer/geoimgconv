@@ -559,97 +559,6 @@ void RealMedianFilterTemplBase<CellType>::StupidFilter(const int &currYToProcess
 //       Прочий функционал        //
 //--------------------------------//
 
-//Читает изображение в матрицу так чтобы по краям оставалось место для создания граничных
-//пикселей.
-/*template <typename CellType>
-bool RealMedianFilterTemplBase<CellType>::LoadImage(const std::string &fileName, ErrorInfo *errObj,
-	CallBackBase *callBackObj)
-{
-	//Чистим матрицу и грузим в неё файл.
-	bool result;
-	sourceMatrix_.Clear();
-	getOwnerObj().FixAperture();
-	result = sourceMatrix_.LoadFromGDALFile(fileName, (getOwnerObj().getAperture() - 1) / 2, errObj);
-	if (result)
-		getOwnerObj().setSourceFileName(fileName);
-	return result;
-}*/
-
-//Сохраняет матрицу в изображение. За основу берётся ранее загруженная через LoadImage
-//картинка - файл копируется под новым именем и затем в него вносятся изменённые пиксели.
-//В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
-/*template <typename CellType>
-bool  RealMedianFilterTemplBase<CellType>::SaveImage(const std::string &fileName, ErrorInfo *errObj)
-{
-	//Недопилено.
-	filesystem::path destFilePath, sourceFilePath, tempFilePath, basePath;
-	system::error_code errCode;
-	destFilePath = STB.Utf8ToWstring(fileName);
-	sourceFilePath = STB.Utf8ToWstring(getOwnerObj().getSourceFileName());
-	basePath = destFilePath.parent_path();
-
-	//PARANOYA MODE ON. Надо убедиться что файл есть куда записывать.
-	if (!filesystem::is_directory(basePath))
-	{
-		if (!filesystem::exists(basePath))
-		{
-			if (!filesystem::create_directories(basePath, errCode))
-			{
-				//Нет директории для файла и не удалось её создать. Облом :(.
-				if (errObj) errObj->SetError(CMNERR_WRITE_ERROR, ": " + 
-					STB.SystemCharsetToUtf8((errCode.message())));
-				return false;
-			}
-		}
-		else
-		{
-			//Путь есть но это не директория - лучше ничего не трогать. Облом :(
-			if (errObj) errObj->SetError(CMNERR_WRITE_ERROR,
-				": невозможно создать каталог для записи файла");
-			return false;
-		}
-	}
-	//PARANOYA MODE OFF
-
-	//Скопируем исходный файл в новый временный, в том же каталоге что и целевое имя файла.
-	tempFilePath = basePath;
-	tempFilePath /= filesystem::unique_path("%%%%-%%%%-%%%%-%%%%.tmp");
-	string tempFileName = STB.WstringToUtf8(tempFilePath.wstring());
-	if (!filesystem::exists(sourceFilePath) || filesystem::exists(tempFilePath))
-	{
-		if (errObj) errObj->SetError(CMNERR_WRITE_ERROR,
-			": не удалось скопировать исходный файл во временный");
-		return false;
-	}
-	system::error_code boostErrCode;
-	filesystem::copy_file(sourceFilePath, tempFilePath, boostErrCode);
-	if (boostErrCode.value())
-	{
-		if (errObj) errObj->SetError(CMNERR_WRITE_ERROR,
-			": не удалось скопировать исходный файл во временный");
-		return false;
-	}
-	
-	//Собсно, запись.
-	if (!destMatrix_.SaveToGDALFile(tempFileName, 0, 0, errObj))
-	{
-		filesystem::remove(tempFilePath, boostErrCode);
-		return false;
-	};
-
-	//Всё ок. Осталось переименовать.
-	filesystem::rename(tempFilePath, destFilePath, boostErrCode);
-	if (boostErrCode.value())
-	{
-		if (errObj) errObj->SetError(CMNERR_WRITE_ERROR,
-			": не удалось переименовать временный файл в "+destFilePath.string());
-		return false;
-	}
-
-	//Всё ок вроде
-	return true;
-}*/
-
 //Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 //выбранным алгоритмом.
 template <typename CellType>
@@ -1016,38 +925,6 @@ void MedianFilter::CloseAllFiles()
 	CloseInputFile();
 	CloseOutputFile();
 }
-
-
-/*bool MedianFilter::LoadImage(const std::string &fileName, ErrorInfo *errObj,
-	CallBackBase *callBackObj)
-	//Читает изображение в матрицу так чтобы по краям оставалось место для создания граничных
-	//пикселей.
-{
-	FixAperture();
-	if (OpenInputFile(fileName, errObj))
-	{
-		imageIsLoaded_ = pFilterObj_->LoadImage(fileName, errObj, callBackObj);
-	}
-	
-	return imageIsLoaded_;
-}*/
-
-//Сохраняет матрицу в изображение. За основу берётся ранее загруженная через LoadImage
-//картинка - файл копируется под новым именем и затем в него вносятся изменённые пиксели.
-//В первую очередь это нужно чтобы оставить метаданные в неизменном оригинальном виде.
-/*bool MedianFilter::SaveImage(const std::string &fileName, ErrorInfo *errObj)
-{
-	//Тупой проброс вызова.
-	if (imageIsLoaded_)
-	{
-		return pFilterObj_->SaveImage(fileName, errObj);
-	}
-	else
-	{
-		if (errObj) errObj->SetError(CMNERR_FILE_NOT_LOADED);
-		return false;
-	}
-}*/
 
 //Приводит апертуру (длина стороны окна фильтра) к имеющему смысл значению.
 void MedianFilter::FixAperture()

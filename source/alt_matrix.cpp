@@ -44,10 +44,8 @@ template <typename CellType> void AntiUnrExtsHelper()
 	AltMatrix<CellType> temp;
 	typedef void(AltMatrix<CellType>::*MethodPointer)(...);
 	MethodPointer pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveToFile);
-	//pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveToGDALFile);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveToGDALRaster);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::LoadFromFile);
-	//pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::LoadFromGDALFile);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::LoadFromGDALRaster);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveChunkToMatrix);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveChunkToFile);
@@ -132,59 +130,6 @@ bool AltMatrix<CellType>::SaveToFile(const string &fileName, ErrorInfo *errObj) 
 	return false;
 }
 
-//Сохраняет матрицу высот в изображение через GDAL. Изображение уже должно существовать,
-//т.е. мы просто заменяем там указанную часть пикселей. yStart и yStart задают прямоугольник,
-//пикселы из которого будут перезаписаны. T.е. задаёт верхний левый угол в целевом изображении,
-//в который попадёт верхний левый угол записываемого изображения. Размер прямоугольника
-//определяется размером собственно матрицы, размеры целевого изображения должны ему
-//соответствовать. Вернёт true если всё ок.
-/*template <typename CellType>
-bool AltMatrix<CellType>::SaveToGDALFile(const std::string &fileName, const int &xStart,
-	const int &yStart, ErrorInfo *errObj) const
-{
-	//А был ли файл?
-	filesystem::path filePath = STB.Utf8ToWstring(fileName);
-	if (!filesystem::is_regular_file(filePath))
-	{
-		if (errObj)	errObj->SetError(CMNERR_FILE_NOT_EXISTS, ": " + fileName);
-		return false;
-	}
-
-	//Открываем файл.
-	GDALDataset *inputDataset = (GDALDataset*)GDALOpen(fileName.c_str(), GA_Update);
-	if (!inputDataset)
-	{
-		if (errObj)	errObj->SetError(CMNERR_WRITE_ERROR, ": " + fileName);
-		return false;
-	}
-	if (inputDataset->GetRasterCount() != 1)
-	{
-		//Если в картинке слоёв не строго 1 штука - это какая-то непонятная картинка,
-		//т.е. не похожа на карту высот, возможно там RGB или ещё что подобное...
-		//Так что облом и ругаемся.
-		GDALClose(inputDataset);
-		if (errObj) errObj->SetError(CMNERR_UNSUPPORTED_FILE_FORMAT, ": " + fileName);
-		return false;
-	}
-	GDALRasterBand *inputRaster = inputDataset->GetRasterBand(1);
-
-	//Пишем
-	CPLErr gdalResult;
-	gdalResult = inputRaster->RasterIO(GF_Write, xStart, yStart, xSize_, ySize_,
-		(void*)(data_), xSize_, ySize_, GICToGDAL_PixelType(pixelType_),
-		0, 0, NULL);
-	if (gdalResult != CE_None)
-	{
-		GDALClose(inputDataset);
-		if (errObj) errObj->SetError(CMNERR_READ_ERROR, ": " + GetLastGDALError());
-		return false;
-	}
-
-	//Записали вроде.
-	GDALClose(inputDataset);
-	return true;
-}*/
-
 //Сохраняет в GDALRasterBand кусок матрицы указанного размера и на указанную позицию.
 //gdalRaster - указатель на объект GDALRasterBand записываемого изображения.
 //yPosition - начальная строка в записываемом изображении, начиная с которой надо писать.
@@ -230,89 +175,6 @@ bool AltMatrix<CellType>::LoadFromFile(const string &fileName, ErrorInfo *errObj
 	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
 	return false;
 }
-
-/*//Загружает матрицу высот из изображения через GDAL. Вернёт true если всё ок.
-template <typename CellType>
-bool AltMatrix<CellType>::LoadFromGDALFile(const std::string &fileName,
-	const int &marginSize, ErrorInfo *errObj)
-{
-	//Независимо от того удастся ли загрузить файл - данные в объекте
-	//должны быть удалены.
-	if (IsClear()) Clear();
-	//А был ли файл?
-	filesystem::path filePath = STB.Utf8ToWstring(fileName);
-	if (!filesystem::is_regular_file(filePath))
-	{
-		if (errObj)	errObj->SetError(CMNERR_FILE_NOT_EXISTS, ": " + fileName);
-		return false;
-	}
-
-	//Открываем файл, узнаём размер картинки
-	GDALDataset *inputDataset = (GDALDataset*)GDALOpen(fileName.c_str(), GA_ReadOnly);
-	if (!inputDataset)
-	{
-		if (errObj)	errObj->SetError(CMNERR_READ_ERROR, ": " + fileName);
-		return false;
-	}
-	if (inputDataset->GetRasterCount() != 1)
-	{
-		//Если в картинке слоёв не строго 1 штука - это какая-то непонятная картинка,
-		//т.е. не похожа на карту высот, возможно там RGB или ещё что подобное...
-		//Так что облом и ругаемся.
-		GDALClose(inputDataset);
-		if (errObj) errObj->SetError(CMNERR_UNSUPPORTED_FILE_FORMAT, ": " + fileName);
-		return false;
-	}
-	GDALRasterBand *inputRaster = inputDataset->GetRasterBand(1);
-	int rasterXSize = inputRaster->GetXSize();
-	int rasterYSize = inputRaster->GetYSize();
-	if ((rasterXSize <= 0) || (rasterYSize <= 0))
-	{
-		GDALClose(inputDataset);
-		if (errObj) errObj->SetError(CMNERR_UNSUPPORTED_FILE_FORMAT, ": " + fileName);
-		return false;
-	}
-
-	//Выделяем память.
-	CreateEmpty(rasterXSize+(marginSize * 2), rasterYSize+(marginSize * 2));
-
-	//RasterIO умеет в spacing, поэтому нет необходимости читать картинку построчно для того
-	//чтобы добавлять в начале и конце строк пустоту для marginSize. Всё можно загрузить сразу
-	//одним вызовом, главное не накосячить в рассчётах, иначе картинка превращается
-	//в пиксельное месиво :).
-	CPLErr gdalResult;
-	gdalResult = inputRaster->RasterIO(GF_Read, 0, 0, rasterXSize, rasterYSize,
-		(void*)((CellType*)(data_) + marginSize*xSize_ + marginSize),
-		rasterXSize, rasterYSize, GICToGDAL_PixelType(pixelType_), 0,
-		(rasterXSize + (marginSize*2))*sizeof(CellType), NULL);
-	if (gdalResult != CE_None)
-	{
-		GDALClose(inputDataset);
-		if (errObj) errObj->SetError(CMNERR_READ_ERROR, ": " + GetLastGDALError());
-		return false;
-	}
-	//Главное не забыть закрыть файл!!!
-	GDALClose(inputDataset);
-
-	//Осталось пробежаться по всем пикселям и откласифицировать их на значимые и незначимые.
-	//Незначимым считаем пиксели равные нулю. Граничные пиксели кстати трогать нет смысла.
-	if (useSignData_)
-	{
-		int i, j;
-		for (i = marginSize; i < (ySize_ - marginSize); i++)
-		{
-			for (j = marginSize; j < (xSize_ - marginSize); j++)
-			{
-				if (matrixArr_[i][j] != CellType(0))
-					//Это значимый пиксель.
-					signMatrixArr_[i][j] = 1;
-			}
-		}
-	}
-
-	//Ок, всё ок ).
-	return true;
-}*/
 
 //Загружает из GDALRasterBand кусочек матрицы высот указанного размера, при этом верхние 2 блока
 //берёт либо из файла либо из нижней части другой (или из себя если дана ссылка на this) матрицы.
