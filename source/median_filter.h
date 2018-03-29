@@ -321,7 +321,8 @@ private:
 	GDALRasterBand *gdalSourceRaster_;	//GDAL-овский объект для работы с пикселами исходного файла.
 	GDALRasterBand *gdalDestRaster_;		//GDAL-овский объект для работы с пикселами файла назначения.
 	int currPositionY_;	//Позиция "курсора" при чтении\записи очередных блоков из файла.
-	bool useHuangAlgo_;	//Приватное поле. Если true то размеры блоков памяти будут считаться для алгоритма Хуанга.
+	bool useHuangAlgo_;	//Если true то размеры блоков памяти будут считаться для алгоритма Хуанга.
+	boost::uint16_t huangLevelsNum_;	//Количество уровней квантования для алгоритма Хуанга. Имеет значение для подсчёта размера требуемой памяти.
 
 	//Приватные методы
 
@@ -390,7 +391,7 @@ public:
 	void setCurrPositionY(const int &value) { currPositionY_ = value; }
 
 	//Конструкторы-деструкторы
-	MedianFilterBase(bool useHuangAlgo = false);
+	MedianFilterBase(bool useHuangAlgo = false, boost::uint16_t huangLevelsNum = DEFAULT_HUANG_LEVELS_NUM);
 	~MedianFilterBase();
 
 	//Прочий функционал
@@ -434,7 +435,7 @@ class MedianFilterStub : public MedianFilterBase
 {
 public:
 	//Конструктор по умолчанию. Другие использовать нельзя.
-	MedianFilterStub() : MedianFilterBase(false) {}
+	MedianFilterStub() : MedianFilterBase() {}
 	//Применить "никакой" медианный фильтр.
 	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
 };
@@ -445,8 +446,19 @@ class MedianFilterStupid : public MedianFilterBase
 {
 public:
 	//Конструктор по умолчанию. Другие использовать нельзя.
-	MedianFilterStupid() : MedianFilterBase(false) {}
+	MedianFilterStupid() : MedianFilterBase() {}
 	//Применить "тупой" медианный фильтр.
+	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
+};
+
+//Наследник, "реализующий" медианную фильтрацию алгоритмом Хуанга.
+//Результат записывается в выбранный destFile
+class MedianFilterHuang : public MedianFilterBase
+{
+public:
+	//Конструктор по умолчанию. Другие использовать нельзя.
+	MedianFilterHuang(MedfilterAlgo algo, boost::uint16_t levelsNum) : MedianFilterBase(true, levelsNum) {}
+	//Обработать изображение медианным фильтром по алгоритму Хуанга
 	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
 };
 

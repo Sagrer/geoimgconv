@@ -627,13 +627,13 @@ bool RealMedianFilterTemplBase<CellType>::DestSaveToCSVFile(const std::string &f
 //          MedianFilterBase          //
 ////////////////////////////////////////
 
-MedianFilterBase::MedianFilterBase(bool useHuangAlgo) : aperture_(DEFAULT_MEDFILTER_APERTURE),
-threshold_(DEFAULT_MEDFILTER_THRESHOLD), marginType_(DEFAULT_MEDFILTER_MARGIN_TYPE), useMemChunks_(false),
-blocksInMem_(0), sourceFileName_(""), destFileName_(""), imageSizeX_(0), imageSizeY_(0),
-imageIsLoaded_(false), sourceIsAttached_(false), destIsAttached_(false), dataType_(PIXEL_UNKNOWN),
-dataTypeSize_(0), pFilterObj_(NULL), minBlockSize_(0), minMemSize_(0), gdalSourceDataset_(NULL),
-gdalDestDataset_(NULL), gdalSourceRaster_(NULL), gdalDestRaster_(NULL), currPositionY_(0),
-useHuangAlgo_(useHuangAlgo)
+MedianFilterBase::MedianFilterBase(bool useHuangAlgo, boost::uint16_t huangLevelsNum) :
+aperture_(DEFAULT_MEDFILTER_APERTURE), threshold_(DEFAULT_MEDFILTER_THRESHOLD),
+marginType_(DEFAULT_MEDFILTER_MARGIN_TYPE), useMemChunks_(false), blocksInMem_(0), sourceFileName_(""),
+destFileName_(""), imageSizeX_(0), imageSizeY_(0), imageIsLoaded_(false), sourceIsAttached_(false),
+destIsAttached_(false), dataType_(PIXEL_UNKNOWN), dataTypeSize_(0), pFilterObj_(NULL), minBlockSize_(0),
+minMemSize_(0), gdalSourceDataset_(NULL), gdalDestDataset_(NULL), gdalSourceRaster_(NULL),
+gdalDestRaster_(NULL), currPositionY_(0), useHuangAlgo_(useHuangAlgo), huangLevelsNum_(huangLevelsNum)
 {
 	
 }
@@ -682,12 +682,30 @@ void MedianFilterBase::CalcMemSizes()
 	//Размер пиксела в исходного блока в байтах у нас складывается из размера типа
 	//элементов в матрице и размера элемента вспомогательной матрицы (это 1 байт).
 	//
-	//Размер исходного блока.
-	unsigned long long minSourceBlockSize = blockHeight * blockWidth * (dataTypeSize_ + 1);
+	//Размер исходного блока - зависит от того используем ли алгоритм Хуанга.
+	unsigned long long minSourceBlockSize;
+	if (useHuangAlgo_)
+	{
+		minSourceBlockSize = blockHeight * blockWidth * (dataTypeSize_ + 3);
+	}
+	else
+	{
+		minSourceBlockSize = blockHeight * blockWidth * (dataTypeSize_ + 1);
+	}
 	//Размер блока с результатом
 	unsigned long long minDestBlockSize = imageSizeX_ * firstLastBlockHeight * dataTypeSize_;
 	//Минимальное допустимое количество памяти.
 	minMemSize_ = (3 * minSourceBlockSize) + minDestBlockSize;
+	//Для алгоритма Хуанга - надо ещё учесть размер гистограммы.
+	if (useHuangAlgo_)
+	{
+		minMemSize_ += (huangLevelsNum_ * sizeof(unsigned long));
+	}
+	else
+	{
+		//Если это stupid-алгоритм то там в свою очередь имеет значение размер массива для пикселей окна.
+		minMemSize_ += (aperture_ * aperture_ * dataTypeSize_);
+	}
 	//Обобщённый размер "блока", содержащего и исходные данные и результат.
 	minBlockSize_ = minSourceBlockSize + minDestBlockSize;
 	//Общее количество памяти, которое может потребоваться для для работы над изображением.
@@ -999,6 +1017,29 @@ bool MedianFilterStupid::ApplyFilter(CallBackBase *callBackObj, ErrorInfo *errOb
 file(s) were attached.");
 		return false;
 	}
+}
+
+//////////////////////////////////////////
+//          MedianFilterHuang           //
+//////////////////////////////////////////
+
+//Обработать изображение медианным фильтром по алгоритму Хуанга
+bool MedianFilterHuang::ApplyFilter(CallBackBase *callBackObj, ErrorInfo *errObj)
+{
+	//Проброс вызова.
+	/*if (getSourceIsAttached() && getDestIsAttached())
+	{
+		return getFilterObj().ApplyStupidFilter(callBackObj, errObj);
+	}
+	else
+	{
+		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilterBase::ApplyStubFilter no source and\\or dest \
+file(s) were attached.");
+		return false;
+	}*/
+	//Заглушка.
+	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
+	return false;
 }
 
 } //namespace geoimgconv
