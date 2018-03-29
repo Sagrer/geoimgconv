@@ -177,12 +177,13 @@ void AppUIConsoleCallBack::OperationEnd()
 //--------------------------------//
 
 AppUIConsole::AppUIConsole() : confObj_(NULL), maxMemCanBeUsed_(0),
-	maxBlocksCanBeUsed_(0)
+	maxBlocksCanBeUsed_(0), medFilter_(NULL)
 {
 }
 
 AppUIConsole::~AppUIConsole()
 {
+	delete medFilter_;
 }
 
 //--------------------------------//
@@ -605,26 +606,26 @@ int AppUIConsole::RunApp()
 	filesystem::path outputFilePath = filesystem::absolute(STB.Utf8ToWstring(confObj_->getOutputFileName()), STB.Utf8ToWstring(getCurrPath()));
 	string inputFileName = STB.WstringToUtf8(inputFilePath.wstring());
 	string outputFileName = STB.WstringToUtf8(outputFilePath.wstring());
-	MedianFilter medFilter;
+	medFilter_ = new MedianFilterStupid();
 	ErrorInfo errObj;
-	medFilter.setAperture(confObj_->getMedfilterAperture());
-	medFilter.setThreshold(confObj_->getMedfilterThreshold());
-	medFilter.setMarginType(confObj_->getMedfilterMarginType());
+	medFilter_->setAperture(confObj_->getMedfilterAperture());
+	medFilter_->setThreshold(confObj_->getMedfilterThreshold());
+	medFilter_->setMarginType(confObj_->getMedfilterMarginType());
 	PrintToConsole("Пытаюсь открыть исходный файл:\n" + inputFileName + "\n");
-	if (!medFilter.OpenInputFile(inputFileName, &errObj))
+	if (!medFilter_->OpenInputFile(inputFileName, &errObj))
 	{
 		ConsolePrintError(errObj);
 		return 1;
 	}
 	//Детектим сколько памяти нам нужно
-	if (!DetectMaxMemoryCanBeUsed(medFilter, SWAPMODE_ASK, &errObj))
+	if (!DetectMaxMemoryCanBeUsed(*medFilter_, SWAPMODE_ASK, &errObj))
 	{
 		ConsolePrintError(errObj);
 		return 1;
 	}
 	//Открываем файл который будем сохранять.
 	PrintToConsole("Создаю файл назначения и занимаю под него место:\n" + outputFileName + "\n");
-	if (!medFilter.OpenOutputFile(outputFileName, true, &errObj))
+	if (!medFilter_->OpenOutputFile(outputFileName, true, &errObj))
 	{
 		ConsolePrintError(errObj);
 		return 1;
@@ -638,10 +639,10 @@ int AppUIConsole::RunApp()
 
 	//Настраиваем фильтр в соответствии с полученной инфой о памяти.
 	if (confObj_->getMemMode() == MEMORY_MODE_ONECHUNK)
-		medFilter.setUseMemChunks(false);
+		medFilter_->setUseMemChunks(false);
 	else
-		medFilter.setUseMemChunks(true);
-	medFilter.setBlocksInMem(maxBlocksCanBeUsed_);
+		medFilter_->setUseMemChunks(true);
+	medFilter_->setBlocksInMem(maxBlocksCanBeUsed_);
 
 	//PrintToConsole("Открыто. Визуализация значимых пикселей:\n");
 	////medFilter.SourcePrintStupidVisToCout();
@@ -652,21 +653,24 @@ int AppUIConsole::RunApp()
 		STB.BytesNumToInfoSizeStr(maxMemCanBeUsed_) + " памяти, частями по\n" +
 		lexical_cast<std::string>(maxBlocksCanBeUsed_) + " блока(ов).\n");
 	if (confObj_->getMemMode() != MEMORY_MODE_ONECHUNK)
-		PrintToConsole("Размер блока: " + STB.BytesNumToInfoSizeStr(medFilter.getMinBlockSize()) + ".\n");
+		PrintToConsole("Размер блока: " + STB.BytesNumToInfoSizeStr(medFilter_->getMinBlockSize()) + ".\n");
 	cout << endl;
 	
 	//Собственно, запуск фильтра.
 	AppUIConsoleCallBack CallBackObj;
 	CallBackObj.OperationStart();
-	if (!medFilter.ApplyStupidFilter(&CallBackObj, &errObj))
+	if (!medFilter_->ApplyFilter(&CallBackObj, &errObj))
 	{
 		ConsolePrintError(errObj);
-			return 1;
+		return 1;
 	}
 	CallBackObj.OperationEnd();
 
 	//Закрываем файлы.
-	medFilter.CloseAllFiles();
+	medFilter_->CloseAllFiles();
+	//Объект удалим сразу, не смотря на то что в крайнем случае об этом бы позаботился деструктор AppUIConsole
+	delete medFilter_;
+	medFilter_ = NULL;
 
 	PrintToConsole("Готово.\n");
 

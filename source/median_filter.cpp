@@ -623,21 +623,22 @@ bool RealMedianFilterTemplBase<CellType>::DestSaveToCSVFile(const std::string &f
 	return destMatrix_.SaveToCSVFile(fileName, errObj);
 }
 
-////////////////////////////////////
-//          MedianFilter          //
-////////////////////////////////////
+////////////////////////////////////////
+//          MedianFilterBase          //
+////////////////////////////////////////
 
-MedianFilter::MedianFilter() : aperture_(DEFAULT_MEDFILTER_APERTURE), threshold_(DEFAULT_MEDFILTER_THRESHOLD),
-marginType_(DEFAULT_MEDFILTER_MARGIN_TYPE), useMemChunks_(false), blocksInMem_(0), sourceFileName_(""),
-destFileName_(""), imageSizeX_(0), imageSizeY_(0), imageIsLoaded_(false), sourceIsAttached_(false),
-destIsAttached_(false), dataType_(PIXEL_UNKNOWN), dataTypeSize_(0), pFilterObj_(NULL),
-minBlockSize_(0), minMemSize_(0), gdalSourceDataset_(NULL), gdalDestDataset_(NULL), gdalSourceRaster_(NULL),
-gdalDestRaster_(NULL), currPositionY_(0)
+MedianFilterBase::MedianFilterBase(bool useHuangAlgo) : aperture_(DEFAULT_MEDFILTER_APERTURE),
+threshold_(DEFAULT_MEDFILTER_THRESHOLD), marginType_(DEFAULT_MEDFILTER_MARGIN_TYPE), useMemChunks_(false),
+blocksInMem_(0), sourceFileName_(""), destFileName_(""), imageSizeX_(0), imageSizeY_(0),
+imageIsLoaded_(false), sourceIsAttached_(false), destIsAttached_(false), dataType_(PIXEL_UNKNOWN),
+dataTypeSize_(0), pFilterObj_(NULL), minBlockSize_(0), minMemSize_(0), gdalSourceDataset_(NULL),
+gdalDestDataset_(NULL), gdalSourceRaster_(NULL), gdalDestRaster_(NULL), currPositionY_(0),
+useHuangAlgo_(useHuangAlgo)
 {
 	
 }
 
-MedianFilter::~MedianFilter()
+MedianFilterBase::~MedianFilterBase()
 {
 	//Возможно создавался объект реального фильтра. Надо удалить.
 	delete pFilterObj_;
@@ -651,7 +652,7 @@ MedianFilter::~MedianFilter()
 
 //Вычислить минимальные размеры блоков памяти, которые нужны для принятия решения о
 //том сколько памяти разрешено использовать медианному фильтру в процессе своей работы.
-void MedianFilter::CalcMemSizes()
+void MedianFilterBase::CalcMemSizes()
 {
 	//Смысл в том, что фильтр обрабатывает картинку, в которой помимо самой картинки содержатся
 	//граничные пиксели - сверху, снизу, слева, справа. Они либо генерируются одним из алгоритмов,
@@ -682,8 +683,6 @@ void MedianFilter::CalcMemSizes()
 	//элементов в матрице и размера элемента вспомогательной матрицы (это 1 байт).
 	//
 	//Размер исходного блока.
-	/*unsigned long long minSourceBlockSize = (2 * firstLastBlockHeight*blockWidth +
-		blockHeight * blockWidth) * (dataTypeSize_ + 1);*/
 	unsigned long long minSourceBlockSize = blockHeight * blockWidth * (dataTypeSize_ + 1);
 	//Размер блока с результатом
 	unsigned long long minDestBlockSize = imageSizeX_ * firstLastBlockHeight * dataTypeSize_;
@@ -692,8 +691,6 @@ void MedianFilter::CalcMemSizes()
 	//Обобщённый размер "блока", содержащего и исходные данные и результат.
 	minBlockSize_ = minSourceBlockSize + minDestBlockSize;
 	//Общее количество памяти, которое может потребоваться для для работы над изображением.
-	/*maxMemSize_ = (((2 * minBlockSize_) + (imageSizeX_ * imageSizeY_) + (firstLastBlockHeight * imageSizeY_)) *
-		(dataTypeSize_ + 1)) + (imageSizeX_ * imageSizeY_ * dataTypeSize_);*/
 	maxMemSize_ = (2 * minSourceBlockSize) +		//2 граничных source-блока
 		(imageSizeX_ * imageSizeY_ * dataTypeSize_) +	//dest-матрица
 		(blockWidth * imageSizeY_ * (dataTypeSize_ + 1));	//остальная source-матрица.
@@ -706,7 +703,7 @@ void MedianFilter::CalcMemSizes()
 
 //Выбрать исходный файл для дальнейшего чтения и обработки. Получает информацию о параметрах изображения,
 //запоминает её в полях объекта.
-bool MedianFilter::OpenInputFile(const std::string &fileName, ErrorInfo *errObj)
+bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *errObj)
 {
 	//TODO: когда избавлюсь от Load и Save - тут должны будут создаваться объекты GDAL, существующие до
 	//завершения работы с файлом. Чтобы не создавать их постоянно в процессе по-кусочечной обработки
@@ -719,7 +716,7 @@ bool MedianFilter::OpenInputFile(const std::string &fileName, ErrorInfo *errObj)
 	if (sourceIsAttached_)
 	{
 		//Нельзя открывать файл если старый не был закрыт.
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilter::OpenInputFile() попытка открыть файл при не закрытом старом." );
+		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilterBase::OpenInputFile() попытка открыть файл при не закрытом старом." );
 		return false;
 	}
 
@@ -824,7 +821,7 @@ bool MedianFilter::OpenInputFile(const std::string &fileName, ErrorInfo *errObj)
 	}
 	else
 	{
-		if (errObj) errObj->SetError(CMNERR_UNKNOWN_ERROR, "MedianFilter::OpenInputFile() error creating pFilterObj_!",true);
+		if (errObj) errObj->SetError(CMNERR_UNKNOWN_ERROR, "MedianFilterBase::OpenInputFile() error creating pFilterObj_!",true);
 		gdalSourceDataset_ = NULL;
 		gdalSourceRaster_ = NULL;
 		return false;
@@ -833,18 +830,18 @@ bool MedianFilter::OpenInputFile(const std::string &fileName, ErrorInfo *errObj)
 
 //Подготовить целевой файл к записи в него результата. Если forceRewrite==true - перезапишет уже
 //существующий файл. Иначе вернёт ошибку (false и инфу в errObj). Input-файл уже должен быть открыт.
-bool MedianFilter::OpenOutputFile(const std::string &fileName, const bool &forceRewrite, ErrorInfo *errObj)
+bool MedianFilterBase::OpenOutputFile(const std::string &fileName, const bool &forceRewrite, ErrorInfo *errObj)
 {
 	//Этот метод можно вызывать только если исходный файл уже был открыт.
 	if (!sourceIsAttached_)
 	{
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  MedianFilter::OpenOutputFile исходный файл не был открыт.");
+		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  MedianFilterBase::OpenOutputFile исходный файл не был открыт.");
 		return false;
 	}
 	//И только если файл назначение открыт наоборот ещё не был.
 	if (destIsAttached_)
 	{
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  MedianFilter::OpenOutputFile попытка открыть файл назначения при уже открытом файле назначения.");
+		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  MedianFilterBase::OpenOutputFile попытка открыть файл назначения при уже открытом файле назначения.");
 		return false;
 	}
 	
@@ -896,7 +893,7 @@ bool MedianFilter::OpenOutputFile(const std::string &fileName, const bool &force
 }
 
 //Закрыть исходный файл.
-void MedianFilter::CloseInputFile()
+void MedianFilterBase::CloseInputFile()
 {
 	if (sourceIsAttached_)
 	{
@@ -908,7 +905,7 @@ void MedianFilter::CloseInputFile()
 }
 
 //Закрыть файл назначения.
-void MedianFilter::CloseOutputFile()
+void MedianFilterBase::CloseOutputFile()
 {
 	if (destIsAttached_)
 	{
@@ -920,14 +917,14 @@ void MedianFilter::CloseOutputFile()
 }
 
 //Закрыть все файлы.
-void MedianFilter::CloseAllFiles()
+void MedianFilterBase::CloseAllFiles()
 {
 	CloseInputFile();
 	CloseOutputFile();
 }
 
 //Приводит апертуру (длина стороны окна фильтра) к имеющему смысл значению.
-void MedianFilter::FixAperture()
+void MedianFilterBase::FixAperture()
 {
 	//Апертура меньше трёх невозможна и не имеет смысла.
 	//Апертура больше трёх должна быть нечётной чтобы в любую сторону от текущего пикселя было
@@ -941,41 +938,8 @@ void MedianFilter::FixAperture()
 	}
 }
 
-//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
-bool MedianFilter::ApplyStupidFilter(CallBackBase *callBackObj, ErrorInfo *errObj)
-{
-	//Проброс вызова.
-	if (sourceIsAttached_ || destIsAttached_)
-	{
-		return pFilterObj_->ApplyStupidFilter(callBackObj, errObj);
-	}
-	else
-	{
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilter::ApplyStubFilter no source and\\or dest \
-file(s) were attached.");
-		return false;
-	}
-}
-
-//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
-//Для отладки. Результат записывается в выбранный destFile
-bool MedianFilter::ApplyStubFilter(CallBackBase *callBackObj, ErrorInfo *errObj)
-{
-	//Проброс вызова.
-	if (sourceIsAttached_ || destIsAttached_)
-	{
-		return pFilterObj_->ApplyStubFilter(callBackObj, errObj);
-	}
-	else
-	{
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilter::ApplyStubFilter no source and\\or dest \
-file(s) were attached.");
-		return false;
-	}
-}
-
 //"Тупая" визуализация матрицы, отправляется прямо в cout.
-void MedianFilter::SourcePrintStupidVisToCout()
+void MedianFilterBase::SourcePrintStupidVisToCout()
 {
 	//Просто проброс вызова в объект матрицы.
 	pFilterObj_->SourcePrintStupidVisToCout();
@@ -984,17 +948,57 @@ void MedianFilter::SourcePrintStupidVisToCout()
 //Вывод исходной матрицы в csv-файл, который должны понимать всякие картографические
 //программы. Это значит что каждый пиксел - это одна строка в файле.
 //Это "тупой" вариант вывода - метаданные нормально не сохраняются.
-bool MedianFilter::SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
+bool MedianFilterBase::SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
 {
 	//Просто проброс вызова в объект матрицы.
 	return pFilterObj_->SourceSaveToCSVFile(fileName, errObj);
 }
 
 //Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
-bool MedianFilter::DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
+bool MedianFilterBase::DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
 {
 	//Просто проброс вызова в объект матрицы.
 	return pFilterObj_->DestSaveToCSVFile(fileName, errObj);
+}
+
+////////////////////////////////////////
+//          MedianFilterStub          //
+////////////////////////////////////////
+
+//Применить "никакой" медианный фильтр.
+bool MedianFilterStub::ApplyFilter(CallBackBase *callBackObj, ErrorInfo *errObj)
+{
+	//Проброс вызова.
+	if (getSourceIsAttached() && getDestIsAttached())
+	{
+		return getFilterObj().ApplyStubFilter(callBackObj, errObj);
+	}
+	else
+	{
+		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilterBase::ApplyStubFilter no source and\\or dest \
+file(s) were attached.");
+		return false;
+	}
+}
+
+//////////////////////////////////////////
+//          MedianFilterStupid          //
+//////////////////////////////////////////
+
+//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
+bool MedianFilterStupid::ApplyFilter(CallBackBase *callBackObj, ErrorInfo *errObj)
+{
+	//Проброс вызова.
+	if (getSourceIsAttached() && getDestIsAttached())
+	{
+		return getFilterObj().ApplyStupidFilter(callBackObj, errObj);
+	}
+	else
+	{
+		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilterBase::ApplyStubFilter no source and\\or dest \
+file(s) were attached.");
+		return false;
+	}
 }
 
 } //namespace geoimgconv

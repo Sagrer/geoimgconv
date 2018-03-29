@@ -34,12 +34,12 @@ namespace geoimgconv
 //Поскольку пикселы могут быть разными - базовый класс оборудован шаблонными
 //наследниками и полиморфизмом.
 
-//MedianFilter - изначально тут была вся эта система с шаблонными наследниками и
+//MedianFilterBase - изначально тут была вся эта система с шаблонными наследниками и
 //полиморфизмом, но теперь это просто обёртка, которая однако занимается предварительным
 //чтением картинки, определением её параметров и решает какой наследник RealMedianFilterBase
 //заюзать для реальной работы над изображением.
 
-class MedianFilter;	//Предварительно объявление т.к. в RealMedianFilterbase будет на него ссылка.
+class MedianFilterBase;	//Предварительно объявление т.к. в RealMedianFilterbase будет на него ссылка.
 
 //Базовый абстрактный класс для шаблонных классов.
 class RealMedianFilterBase
@@ -49,17 +49,17 @@ private:
 	//чтобы вынести сюда код, который должен генерироваться по шаблону для разных типов пиксела.
 	//Поэтому будем просто держать тут ссылку на основной объект класса и брать значения полей
 	//оттуда.
-	MedianFilter *ownerObj_;
+	MedianFilterBase *ownerObj_;
 
 	//Запретим конструктор по умолчанию и копирующий конструктор.
 	RealMedianFilterBase() {};
 	RealMedianFilterBase(RealMedianFilterBase&) {};
 public:
 	//Доступ к ссылке на объект-хозяин
-	MedianFilter& getOwnerObj() const { return *ownerObj_; }
+	MedianFilterBase& getOwnerObj() const { return *ownerObj_; }
 
-	//Нельзя создать объект не дав ссылку на MedianFilter
-	RealMedianFilterBase(MedianFilter *ownerObj) : ownerObj_(ownerObj) {};
+	//Нельзя создать объект не дав ссылку на MedianFilterBase
+	RealMedianFilterBase(MedianFilterBase *ownerObj) : ownerObj_(ownerObj) {};
 	virtual ~RealMedianFilterBase() {};
 
 	//Абстрактные методы
@@ -155,8 +155,8 @@ private:
 	//Первый аргумент указывает количество строк матрицы для реальной обработки.
 	void StupidFilter(const int &currYToProcess, CallBackBase *callBackObj = NULL);
 public:
-	//Нельзя создать объект не дав ссылку на MedianFilter
-	RealMedianFilterTemplBase(MedianFilter *ownerObj) : RealMedianFilterBase(ownerObj) {};
+	//Нельзя создать объект не дав ссылку на MedianFilterBase
+	RealMedianFilterTemplBase(MedianFilterBase *ownerObj) : RealMedianFilterBase(ownerObj) {};
 	//~RealMedianFilterTemplBase() {}; //Пустой. Хватит по умолчанию.
 
 	//Прочий функционал
@@ -189,8 +189,8 @@ public:
 template <typename CellType> class RealMedianFilter : public RealMedianFilterTemplBase<CellType>
 {
 public:
-	//Нельзя создать объект не дав ссылку на MedianFilter
-	RealMedianFilter(MedianFilter *ownerObj) : RealMedianFilterTemplBase<CellType>(ownerObj) {};
+	//Нельзя создать объект не дав ссылку на MedianFilterBase
+	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterTemplBase<CellType>(ownerObj) {};
 };
 
 //Специализация RealMedianFilter для double
@@ -204,8 +204,8 @@ private:
 		return std::abs(value1-value2);
 	};
 public:
-	//Нельзя создать объект не дав ссылку на MedianFilter
-	RealMedianFilter(MedianFilter *ownerObj) : RealMedianFilterTemplBase<double>(ownerObj) {};
+	//Нельзя создать объект не дав ссылку на MedianFilterBase
+	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterTemplBase<double>(ownerObj) {};
 };
 
 //Специализация RealMedianFilter для float
@@ -219,8 +219,8 @@ private:
 		return std::abs(value1-value2);
 	};
 public:
-	//Нельзя создать объект не дав ссылку на MedianFilter
-	RealMedianFilter(MedianFilter *ownerObj) : RealMedianFilterTemplBase<float>(ownerObj) {};
+	//Нельзя создать объект не дав ссылку на MedianFilterBase
+	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterTemplBase<float>(ownerObj) {};
 };
 
 //Специализация RealMedianFilter для boost::int8_t
@@ -234,8 +234,8 @@ private:
 		return std::abs(value1-value2);
 	};
 public:
-	//Нельзя создать объект не дав ссылку на MedianFilter
-	RealMedianFilter(MedianFilter *ownerObj) : RealMedianFilterTemplBase<boost::int8_t>(ownerObj) {};
+	//Нельзя создать объект не дав ссылку на MedianFilterBase
+	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterTemplBase<boost::int8_t>(ownerObj) {};
 };
 
 //Специализация RealMedianFilter для boost::int16_t
@@ -249,8 +249,8 @@ private:
 		return std::abs(value1-value2);
 	};
 public:
-	//Нельзя создать объект не дав ссылку на MedianFilter
-	RealMedianFilter(MedianFilter *ownerObj) : RealMedianFilterTemplBase<boost::int16_t>(ownerObj) {};
+	//Нельзя создать объект не дав ссылку на MedianFilterBase
+	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterTemplBase<boost::int16_t>(ownerObj) {};
 };
 
 //Специализация RealMedianFilter для boost::int32_t
@@ -264,8 +264,8 @@ private:
 		return std::abs(value1-value2);
 	};
 public:
-	//Нельзя создать объект не дав ссылку на MedianFilter
-	RealMedianFilter(MedianFilter *ownerObj) : RealMedianFilterTemplBase<boost::int32_t>(ownerObj) {};
+	//Нельзя создать объект не дав ссылку на MedianFilterBase
+	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterTemplBase<boost::int32_t>(ownerObj) {};
 };
 
 //Алиасы для классов, работающих с реально использующимися в GeoTIFF типами пикселов.
@@ -289,8 +289,9 @@ BOOST_STATIC_ASSERT_MSG(sizeof(double) == 8, "double size is not 64 bit! You nee
 BOOST_STATIC_ASSERT_MSG(sizeof(float) == 4, "float size is not 32 bit! You need to fix the code for you compillator!");
 
 //Обёртка с общей для всех типов пиксела функциональностью. Работать с фильтром надо именно через
-//этот класс! Не через RealMedianFilter*-ы!
-class MedianFilter : public BaseFilter
+//этот класс! Не через RealMedianFilter*-ы! Это базовая абстрактная обёртка, которая не имеет метода
+//для собственно применения фильтра.
+class MedianFilterBase : public BaseFilter
 {
 private:
 	//Поля
@@ -312,6 +313,7 @@ private:
 	size_t dataTypeSize_;	//Размер типа данных пикселя.
 	RealMedianFilterBase *pFilterObj_;	//Сюда будет создаваться объект для нужного типа данных.
 	unsigned long long minBlockSize_;	//Размер минимального блока, которыми обрабатывается файл.
+	unsigned long long minBlockSizeHuang_;	//То же но для алгоритма Хуанга.
 	unsigned long long minMemSize_;  //Минимальное количество памяти, без которого фильтр вообще не сможет обработать данное изображение.
 	unsigned long long maxMemSize_;  //Максимальное количество памяти, которое может потребоваться для обработки изображения.
 	GDALDataset *gdalSourceDataset_;	//GDAL-овский датасет с исходным файлом.
@@ -319,12 +321,22 @@ private:
 	GDALRasterBand *gdalSourceRaster_;	//GDAL-овский объект для работы с пикселами исходного файла.
 	GDALRasterBand *gdalDestRaster_;		//GDAL-овский объект для работы с пикселами файла назначения.
 	int currPositionY_;	//Позиция "курсора" при чтении\записи очередных блоков из файла.
+	bool useHuangAlgo_;	//Приватное поле. Если true то размеры блоков памяти будут считаться для алгоритма Хуанга.
 
 	//Приватные методы
 
 	//Вычислить минимальные размеры блоков памяти, которые нужны для принятия решения о
 	//том сколько памяти разрешено использовать медианному фильтру в процессе своей работы.
 	void CalcMemSizes();
+protected:
+	//sourceIsAttached
+	bool const& getSourceIsAttached() const { return sourceIsAttached_; }
+	void setSourceIsAttached(const bool &value) { sourceIsAttached_ = value; }
+	//destIsAttached
+	bool const& getDestIsAttached() const { return destIsAttached_; }
+	void setDestIsAttached(const bool &value) { destIsAttached_ = value; }
+	//pFilterObj
+	RealMedianFilterBase& getFilterObj() const { return *pFilterObj_; }
 public:
 	//Доступ к полям.
 
@@ -378,8 +390,8 @@ public:
 	void setCurrPositionY(const int &value) { currPositionY_ = value; }
 
 	//Конструкторы-деструкторы
-	MedianFilter();
-	~MedianFilter();
+	MedianFilterBase(bool useHuangAlgo = false);
+	~MedianFilterBase();
 
 	//Прочий функционал
 
@@ -400,13 +412,6 @@ public:
 	//Закрыть все файлы.
 	void CloseAllFiles();
 
-	//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
-	bool ApplyStupidFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
-
-	//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
-	//Для отладки. Результат записывается в выбранный destFile
-	bool ApplyStubFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
-
 	//Приводит апертуру к имеющему смысл значению.
 	void FixAperture();
 
@@ -421,6 +426,28 @@ public:
 	//Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 	bool DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
 
+};
+
+//Наследник, реализующий "никакой" фильтр. По сути это просто копирование. Для отладки.
+//Результат записывается в выбранный destFile
+class MedianFilterStub : public MedianFilterBase
+{
+public:
+	//Конструктор по умолчанию. Другие использовать нельзя.
+	MedianFilterStub() : MedianFilterBase(false) {}
+	//Применить "никакой" медианный фильтр.
+	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
+};
+
+//Наследник, реализующий "тупой" фильтр. Алгоритм медианной фильтрации работает "в лоб".
+//Результат записывается в выбранный destFile
+class MedianFilterStupid : public MedianFilterBase
+{
+public:
+	//Конструктор по умолчанию. Другие использовать нельзя.
+	MedianFilterStupid() : MedianFilterBase(false) {}
+	//Применить "тупой" медианный фильтр.
+	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
 };
 
 }	//namespace geoimgconv

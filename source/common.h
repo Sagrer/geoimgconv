@@ -130,7 +130,7 @@ extern const std::string DEFAULT_INPUT_FILE_NAME;
 //Имя исходящего файла
 extern const std::string DEFAULT_OUTPUT_FILE_NAME;
 //Апертура медианного фильтра
-extern const size_t DEFAULT_MEDFILTER_APERTURE;
+extern const int DEFAULT_MEDFILTER_APERTURE;
 //Порог медианного фильтра
 extern const double DEFAULT_MEDFILTER_THRESHOLD;
 //Какой тип заполнения граничных пикселей применяется по умолчанию

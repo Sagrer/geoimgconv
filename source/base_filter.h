@@ -35,6 +35,9 @@ public:
 	virtual unsigned long long const& getMinMemSize() const = 0;
 	//maxMemSize
 	virtual unsigned long long const& getMaxMemSize() const = 0;
+
+	//Метод для применения фильтра - тоже нужен.
+	virtual bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) = 0;
 };
 	
 }	//namespace geoimgconv

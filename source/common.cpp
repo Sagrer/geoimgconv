@@ -36,7 +36,7 @@ const std::string DEFAULT_INPUT_FILE_NAME = "input.tif";
 //Имя исходящего файла
 const std::string DEFAULT_OUTPUT_FILE_NAME = "output.tif";
 //Апертура медианного фильтра
-const size_t DEFAULT_MEDFILTER_APERTURE = 101;
+const int DEFAULT_MEDFILTER_APERTURE = 101;
 //Порог медианного фильтра
 const double DEFAULT_MEDFILTER_THRESHOLD = 0.5;
 //Какой тип заполнения граничных пикселей применяется по умолчанию

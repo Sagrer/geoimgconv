@@ -28,6 +28,7 @@
 #include "app_config.h"
 #include "small_tools_box.h"
 #include "base_filter.h"
+#include "median_filter.h"
 
 namespace geoimgconv
 {
@@ -98,6 +99,7 @@ private:
 	unsigned long long maxMemCanBeUsed_;	//сюда детектится количество памяти которое можно занимать
 	int maxBlocksCanBeUsed_;	//Сюда детектится максимальное количество блоков, которое можно загружать в память для применяемого сейчас фильтра.
 	SysResInfo sysResInfo_;		//Характеристики компа.
+	MedianFilterBase *medFilter_;	//Ссылка на текущий объект фильтра. Хранить как поле - удобно чтобы деструктор уничтожил потом объект по этой ссылке.
 
 	//Приватные методы
 
