@@ -680,6 +680,7 @@ int AppUIConsole::RunApp()
 //Метод для запуска в тестовом режиме.
 int AppUIConsole::RunTestMode()
 {
+	;
 	////Тестируем методы проверки строк.
 	////float
 	//PrintToConsole("123 is float: " + STB.BoolToString(STB.CheckFloatStr("123")) + "\n");
@@ -774,7 +775,7 @@ int AppUIConsole::RunTestMode()
 	//cout << "Done." << endl;
 	////Главное не забыть закрыть файл!!!
 	//GDALClose(inputDataset);
-
+	;
 	////Тест выделения больших (сравнимых с размером адресного пространства) блоков в памяти.
 	//string tempStr;
 	//cout << endl << "Ready to start. Enter string to continue... > ";
@@ -788,10 +789,29 @@ int AppUIConsole::RunTestMode()
 	//char *testArr2 = new char[(unsigned int)(memSize2)];
 	//cout << "OK!" << endl;
 	//cin >> tempStr;
+	
+	////Тестирование получения инфы о минимальной и максимальной высоте из
+	////изображения.
+	//GDALRegister_GTiff();	//Регистрация драйвера GDAL.
+	//cout << "Opening input.tif..." << endl;
+	//GDALDataset *inputDataset = (GDALDataset*)GDALOpen("input.tif", GA_ReadOnly);
+	//GDALRasterBand *inputRaster = inputDataset->GetRasterBand(1);
+	//cout << "NoDataValue: " << STB.DoubleToString(inputRaster->GetNoDataValue(),5) << endl;
+	//inputRaster->SetNoDataValue(0.0);
+	//cout << "New NoDataValue is: " << STB.DoubleToString(inputRaster->GetNoDataValue(), 5) << endl;
+	//double minMaxArr[2];
+	//inputRaster->ComputeRasterMinMax(false, &(minMaxArr[0]));
+	//cout << "MinValue: " << STB.DoubleToString(minMaxArr[0], 5) << endl;
+	//cout << "MaxValue: " << STB.DoubleToString(minMaxArr[1], 5) << endl;
+	//cout << "LevelDelta for 255 levels is: " << STB.DoubleToString(
+	//	(minMaxArr[1] - minMaxArr[0]) / 255.0, 5) << endl;
+	////Главное не забыть закрыть файл!!!
+	//GDALClose(inputDataset);
 
 	//Заглушка, работает когда ничего не тестируется.
 	PrintToConsole("Вы кто такие? Я вас не звал! Никаких тестов в этой версии\n\
 всё равно не выполняется ;).\n");
+	
 	return 0;
 }
 
