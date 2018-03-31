@@ -106,10 +106,10 @@ if(BOOST_SUPR_OUTDATED)
 	add_definitions(-DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
 endif()
 
-#ICU
-find_package(ICU COMPONENTS uc dt in io tu test REQUIRED)
-include_directories(${ICU_INCLUDE_DIRS})
-target_link_libraries(geoimgconv ${ICU_LIBRARIES})
+##ICU - скорее всего явно подключать его не нужно.
+#find_package(ICU COMPONENTS uc dt in io tu test REQUIRED)
+#include_directories(${ICU_INCLUDE_DIRS})
+#target_link_libraries(geoimgconv ${ICU_LIBRARIES})
 
 #GDAL
 find_package(GDAL REQUIRED)

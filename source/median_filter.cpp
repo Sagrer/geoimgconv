@@ -40,6 +40,16 @@ namespace geoimgconv
 //       RealMedianFilterTemplBase        //
 ////////////////////////////////////////////
 
+//Нельзя создать объект не дав ссылку на MedianFilterBase
+template <typename CellType>
+RealMedianFilterTemplBase<CellType>::RealMedianFilterTemplBase(MedianFilterBase *ownerObj) :
+	RealMedianFilterBase(ownerObj),	sourceMatrix_(true, ownerObj->getUseHuangAlgo()),
+	destMatrix_(false,false), minMaxCalculated_(false), noDataPixelValue_(0),
+	minPixelValue_(0), maxPixelValue_(0), levelsDelta_(0.0)
+{
+
+};
+
 //--------------------------------//
 //       Приватные методы         //
 //--------------------------------//
@@ -143,7 +153,7 @@ void RealMedianFilterTemplBase<CellType>::GetMirrorPixel(const int &x, const int
 					GetMirrorPixel(tempX,tempY,firstX,firstY,outX,outY,recurseDepth+1);
 				};
 				found = true;
-			}		
+			}
 		};
 		if (found==false) shift++; //Ничего не найдено - поищем ближе к центру.
 	} while(found==false);
@@ -296,12 +306,12 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		destYSize = getOwnerObj().getImageSizeY();
 	}
 	sourceMatrix_.CreateEmpty(getOwnerObj().getImageSizeX() + (2 * marginSize), sourceYSize);
-	//destMatrix будет создаваться и обнуляться уже в процессе, перед запуском очередного прохода фильтра.	
+	//destMatrix будет создаваться и обнуляться уже в процессе, перед запуском очередного прохода фильтра.
 
 	//Настроим прогрессбар.
 	if (callBackObj)
 		callBackObj->setMaxProgress(getOwnerObj().getImageSizeX() * getOwnerObj().getImageSizeY());
-	
+
 	//Теперь в цикле надо пройти по всем строкам исходного файла.
 	int currYToProcess, filterYToProcess;
 	bool needRecalc = true;
@@ -459,7 +469,7 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 	return true;
 }
 
-//Метод "тупого" фильтра, который тупо копирует входящую матрицу в исходящую. Нужен для тестирования
+//Метод "никакого" фильтра, который тупо копирует входящую матрицу в исходящую. Нужен для тестирования
 //и отладки. Первый аргумент указывает количество строк матрицы для реальной обработки.
 template <typename CellType>
 void RealMedianFilterTemplBase<CellType>::StubFilter(const int &currYToProcess,
@@ -555,6 +565,29 @@ void RealMedianFilterTemplBase<CellType>::StupidFilter(const int &currYToProcess
 	delete[] medianArr;
 }
 
+//Метод вычисляет минимальную и максимальную высоту в открытом изображении если это вообще нужно.
+//Также вычисляет дельту (шаг между уровнями).
+template<typename CellType>
+void RealMedianFilterTemplBase<CellType>::CalcMinMaxPixelValues()
+{
+	if (!minMaxCalculated_)
+	{
+		//Заставим сработать событие, сигнализирующее о начале вычисления.
+		if (ownerObj_->onMinMaxDetectionStart != NULL) ownerObj_->onMinMaxDetectionStart();
+		//Запишем новое NoDataValue и вычислим min и max средствами GDAL.
+		ownerObj_->gdalSourceRaster_->SetNoDataValue((double)noDataPixelValue_);
+		double minMaxArr[2];
+		ownerObj_->gdalSourceRaster_->ComputeRasterMinMax(false, &(minMaxArr[0]));
+		minPixelValue_ = (CellType)minMaxArr[0];
+		maxPixelValue_ = (CellType)minMaxArr[1];
+		minMaxCalculated_ = true;
+		//Дельта (шаг между уровнями) тоже вычисляется именно тут.
+		levelsDelta_ = (double)(maxPixelValue_ - minPixelValue_) / (double)(ownerObj_->getHuangLevelsNum()-1);
+		//И сообщим что всё готово.
+		if (ownerObj_->onMinMaxDetectionEnd != NULL) ownerObj_->onMinMaxDetectionEnd();
+	}
+}
+
 //--------------------------------//
 //       Прочий функционал        //
 //--------------------------------//
@@ -568,13 +601,39 @@ void RealMedianFilterTemplBase<CellType>::FillMargins(const int yStart, const in
 	//Просто пробросим вызов в реально работающий метод, правильно указав метод-заполнитель.
 	switch (getOwnerObj().getMarginType())
 	{
-	case MARGIN_SIMPLE_FILLING: 
+	case MARGIN_SIMPLE_FILLING:
 		FillMargins_PixelBasedAlgo(&RealMedianFilterTemplBase<CellType>::SimpleFiller, yStart, yToProcess,
 		callBackObj);
 		break;
 	case MARGIN_MIRROR_FILLING:
 		FillMargins_PixelBasedAlgo(&RealMedianFilterTemplBase<CellType>::MirrorFiller, yStart, yToProcess,
 			callBackObj);
+	}
+}
+
+//Заполняет матрицу квантованных пикселей в указанном промежутке, получая их из значений
+//оригинальных пикселей в исходной матрице. Нужно для алгоритма Хуанга.
+template <typename CellType>
+void RealMedianFilterTemplBase<CellType>::FillQuantedMatrix(const int yStart, const int yToProcess)
+{
+	//unsigned long progressPosition = 0;
+	//Поехали.
+	for (int y = yStart; y < (yStart + yToProcess); ++y)
+	{
+		for (int x = 0; x < sourceMatrix_.getXSize(); ++x)
+		{
+			//++progressPosition;
+			if (sourceMatrix_.getSignMatrixElem(y, x) == 1)
+			{
+				//Для всех пикселей не равных нулю - преобразовать к одному из уровней в
+				//гистограмме. Нужно знать минимальную и максимальную высоту в исходной
+				//картинке. При этом также вычислится и дельта.
+				CalcMinMaxPixelValues();
+				//Заполняем значение
+				sourceMatrix_.setQuantedMatrixElem(t, x, PixelValueToQuantedValue(
+					sourceMatrix_.getMatrixElem(y, x)));
+			}
+		}
 	}
 }
 
@@ -635,7 +694,7 @@ destIsAttached_(false), dataType_(PIXEL_UNKNOWN), dataTypeSize_(0), pFilterObj_(
 minMemSize_(0), gdalSourceDataset_(NULL), gdalDestDataset_(NULL), gdalSourceRaster_(NULL),
 gdalDestRaster_(NULL), currPositionY_(0), useHuangAlgo_(useHuangAlgo), huangLevelsNum_(huangLevelsNum)
 {
-	
+
 }
 
 MedianFilterBase::~MedianFilterBase()
@@ -825,7 +884,7 @@ bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *err
 			pFilterObj_ = new RealMedianFilterFloat64(this);
 			dataTypeSize_ = sizeof(double);
 			break;
-		default: 
+		default:
 			pFilterObj_ = NULL;
 			dataTypeSize_ = 0;
 	}
@@ -862,7 +921,7 @@ bool MedianFilterBase::OpenOutputFile(const std::string &fileName, const bool &f
 		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  MedianFilterBase::OpenOutputFile попытка открыть файл назначения при уже открытом файле назначения.");
 		return false;
 	}
-	
+
 	//Готовим пути.
 	filesystem::path destFilePath, sourceFilePath;
 	destFilePath = STB.Utf8ToWstring(fileName);
@@ -891,7 +950,7 @@ bool MedianFilterBase::OpenOutputFile(const std::string &fileName, const bool &f
 	filesystem::copy_file(sourceFilePath, destFilePath, errCode);
 	if (errCode.value())
 	{
-		if (errObj) errObj->SetError(CMNERR_WRITE_ERROR, ": " + 
+		if (errObj) errObj->SetError(CMNERR_WRITE_ERROR, ": " +
 			STB.SystemCharsetToUtf8(errCode.message()));
 		return false;
 	}
@@ -917,6 +976,8 @@ void MedianFilterBase::CloseInputFile()
 	{
 		GDALClose(gdalSourceDataset_);
 		sourceIsAttached_ = false;
+		delete pFilterObj_;
+		pFilterObj_ = NULL;
 	}
 	gdalSourceDataset_ = NULL;
 	gdalSourceRaster_ = NULL;

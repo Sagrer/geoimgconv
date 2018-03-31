@@ -57,6 +57,7 @@ int main(int argc, char** argv)
 		//Тестовый режим. Для разработки. Опция командной строки для такого запуска
 		//скрытая, в справке не описана, юзер про неё знать не должен.
 		AppUIConsole theApp;
+		//theApp.InitApp(confObj);
 		return theApp.RunTestMode();
 	}
 	else

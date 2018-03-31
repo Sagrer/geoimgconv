@@ -22,6 +22,8 @@
 #include "common.h"
 #include <string>
 #include "base_filter.h"
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 
 namespace geoimgconv
 {
@@ -92,12 +94,24 @@ template <typename CellType> class RealMedianFilterTemplBase : public RealMedian
 {
 private:
 	//Приватные поля.
-	//std::string sourceFileName_;
-	AltMatrix<CellType> sourceMatrix_;	//Тут хранится самое ценное! То с чем работаем :).
-	AltMatrix<CellType> destMatrix_;		//А тут ещё более ценное - результат ).
-		
+
+	//Матрица для исходного изображения.
+	AltMatrix<CellType> sourceMatrix_;
+	//Матрица для результата.
+	AltMatrix<CellType> destMatrix_;
+	//Вычислялись ли уже минимальное и максимальное значения высот для картинки.
+	bool minMaxCalculated_;
+	//Значение высоты пикселя, для которого пиксель считается незначимым.
+	CellType noDataPixelValue_;
+	//Минимальная высота, встречающаяся в изображении.
+	CellType minPixelValue_;
+	//Максимальная высота, встречающаяся в изображении.
+	CellType maxPixelValue_;
+	//Дельта - шаг между уровнями квантования.
+	double levelsDelta_;
+
 	//Приватные типы
-		
+
 	//Указатель на метод-заполнитель пикселей
 	typedef void(RealMedianFilterTemplBase<CellType>::*PixFillerMethod)(const int &x,
 		const int &y, const PixelDirection direction, const int &marginSize);
@@ -105,13 +119,13 @@ private:
 	//Указатель на метод-фильтр
 	typedef void(RealMedianFilterTemplBase<CellType>::*FilterMethod)(const int &currYToProcess,
 		CallBackBase *callBackObj);
-		
+
 	//Приватные методы
 
 	//Сделать шаг по пиксельным координатам в указанном направлении.
 	//Вернёт false если координаты ушли за границы изображения, иначе true.
 	bool PixelStep(int &x, int &y, const PixelDirection direction);
-		
+
 	//Получает координаты действительного пикселя, зеркального для
 	//currXY по отношению к центральному xy. Результат записывается
 	//в outXY.
@@ -120,7 +134,7 @@ private:
 	//Заполнять пиксели простым алгоритмом в указанном направлении
 	void SimpleFiller(const int &x, const int &y, const PixelDirection direction,
 		const int &marginSize);
-		
+
 	//Заполнять пиксели зеркальным алгоритмом в указанном направлении
 	void MirrorFiller(const int &x, const int &y, PixelDirection direction,
 		const int &marginSize);
@@ -134,7 +148,7 @@ private:
 
 	//Заполнить пустые пиксели source-матрицы зеркальным алгоритмом.
 	void FillMargins_Mirror(CallBackBase *callBackObj = NULL);
-		
+
 	//Вернёт положительную разницу между двумя значениями пикселя независимо от
 	//типа данных в ячейках. Виртуальная версия для неизвестного типа.
 	inline virtual CellType GetDelta(const CellType &value1, const CellType &value2)
@@ -147,23 +161,65 @@ private:
 	//уже должны быть подключены. Вернёт false и инфу об ошибке если что-то пойдёт не так.
 	bool ApplyFilter(FilterMethod CurrFilter, CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
 
-	//Метод "тупого" фильтра, который тупо копирует входящую матрицу в исходящую. Нужен для тестирования
+	//Метод "никакого" фильтра, который тупо копирует входящую матрицу в исходящую. Нужен для тестирования
 	//и отладки. Первый аргумент указывает количество строк матрицы для реальной обработки.
 	void StubFilter(const int &currYToProcess, CallBackBase *callBackObj = NULL);
 
 	//Метод для обработки матрицы "тупым" фильтром, котороый действует практически в лоб.
 	//Первый аргумент указывает количество строк матрицы для реальной обработки.
 	void StupidFilter(const int &currYToProcess, CallBackBase *callBackObj = NULL);
+
+	//Метод вычисляет минимальную и максимальную высоту в открытом изображении если это вообще нужно.
+	//Также вычисляет дельту (шаг между уровнями).
+	void CalcMinMaxPixelValues();
+
+	//Преобразование значение пикселя в квантованное значение. minMaxCalculated_ не проверяется (чтобы
+	//не тратить на это время, метод будет очень часто вызываться), однако оно должно быть true,
+	//иначе получится ерунда.
+	boost::uint16_t PixelValueToQuantedValue(const CellType &value)
+	{
+		//Код в header-е чтобы инлайнился.
+		return ((boost::uint16_t)(value/delta))+1;
+	}
+
+	//Нужен метод чтобы преобразовывать обратно QuantedValue в CellType, и вероятно его придётся
+	//делать виртуальным, т.к. для целочисленного CellType выражение будет отличаться от
+	//выражения для CellType с плавающей запятой.
+	//TODO.
+
 public:
 	//Нельзя создать объект не дав ссылку на MedianFilterBase
-	RealMedianFilterTemplBase(MedianFilterBase *ownerObj) : RealMedianFilterBase(ownerObj) {};
-	//~RealMedianFilterTemplBase() {}; //Пустой. Хватит по умолчанию.
+	RealMedianFilterTemplBase(MedianFilterBase *ownerObj);
+
+	//Доступ к полям.
+
+	//minMaxCalculated
+	const bool& getMinMaxCalculated() const { return minMaxCalculated_; }
+	//noDataPixelValue
+	const CellType& getNoDataPixelValue() const { return noDataPixelValue_; }
+	void setNoDataPixelValue(CellType &value)
+	{
+		//После смены значения, по которому определяются незначимые пиксели - минимальную
+		//и максимальную высоту придётся пересчитывать.
+		minMaxCalculated_ = false;
+		noDataPixelValue_ = value;
+	}
+	//minPixelValue
+	const CellType& getMinPixelValue() { return minPixelValue_; }
+	//maxPixelValue
+	const CellType& getMaxPixelValue() { return maxPixelValue_; }
+	//levelsDelta
+	const double& getLevelsDelta() { return levelsDelta_; }
 
 	//Прочий функционал
 
 	//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 	//выбранным алгоритмом.
 	void FillMargins(const int yStart, const int yToProcess, CallBackBase *callBackObj = NULL);
+
+	//Заполняет матрицу квантованных пикселей в указанном промежутке, получая их из значений
+	//оригинальных пикселей в исходной матрице. Нужно для алгоритма Хуанга.
+	void FillQuantedMatrix(const int yStart, const int yToProcess);
 
 	//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
 	bool ApplyStupidFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
@@ -174,12 +230,12 @@ public:
 
 	//"Тупая" визуализация матрицы, отправляется прямо в cout.
 	void SourcePrintStupidVisToCout();
-		
+
 	//Вывод исходной матрицы в csv-файл, который должны понимать всякие картографические
 	//программы. Это значит что каждый пиксел - это одна строка в файле.
 	//Это "тупой" вариант вывода - метаданные нормально не сохраняются.
 	bool SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
-		
+
 	//Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 	bool DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
 };
@@ -339,6 +395,13 @@ protected:
 	//pFilterObj
 	RealMedianFilterBase& getFilterObj() const { return *pFilterObj_; }
 public:
+	//"События", к которым можно привязать обработчики.
+
+	//Объект начал вычислять минимальную и максимальную высоту на карте высот.
+	boost::function<void()> onMinMaxDetectionStart;
+	//Объект закончил вычислять минимальную и максимальную высоту на карте высот.
+	boost::function<void()> onMinMaxDetectionEnd;
+
 	//Доступ к полям.
 
 	//aperture
@@ -389,6 +452,10 @@ public:
 	//currPositionY
 	int const& getCurrPositionY() const { return currPositionY_; }
 	void setCurrPositionY(const int &value) { currPositionY_ = value; }
+	//useHuangAlgo
+	bool const& getUseHuangAlgo() const { return useHuangAlgo_; }
+	//huangLevelsNum
+	const boost::uint16_t& getHuangLevelsNum() const { return huangLevelsNum_; }
 
 	//Конструкторы-деструкторы
 	MedianFilterBase(bool useHuangAlgo = false, boost::uint16_t huangLevelsNum = DEFAULT_HUANG_LEVELS_NUM);
