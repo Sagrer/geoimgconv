@@ -630,7 +630,7 @@ void RealMedianFilterTemplBase<CellType>::FillQuantedMatrix(const int yStart, co
 				//картинке. При этом также вычислится и дельта.
 				CalcMinMaxPixelValues();
 				//Заполняем значение
-				sourceMatrix_.setQuantedMatrixElem(t, x, PixelValueToQuantedValue(
+				sourceMatrix_.setQuantedMatrixElem(y, x, PixelValueToQuantedValue(
 					sourceMatrix_.getMatrixElem(y, x)));
 			}
 		}

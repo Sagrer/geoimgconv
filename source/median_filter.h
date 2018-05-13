@@ -179,7 +179,7 @@ private:
 	boost::uint16_t PixelValueToQuantedValue(const CellType &value)
 	{
 		//Код в header-е чтобы инлайнился.
-		return ((boost::uint16_t)(value/delta))+1;
+		return ((boost::uint16_t)(value/levelsDelta_))+1;
 	}
 
 	//Нужен метод чтобы преобразовывать обратно QuantedValue в CellType, и вероятно его придётся
