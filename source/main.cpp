@@ -30,7 +30,7 @@ int main(int argc, char** argv)
 	//string temp;
 	//cout << "Debug wait for attaching. Attach debugger, enter something and press Enter.\n" << endl;
 	//cin >> temp;
-	
+
 	//Мы не знаем заранее в каком режиме будем работать, поэтому сначала разбираем
 	//настройки и командную строку и только потом создаём и передаём управление объекту
 	//приложения нужного типа.
@@ -43,7 +43,7 @@ int main(int argc, char** argv)
 		cout << STB.Utf8ToConsoleCharset("Ошибка: "+errObj.getErrorText()) << endl;
 		return 1;
 	}
-	
+
 	//Пока реализовано лишь 2 режима работы.
 	if (confObj.getAppMode() == APPMODE_MEDIAN)
 	{

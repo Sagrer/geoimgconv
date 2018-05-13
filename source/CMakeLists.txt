@@ -26,6 +26,10 @@ set(CMAKE_CODEBLOCKS_EXCLUDE_EXTERNAL_FILES ON)
 #Подключаем локальную директорию с модулями CMake.
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
 
+#Включим требование к стандарту с++11
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 #Проект.
 project(geoimgconv VERSION 0.0.1 LANGUAGES CXX C)
 
@@ -124,3 +128,14 @@ if(WIN32)
 		endif()
 	endif()
 endif()
+
+#Подключаем модуль cotire от Sascha Kratky для использования прекомпилированных заголовков.
+include(cotire)
+#Запрещаем cotire использовать unity build т.к. он ускоряет скорее только полную сборку а не
+#сборку отдельных изменившихся файлов + создаёт кучу проблем.
+set_target_properties(geoimgconv PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
+#Добавляем в прекомпилированный заголовок редко изменяющиеся заголовки из состава файлов проекта.
+set_target_properties(geoimgconv PROPERTIES
+	COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/small_tools_box.h")
+#Включаем cotire для проекта.
+cotire(geoimgconv)
