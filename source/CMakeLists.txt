@@ -120,11 +120,14 @@ find_package(GDAL REQUIRED)
 include_directories(${GDAL_INCLUDE_DIR})
 target_link_libraries(geoimgconv ${GDAL_LIBRARY})
 
-#При сборке 32-битной версии под студию включим использование более 2гигов памяти.
 if(WIN32)
 	if(NOT "${CMAKE_GENERATOR}" MATCHES "(Win64|IA64)")
+		#При сборке 32-битной версии под студию включим использование более 2гигов памяти.
 		if(MSVC)
 			SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
+		elseif(MINGW)
+			#То же самое для 32-битной mingw. -Wl - чтобы g++ передал опцию именно линкеру.
+			SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--large-address-aware")
 		endif()
 	endif()
 endif()
