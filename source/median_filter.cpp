@@ -572,13 +572,13 @@ template<typename CellType>
 void RealMedianFilter<CellType>::HuangFilter(const int &currYToProcess, CallBackBase *callBackObj)
 {
 	//Создаём массив-гистограмму.
-	boost::uint16_t	*gist = new boost::uint16_t[ownerObj_->getHuangLevelsNum()];
+	boost::uint16_t	*gist = new boost::uint16_t[getOwnerObj().getHuangLevelsNum()];
 	//Текущее значение медианы
 	boost::uint16_t median;
 	//Количество элементов в гистограмме, которые меньше медианы (т.е. левее её).
 	boost::uint16_t elemsLeftMed;
 	//Позиция, в которой по идее должна быть расположена медиана.
-	boost::uint16_t halfMedPos = ((ownerObj_->getAperture() * ownerObj_->getAperture()) - 1) / 2;
+	boost::uint16_t halfMedPos = ((getOwnerObj().getAperture() * getOwnerObj().getAperture()) - 1) / 2;
 	//Признак значимости гистограммы. Изначально гистограмма незначима и её нужно заполнить.
 	bool gistIsActual = false;
 	//Признак вообще наличия гистограммы. Второй признак нужен т.к. гистограмма может быть незначимой,
@@ -810,7 +810,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_FillGist(const int &leftUpY,
 	windowYEnd = leftUpY + getOwnerObj().getAperture();
 	windowXEnd = leftUpX + getOwnerObj().getAperture();
 	//Обнуляем гистограмму.
-	std::fill(gist, gist+ownerObj_->getHuangLevelsNum(), 0);
+	std::fill(gist, gist+getOwnerObj().getHuangLevelsNum(), 0);
 	//Проходим по пикселям апертуры и заполняем гистограмму.
 	for (windowY = leftUpY; windowY < windowYEnd; ++windowY)
 	{
@@ -966,7 +966,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_WriteDestPixel(const int &de
 	const int &sourceY,	const int &sourceX,	const boost::uint16_t &median)
 {
 	CellType newValue = QuantedValueToPixelValue(median);
-	if (GetDelta(newValue, sourceMatrix_->getMatrixElem(sourceY, sourceX))
+	if (GetDelta(newValue, sourceMatrix_.getMatrixElem(sourceY, sourceX))
 		< getOwnerObj().getThreshold())
 	{
 		//Отличие от медианы меньше порогового. Просто копируем пиксел.
@@ -1059,6 +1059,15 @@ bool RealMedianFilter<CellType>::ApplyStupidFilter(CallBackBase *callBackObj,
 {
 	//Просто вызываем уже готовый метод, передав ему нужный фильтрующий метод.
 	return ApplyFilter(&RealMedianFilter<CellType>::StupidFilter, callBackObj, errObj);
+}
+
+//Обрабатывает выбранный исходный файл алгоритмом Хуанга. Результат записывается в выбранный destFile.
+template <typename CellType>
+bool RealMedianFilter<CellType>::ApplyHuangFilter(CallBackBase *callBackObj,
+	ErrorInfo *errObj)
+{
+	//Просто вызываем уже готовый метод, передав ему нужный фильтрующий метод.
+	return ApplyFilter(&RealMedianFilter<CellType>::HuangFilter, callBackObj, errObj);
 }
 
 //Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
@@ -1503,19 +1512,16 @@ file(s) were attached.");
 bool MedianFilterHuang::ApplyFilter(CallBackBase *callBackObj, ErrorInfo *errObj)
 {
 	//Проброс вызова.
-	/*if (getSourceIsAttached() && getDestIsAttached())
+	if (getSourceIsAttached() && getDestIsAttached())
 	{
-		return getFilterObj().ApplyStupidFilter(callBackObj, errObj);
+		return getFilterObj().ApplyHuangFilter(callBackObj, errObj);
 	}
 	else
 	{
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilterBase::ApplyStubFilter no source and\\or dest \
+		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilterBase::ApplyHuangFilter no source and\\or dest \
 file(s) were attached.");
 		return false;
-	}*/
-	//Заглушка.
-	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
-	return false;
+	}
 }
 
 } //namespace geoimgconv

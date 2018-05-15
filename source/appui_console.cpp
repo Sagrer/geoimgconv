@@ -202,13 +202,13 @@ AppUIConsole::~AppUIConsole()
 //swapMode - задаёт либо интерактивный режим либо тихий режим работы, в тихом режиме swap может
 //либо использоваться либо не использоваться в зависимости от выбранного режима.
 //Перед запуском метода _должен_ был быть выполнен метод DetectSysResInfo()!
-bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const SwapMode swapMode, 
+bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const SwapMode swapMode,
 	ErrorInfo *errObj)
 {
-	
+
 	//TODO: монструозный метод! Надо или упростить логику или выделить часть кода во вспомогательные
 	//методы.
-	
+
 	maxMemCanBeUsed_ = 0;
 	maxBlocksCanBeUsed_ = 0;
 
@@ -480,7 +480,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		if (maxMemCanBeUsed_ > addrSizeLimit)
 		{
 			maxMemCanBeUsed_ = addrSizeLimit;
-		}		
+		}
 	}
 	else
 	{
@@ -511,7 +511,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		maxBlocksCanBeUsed_ = int(variableMemSize / filterObj.getMinBlockSize())+2;
 		maxMemCanBeUsed_ = (maxBlocksCanBeUsed_ * filterObj.getMinBlockSize())-invariableMemSize;
 	}
-	
+
 	return true;
 }
 
@@ -601,13 +601,32 @@ int AppUIConsole::RunApp()
 	/*PrintToConsole("Размер, указанный для режима работы с памятью: " +
 	lexical_cast<string>(confObj_->getMemSize()) + "\n\n");*/
 
-	//Всё-таки нужно обработать картинку. Настраиваем медианный фильтр и пути к файлам.
+	//Всё-таки нужно обработать картинку. В зависимости от выбранного режима создадим нужный фильтр.
+	ErrorInfo errObj;
+	if (confObj_->getMedfilterAlgo() == MEDFILTER_ALGO_STUB)
+	{
+		medFilter_ = new MedianFilterStub();
+	}
+	else if (confObj_->getMedfilterAlgo() == MEDFILTER_ALGO_STUPID)
+	{
+		medFilter_ = new MedianFilterStupid();
+	}
+	else if (confObj_->getMedfilterAlgo() == MEDFILTER_ALGO_HUANG)
+	{
+		medFilter_ = new MedianFilterHuang(confObj_->getMedfilterHuangLevelsNum());
+	}
+	else
+	{
+		//Выбран непонятно какой режим. Это очень печально. Ругаемся и умираем.
+		errObj.SetError(CMNERR_INTERNAL_ERROR,": выбран неизвестный алгоритм медианной фильтрации.");
+		ConsolePrintError(errObj);
+		return 1;
+	};
+	//Настраиваем медианный фильтр и пути к файлам.
 	filesystem::path inputFilePath = filesystem::absolute(STB.Utf8ToWstring(confObj_->getInputFileName()), STB.Utf8ToWstring(getCurrPath()));
 	filesystem::path outputFilePath = filesystem::absolute(STB.Utf8ToWstring(confObj_->getOutputFileName()), STB.Utf8ToWstring(getCurrPath()));
 	string inputFileName = STB.WstringToUtf8(inputFilePath.wstring());
 	string outputFileName = STB.WstringToUtf8(outputFilePath.wstring());
-	medFilter_ = new MedianFilterStupid();
-	ErrorInfo errObj;
 	medFilter_->setAperture(confObj_->getMedfilterAperture());
 	medFilter_->setThreshold(confObj_->getMedfilterThreshold());
 	medFilter_->setMarginType(confObj_->getMedfilterMarginType());
@@ -655,7 +674,7 @@ int AppUIConsole::RunApp()
 	if (confObj_->getMemMode() != MEMORY_MODE_ONECHUNK)
 		PrintToConsole("Размер блока: " + STB.BytesNumToInfoSizeStr(medFilter_->getMinBlockSize()) + ".\n");
 	cout << endl;
-	
+
 	//Собственно, запуск фильтра.
 	AppUIConsoleCallBack CallBackObj;
 	CallBackObj.OperationStart();
@@ -789,7 +808,7 @@ int AppUIConsole::RunTestMode()
 	//char *testArr2 = new char[(unsigned int)(memSize2)];
 	//cout << "OK!" << endl;
 	//cin >> tempStr;
-	
+
 	////Тестирование получения инфы о минимальной и максимальной высоте из
 	////изображения.
 	//GDALRegister_GTiff();	//Регистрация драйвера GDAL.
@@ -811,7 +830,7 @@ int AppUIConsole::RunTestMode()
 	//Заглушка, работает когда ничего не тестируется.
 	PrintToConsole("Вы кто такие? Я вас не звал! Никаких тестов в этой версии\n\
 всё равно не выполняется ;).\n");
-	
+
 	return 0;
 }
 

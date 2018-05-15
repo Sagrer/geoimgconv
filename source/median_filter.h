@@ -74,6 +74,9 @@ public:
 	//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
 	virtual bool ApplyStupidFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) = 0;
 
+	//Обрабатывает выбранный исходный файл алгоритмом Хуанга.
+	virtual bool ApplyHuangFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) = 0;
+
 	//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
 	//Для отладки. Результат записывается в выбранный destFile
 	virtual bool ApplyStubFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) = 0;
@@ -256,6 +259,9 @@ public:
 
 	//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
 	bool ApplyStupidFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
+
+	//Обрабатывает выбранный исходный файл алгоритмом Хуанга. Результат записывается в выбранный destFile.
+	bool ApplyHuangFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
 
 	//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
 	//Для отладки. Результат записывается в выбранный destFile
@@ -541,7 +547,7 @@ class MedianFilterHuang : public MedianFilterBase
 {
 public:
 	//Конструктор по умолчанию. Другие использовать нельзя.
-	MedianFilterHuang(MedfilterAlgo algo, boost::uint16_t levelsNum) : MedianFilterBase(true, levelsNum) {}
+	MedianFilterHuang(boost::uint16_t levelsNum) : MedianFilterBase(true, levelsNum) {}
 	//Обработать изображение медианным фильтром по алгоритму Хуанга
 	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
 };
