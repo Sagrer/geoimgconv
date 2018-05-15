@@ -162,6 +162,28 @@ private:
 	//Первый аргумент указывает количество строк матрицы для реальной обработки.
 	void StupidFilter(const int &currYToProcess, CallBackBase *callBackObj = NULL);
 
+	//Метод для обработки матрицы алгоритмом Хуанга. Теоретически на больших окнах это очень быстрый
+	//алгоритм, единственный недостаток которого - потеря точности из за квантования.
+	void HuangFilter(const int &currYToProcess, CallBackBase *callBackObj = NULL);
+
+	//Вспомогательный метод для алгоритма Хуанга. Заполняет гистограмму с нуля. В параметрах координаты
+	//верхнего левого угла апертуры.
+	inline void HuangFilter_FillGist(const int &leftUpY, const int &leftUpX, boost::uint16_t *gist,
+		boost::uint16_t &median, boost::uint16_t &elemsLeftMed,
+		const boost::uint16_t &halfMedPos);
+
+	//Вспомогательный метод для алгоритма Хуанга. Выполняет шаг вправо.
+	inline void HuangFilter_DoStepRight(const int &leftUpY, const int &leftUpX, boost::uint16_t *gist,
+		const boost::uint16_t &median, boost::uint16_t &elemsLeftMed);
+
+	//Вспомогательный метод для алгоритма Хуанга. Выполняет шаг влево.
+	inline void HuangFilter_DoStepLeft(const int &leftUpY, const int &leftUpX, boost::uint16_t *gist,
+		const boost::uint16_t &median, boost::uint16_t &elemsLeftMed);
+
+	//Вспомогательный метод для алгоритма Хуанга. Выполняет шаг вниз.
+	inline void HuangFilter_DoStepDown(const int &leftUpY, const int &leftUpX, boost::uint16_t *gist,
+		const boost::uint16_t &median, boost::uint16_t &elemsLeftMed);
+
 	//Метод вычисляет минимальную и максимальную высоту в открытом изображении если это вообще нужно.
 	//Также вычисляет дельту (шаг между уровнями).
 	void CalcMinMaxPixelValues();

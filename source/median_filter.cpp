@@ -565,6 +565,160 @@ void RealMedianFilter<CellType>::StupidFilter(const int &currYToProcess,
 	delete[] medianArr;
 }
 
+//Метод для обработки матрицы алгоритмом Хуанга. Теоретически на больших окнах это очень быстрый
+//алгоритм, единственный недостаток которого - некоторая потеря точности из за квантования.
+template<typename CellType>
+void RealMedianFilter<CellType>::HuangFilter(const int &currYToProcess, CallBackBase *callBackObj)
+{
+	//Создаём массив-гистограмму.
+	boost::uint16_t	*gist = new boost::uint16_t[ownerObj_->getHuangLevelsNum()];
+	//Текущее значение медианы
+	boost::uint16_t median;
+	//Количество элементов в гистограмме, которые меньше медианы (т.е. левее её).
+	boost::uint16_t elemsLeftMed;
+	//Позиция, в которой по идее должна быть расположена медиана.
+	boost::uint16_t halfMedPos = ((ownerObj_->getAperture() * ownerObj_->getAperture()) - 1) / 2;
+	//Признак значимости гистограммы. Изначально гистограмма незначима и её нужно заполнить.
+	bool histIsActual = false;
+
+	//Не забыть delete!
+	delete[] gist;
+}
+
+//Вспомогательный метод для алгоритма Хуанга. Заполняет гистограмму с нуля. В параметрах координаты
+//верхнего левого угла апертуры.
+template<typename CellType>
+inline void RealMedianFilter<CellType>::HuangFilter_FillGist(const int &leftUpY, const int &leftUpX,
+	boost::uint16_t *gist, boost::uint16_t &median, boost::uint16_t &elemsLeftMed,
+	const boost::uint16_t & halfMedPos)
+{
+	//Счётчики и границы.
+	int windowY, windowX, windowYEnd, windowXEnd;
+	windowYEnd = leftUpY + getOwnerObj().getAperture();
+	windowXEnd = leftUpX + getOwnerObj().getAperture();
+	//Обнуляем гистограмму.
+	std::fill(gist, gist+ownerObj_->getHuangLevelsNum(), 0);
+	//Проходим по пикселям апертуры и заполняем гистограмму.
+	for (windowY = leftUpY; windowY < windowYEnd; ++windowY)
+	{
+		for (windowX = leftUpX; windowX < windowXEnd; ++windowX)
+		{
+			//Инкрементируем счётчик пикселей этого уровня в гистограмме.
+			++(gist[sourceMatrix_.getQuantedMatrixElem(windowY, windowX)]);
+		}
+	}
+	//Теперь найдём актуальное значение медианы и количество пикселей левее медианы.
+	elemsLeftMed = 0;
+	median = 0;
+	while ((elemsLeftMed + gist[median]) <= halfMedPos)
+	{
+		elemsLeftMed += gist[median];
+		++median;
+	}
+}
+
+//Вспомогательный метод для алгоритма Хуанга. Выполняет шаг вправо.
+template<typename CellType>
+inline void RealMedianFilter<CellType>::HuangFilter_DoStepRight(const int &leftUpY,
+	const int &leftUpX, boost::uint16_t *gist, const boost::uint16_t &median,
+	boost::uint16_t &elemsLeftMed)
+{
+	//Счётчики и границы.
+	int windowY, windowXLeft, windowXRight , windowYEnd;
+	windowYEnd = leftUpY + getOwnerObj().getAperture();
+	windowXLeft = leftUpX - 1;
+	windowXRight = windowXLeft + getOwnerObj().getAperture();
+	//Тут будет текущее квантованное значение пикселя.
+	boost::uint16_t currQuantedValue;
+	
+	//Удаляем из гистограммы колонку левее апертуры, добавляем последнюю (самую правую) колонку.
+	for (windowY = leftUpY; windowY < windowYEnd; ++windowY)
+	{
+		//Левая колонка.
+		currQuantedValue = sourceMatrix_.getQuantedMatrixElem(windowY, windowXLeft);
+		--(gist[currQuantedValue]);
+		if (currQuantedValue < median)
+		{
+			--elemsLeftMed;
+		}
+		//Правая колонка.
+		currQuantedValue = sourceMatrix_.getQuantedMatrixElem(windowY, windowXRight);
+		++(gist[currQuantedValue]);
+		if (currQuantedValue < median)
+		{
+			++elemsLeftMed;
+		}
+	}
+}
+
+//Вспомогательный метод для алгоритма Хуанга. Выполняет шаг влево.
+template<typename CellType>
+inline void RealMedianFilter<CellType>::HuangFilter_DoStepLeft(const int &leftUpY,
+	const int &leftUpX, boost::uint16_t *gist, const boost::uint16_t &median,
+	boost::uint16_t &elemsLeftMed)
+{
+	//Счётчики и границы.
+	int windowY, windowXRight, windowYEnd;
+	windowYEnd = leftUpY + getOwnerObj().getAperture();
+	windowXRight = leftUpX + getOwnerObj().getAperture();
+	//Тут будет текущее квантованное значение пикселя.
+	boost::uint16_t currQuantedValue;
+
+	//Удаляем из гистограммы колонку правее апертуры, добавляем первую (самую левую) колонку.
+	for (windowY = leftUpY; windowY < windowYEnd; ++windowY)
+	{
+		//Левая колонка.
+		currQuantedValue = sourceMatrix_.getQuantedMatrixElem(windowY, leftUpX);
+		++(gist[currQuantedValue]);
+		if (currQuantedValue < median)
+		{
+			++elemsLeftMed;
+		}
+		//Правая колонка.
+		currQuantedValue = sourceMatrix_.getQuantedMatrixElem(windowY, windowXRight);
+		--(gist[currQuantedValue]);
+		if (currQuantedValue < median)
+		{
+			--elemsLeftMed;
+		}
+	}
+}
+
+//Вспомогательный метод для алгоритма Хуанга. Выполняет шаг вниз.
+template<typename CellType>
+inline void RealMedianFilter<CellType>::HuangFilter_DoStepDown(const int &leftUpY,
+	const int &leftUpX, boost::uint16_t *gist, const boost::uint16_t &median,
+	boost::uint16_t &elemsLeftMed)
+{
+	//Счётчики и границы.
+	int windowX, windowYUp, windowYDown, windowXEnd;
+	windowXEnd = leftUpX + getOwnerObj().getAperture();
+	windowYUp = leftUpY - 1;
+	windowYDown = windowYUp + getOwnerObj().getAperture();
+	//Тут будет текущее квантованное значение пикселя.
+	boost::uint16_t currQuantedValue;
+
+	//Удаляем из гистограммы строку выше апертуры, добавляем последнюю (самую нижнюю)
+	//строку апертуры.
+	for (windowX = leftUpX; windowX < windowXEnd; ++windowX)
+	{
+		//Верхняя строка.
+		currQuantedValue = sourceMatrix_.getQuantedMatrixElem(windowYUp, windowX);
+		--(gist[currQuantedValue]);
+		if (currQuantedValue < median)
+		{
+			--elemsLeftMed;
+		}
+		//Нижняя строка.
+		currQuantedValue = sourceMatrix_.getQuantedMatrixElem(windowYDown, windowX);
+		++(gist[currQuantedValue]);
+		if (currQuantedValue < median)
+		{
+			++elemsLeftMed;
+		}
+	}
+}
+
 //Метод вычисляет минимальную и максимальную высоту в открытом изображении если это вообще нужно.
 //Также вычисляет дельту (шаг между уровнями).
 template<typename CellType>
