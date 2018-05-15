@@ -24,6 +24,7 @@
 #include "base_filter.h"
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
+#include <cmath>
 
 namespace geoimgconv
 {
@@ -90,7 +91,7 @@ public:
 };
 
 //Шаблонный класс для произвольного типа ячейки. Базовая версия (для специализации наследников)
-template <typename CellType> class RealMedianFilterTemplBase : public RealMedianFilterBase
+template <typename CellType> class RealMedianFilter : public RealMedianFilterBase
 {
 private:
 	//Приватные поля.
@@ -113,11 +114,11 @@ private:
 	//Приватные типы
 
 	//Указатель на метод-заполнитель пикселей
-	typedef void(RealMedianFilterTemplBase<CellType>::*PixFillerMethod)(const int &x,
+	typedef void(RealMedianFilter<CellType>::*PixFillerMethod)(const int &x,
 		const int &y, const PixelDirection direction, const int &marginSize);
 
 	//Указатель на метод-фильтр
-	typedef void(RealMedianFilterTemplBase<CellType>::*FilterMethod)(const int &currYToProcess,
+	typedef void(RealMedianFilter<CellType>::*FilterMethod)(const int &currYToProcess,
 		CallBackBase *callBackObj);
 
 	//Приватные методы
@@ -149,14 +150,6 @@ private:
 	//Заполнить пустые пиксели source-матрицы зеркальным алгоритмом.
 	void FillMargins_Mirror(CallBackBase *callBackObj = NULL);
 
-	//Вернёт положительную разницу между двумя значениями пикселя независимо от
-	//типа данных в ячейках. Виртуальная версия для неизвестного типа.
-	inline virtual CellType GetDelta(const CellType &value1, const CellType &value2)
-	{
-		if (value1 >= value2) return value1-value2;
-		else return value2-value1;
-	};
-
 	//Применит указанный (ссылкой на метод) фильтр к изображению. Входящий и исходящий файлы
 	//уже должны быть подключены. Вернёт false и инфу об ошибке если что-то пойдёт не так.
 	bool ApplyFilter(FilterMethod CurrFilter, CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
@@ -179,17 +172,12 @@ private:
 	boost::uint16_t PixelValueToQuantedValue(const CellType &value)
 	{
 		//Код в header-е чтобы инлайнился.
-		return ((boost::uint16_t)(value/levelsDelta_))+1;
+		return ((boost::uint16_t)(value/levelsDelta_));
 	}
-
-	//Нужен метод чтобы преобразовывать обратно QuantedValue в CellType, и вероятно его придётся
-	//делать виртуальным, т.к. для целочисленного CellType выражение будет отличаться от
-	//выражения для CellType с плавающей запятой.
-	//TODO.
 
 public:
 	//Нельзя создать объект не дав ссылку на MedianFilterBase
-	RealMedianFilterTemplBase(MedianFilterBase *ownerObj);
+	RealMedianFilter(MedianFilterBase *ownerObj);
 
 	//Доступ к полям.
 
@@ -238,91 +226,75 @@ public:
 
 	//Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 	bool DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
-};
 
-//Шаблонный класс для произвольного типа ячейки. Пустой наследник (не специализированная
-//версия. Через этот класс работают все unsigned-версии CellType.
-template <typename CellType> class RealMedianFilter : public RealMedianFilterTemplBase<CellType>
-{
-public:
-	//Нельзя создать объект не дав ссылку на MedianFilterBase
-	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterTemplBase<CellType>(ownerObj) {};
-};
-
-//Специализация RealMedianFilter для double
-template <> class RealMedianFilter<double> : public RealMedianFilterTemplBase<double>
-{
-private:
 	//Вернёт положительную разницу между двумя значениями пикселя независимо от
-	//типа данных в ячейках.
-	inline double GetDelta(const double &value1, const double &value2)
+	//типа данных в ячейках. Версия для неизвестного типа.
+	inline CellType GetDelta(const CellType &value1, const CellType &value2)
 	{
-		return std::abs(value1-value2);
+		if (value1 >= value2) return value1-value2;
+		else return value2-value1;
 	};
-public:
-	//Нельзя создать объект не дав ссылку на MedianFilterBase
-	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterTemplBase<double>(ownerObj) {};
+
+	//Преобразовать QuantedValue в CellType. Эта версия предполагает что CellType
+	//- целочисленный тип и результат требует округления. Эта версия используется
+	//для всех CellType кроме double и float
+	inline CellType QuantedValueToPixelValue(const boost::uint16_t &value)
+	{
+		return (CellType)(std::lround((double)(value)* levelsDelta_));
+	}
 };
 
-//Специализация RealMedianFilter для float
-template <> class RealMedianFilter<float> : public RealMedianFilterTemplBase<float>
-{
-private:
-	//Вернёт положительную разницу между двумя значениями пикселя независимо от
-	//типа данных в ячейках.
-	inline float GetDelta(const float &value1, const float &value2)
-	{
-		return std::abs(value1-value2);
-	};
-public:
-	//Нельзя создать объект не дав ссылку на MedianFilterBase
-	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterTemplBase<float>(ownerObj) {};
-};
+//Специализация методов RealMedianFilter (для тех типов где специализации могут
+//работать быстрее).
 
-//Специализация RealMedianFilter для boost::int8_t
-template <> class RealMedianFilter<boost::int8_t> : public RealMedianFilterTemplBase<boost::int8_t>
+//Вернёт положительную разницу между двумя значениями пикселя. Версия для double.
+template <> inline double RealMedianFilter<double>::
+	GetDelta(const double &value1, const double &value2)
 {
-private:
-	//Вернёт положительную разницу между двумя значениями пикселя независимо от
-	//типа данных в ячейках.
-	inline boost::int8_t GetDelta(const boost::int8_t &value1, const boost::int8_t &value2)
-	{
-		return std::abs(value1-value2);
-	};
-public:
-	//Нельзя создать объект не дав ссылку на MedianFilterBase
-	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterTemplBase<boost::int8_t>(ownerObj) {};
-};
+	return std::abs(value1-value2);
+}
 
-//Специализация RealMedianFilter для boost::int16_t
-template <> class RealMedianFilter<boost::int16_t> : public RealMedianFilterTemplBase<boost::int16_t>
+//Вернёт положительную разницу между двумя значениями пикселя. Версия для float.
+template <> inline float RealMedianFilter<float>::
+GetDelta(const float &value1, const float &value2)
 {
-private:
-	//Вернёт положительную разницу между двумя значениями пикселя независимо от
-	//типа данных в ячейках.
-	inline boost::int16_t GetDelta(const boost::int16_t &value1, const boost::int16_t &value2)
-	{
-		return std::abs(value1-value2);
-	};
-public:
-	//Нельзя создать объект не дав ссылку на MedianFilterBase
-	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterTemplBase<boost::int16_t>(ownerObj) {};
-};
+	return std::abs(value1-value2);
+}
 
-//Специализация RealMedianFilter для boost::int32_t
-template <> class RealMedianFilter<boost::int32_t> : public RealMedianFilterTemplBase<boost::int32_t>
+//Вернёт положительную разницу между двумя значениями пикселя. Версия для boost::int8_t.
+template <> inline boost::int8_t RealMedianFilter<boost::int8_t>::
+GetDelta(const boost::int8_t &value1, const boost::int8_t &value2)
 {
-private:
-	//Вернёт положительную разницу между двумя значениями пикселя независимо от
-	//типа данных в ячейках.
-	inline boost::int32_t GetDelta(const boost::int32_t &value1, const boost::int32_t &value2)
-	{
-		return std::abs(value1-value2);
-	};
-public:
-	//Нельзя создать объект не дав ссылку на MedianFilterBase
-	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterTemplBase<boost::int32_t>(ownerObj) {};
-};
+	return std::abs(value1-value2);
+}
+
+//Вернёт положительную разницу между двумя значениями пикселя. Версия для boost::int16_t.
+template <> inline boost::int16_t RealMedianFilter<boost::int16_t>::
+GetDelta(const boost::int16_t &value1, const boost::int16_t &value2)
+{
+	return std::abs(value1-value2);
+}
+
+//Вернёт положительную разницу между двумя значениями пикселя. Версия для boost::int32_t.
+template <> inline boost::int32_t RealMedianFilter<boost::int32_t>::
+GetDelta(const boost::int32_t &value1, const boost::int32_t &value2)
+{
+	return std::abs(value1-value2);
+}
+
+//Преобразовать QuantedValue в double.
+template <> inline double RealMedianFilter<double>::
+ QuantedValueToPixelValue(const boost::uint16_t &value)
+{
+	return (double)value * levelsDelta_;
+}
+
+//Преобразовать QuantedValue в float.
+template <> inline float RealMedianFilter<float>::
+QuantedValueToPixelValue(const boost::uint16_t &value)
+{
+	return (float)((double)value * levelsDelta_);
+}
 
 //Алиасы для классов, работающих с реально использующимися в GeoTIFF типами пикселов.
 //Все они испольуются внутри median_filter.cpp а значит их код точно сгенерируется по шаблону.

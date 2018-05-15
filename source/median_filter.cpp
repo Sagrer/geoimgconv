@@ -37,12 +37,12 @@ namespace geoimgconv
 //Константы со значениями по умолчанию см. в common.cpp
 
 ////////////////////////////////////////////
-//       RealMedianFilterTemplBase        //
+//           RealMedianFilter             //
 ////////////////////////////////////////////
 
 //Нельзя создать объект не дав ссылку на MedianFilterBase
 template <typename CellType>
-RealMedianFilterTemplBase<CellType>::RealMedianFilterTemplBase(MedianFilterBase *ownerObj) :
+RealMedianFilter<CellType>::RealMedianFilter(MedianFilterBase *ownerObj) :
 	RealMedianFilterBase(ownerObj),	sourceMatrix_(true, ownerObj->getUseHuangAlgo()),
 	destMatrix_(false,false), minMaxCalculated_(false), noDataPixelValue_(0),
 	minPixelValue_(0), maxPixelValue_(0), levelsDelta_(0.0)
@@ -57,7 +57,7 @@ RealMedianFilterTemplBase<CellType>::RealMedianFilterTemplBase(MedianFilterBase 
 //Сделать шаг по пиксельным координатам в указанном направлении.
 //Вернёт false если координаты ушли за границы изображения, иначе true.
 template <typename CellType>
-bool RealMedianFilterTemplBase<CellType>::PixelStep(int &x, int &y, const PixelDirection direction)
+bool RealMedianFilter<CellType>::PixelStep(int &x, int &y, const PixelDirection direction)
 {
 	if (direction == PIXEL_DIR_UP)
 	{
@@ -105,7 +105,7 @@ bool RealMedianFilterTemplBase<CellType>::PixelStep(int &x, int &y, const PixelD
 //currXY по отношению к центральному xy. Результат записывается
 //в outXY.
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::GetMirrorPixel(const int &x, const int &y, const int &currX, const int &currY, int &outX, int &outY, const int recurseDepth)
+void RealMedianFilter<CellType>::GetMirrorPixel(const int &x, const int &y, const int &currX, const int &currY, int &outX, int &outY, const int recurseDepth)
 {
 	int shift = 0;	// это cмещение в сторону центра если пиксель оказался недействительным.
 	int delta, firstX, firstY, tempX, tempY;
@@ -161,7 +161,7 @@ void RealMedianFilterTemplBase<CellType>::GetMirrorPixel(const int &x, const int
 
 //Заполнять пиксели простым алгоритмом в указанном направлении
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::SimpleFiller(const int &x, const int &y,
+void RealMedianFilter<CellType>::SimpleFiller(const int &x, const int &y,
 	const PixelDirection direction, const int &marginSize)
 {
 	int currX = x;
@@ -192,7 +192,7 @@ void RealMedianFilterTemplBase<CellType>::SimpleFiller(const int &x, const int &
 
 //Заполнять пиксели зеркальным алгоритмом в указанном направлении
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::MirrorFiller(const int &x, const int &y,
+void RealMedianFilter<CellType>::MirrorFiller(const int &x, const int &y,
 	const PixelDirection direction, const int &marginSize)
 {
 	int currX = x;
@@ -225,7 +225,7 @@ void RealMedianFilterTemplBase<CellType>::MirrorFiller(const int &x, const int &
 
 //Костяк алгоритма, общий для Simple и Mirror
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::FillMargins_PixelBasedAlgo(const PixFillerMethod FillerMethod,
+void RealMedianFilter<CellType>::FillMargins_PixelBasedAlgo(const PixFillerMethod FillerMethod,
 	const int yStart, const int yToProcess, CallBackBase *callBackObj)
 {
 	//Двигаемся построчно, пока не найдём значимый пиксель. В границы не лезем,
@@ -270,24 +270,24 @@ void RealMedianFilterTemplBase<CellType>::FillMargins_PixelBasedAlgo(const PixFi
 
 //Заполнить пустые пиксели source-матрицы простым алгоритмом (сплошной цвет).
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::FillMargins_Simple(CallBackBase *callBackObj)
+void RealMedianFilter<CellType>::FillMargins_Simple(CallBackBase *callBackObj)
 {
-	FillMargins_PixelBasedAlgo(&RealMedianFilterTemplBase<CellType>::SimpleFiller,
+	FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller,
 		callBackObj);
 }
 
 //Заполнить пустые пиксели source-матрицы зеркальным алгоритмом.
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::FillMargins_Mirror(CallBackBase *callBackObj)
+void RealMedianFilter<CellType>::FillMargins_Mirror(CallBackBase *callBackObj)
 {
-	FillMargins_PixelBasedAlgo(&RealMedianFilterTemplBase<CellType>::MirrorFiller,
+	FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller,
 		callBackObj);
 }
 
 //Применит указанный (ссылкой на метод) фильтр к изображению. Входящий и исходящий файлы
 //уже должны быть подключены. Вернёт false и инфу об ошибке если что-то пойдёт не так.
 template <typename CellType>
-bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
+bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 	CallBackBase *callBackObj, ErrorInfo *errObj)
 {
 	//Задаём размер матриц.
@@ -472,7 +472,7 @@ bool RealMedianFilterTemplBase<CellType>::ApplyFilter(FilterMethod CurrFilter,
 //Метод "никакого" фильтра, который тупо копирует входящую матрицу в исходящую. Нужен для тестирования
 //и отладки. Первый аргумент указывает количество строк матрицы для реальной обработки.
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::StubFilter(const int &currYToProcess,
+void RealMedianFilter<CellType>::StubFilter(const int &currYToProcess,
 	CallBackBase *callBackObj)
 {
 	int destX, destY, sourceX, sourceY, marginSize;
@@ -503,7 +503,7 @@ void RealMedianFilterTemplBase<CellType>::StubFilter(const int &currYToProcess,
 //Метод для обработки матрицы "тупым" фильтром, котороый действует практически в лоб.
 //Первый аргумент указывает количество строк матрицы для реальной обработки.
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::StupidFilter(const int &currYToProcess,
+void RealMedianFilter<CellType>::StupidFilter(const int &currYToProcess,
 	CallBackBase *callBackObj)
 {
 	//Данный метод применяет медианный фильтр "в лоб", т.ч. тупо для каждого пикселя создаёт
@@ -568,7 +568,7 @@ void RealMedianFilterTemplBase<CellType>::StupidFilter(const int &currYToProcess
 //Метод вычисляет минимальную и максимальную высоту в открытом изображении если это вообще нужно.
 //Также вычисляет дельту (шаг между уровнями).
 template<typename CellType>
-void RealMedianFilterTemplBase<CellType>::CalcMinMaxPixelValues()
+void RealMedianFilter<CellType>::CalcMinMaxPixelValues()
 {
 	if (!minMaxCalculated_)
 	{
@@ -582,7 +582,7 @@ void RealMedianFilterTemplBase<CellType>::CalcMinMaxPixelValues()
 		maxPixelValue_ = (CellType)minMaxArr[1];
 		minMaxCalculated_ = true;
 		//Дельта (шаг между уровнями) тоже вычисляется именно тут.
-		levelsDelta_ = (double)(maxPixelValue_ - minPixelValue_) / (double)(ownerObj_->getHuangLevelsNum()-1);
+		levelsDelta_ = (double)(maxPixelValue_ - minPixelValue_) / (double)(ownerObj_->getHuangLevelsNum());
 		//И сообщим что всё готово.
 		if (ownerObj_->onMinMaxDetectionEnd != NULL) ownerObj_->onMinMaxDetectionEnd();
 	}
@@ -595,18 +595,18 @@ void RealMedianFilterTemplBase<CellType>::CalcMinMaxPixelValues()
 //Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 //выбранным алгоритмом.
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::FillMargins(const int yStart, const int yToProcess,
+void RealMedianFilter<CellType>::FillMargins(const int yStart, const int yToProcess,
 	CallBackBase *callBackObj)
 {
 	//Просто пробросим вызов в реально работающий метод, правильно указав метод-заполнитель.
 	switch (getOwnerObj().getMarginType())
 	{
 	case MARGIN_SIMPLE_FILLING:
-		FillMargins_PixelBasedAlgo(&RealMedianFilterTemplBase<CellType>::SimpleFiller, yStart, yToProcess,
+		FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller, yStart, yToProcess,
 		callBackObj);
 		break;
 	case MARGIN_MIRROR_FILLING:
-		FillMargins_PixelBasedAlgo(&RealMedianFilterTemplBase<CellType>::MirrorFiller, yStart, yToProcess,
+		FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller, yStart, yToProcess,
 			callBackObj);
 	}
 }
@@ -614,7 +614,7 @@ void RealMedianFilterTemplBase<CellType>::FillMargins(const int yStart, const in
 //Заполняет матрицу квантованных пикселей в указанном промежутке, получая их из значений
 //оригинальных пикселей в исходной матрице. Нужно для алгоритма Хуанга.
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::FillQuantedMatrix(const int yStart, const int yToProcess)
+void RealMedianFilter<CellType>::FillQuantedMatrix(const int yStart, const int yToProcess)
 {
 	//unsigned long progressPosition = 0;
 	//Поехали.
@@ -639,26 +639,26 @@ void RealMedianFilterTemplBase<CellType>::FillQuantedMatrix(const int yStart, co
 
 //Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
 template <typename CellType>
-bool RealMedianFilterTemplBase<CellType>::ApplyStupidFilter(CallBackBase *callBackObj,
+bool RealMedianFilter<CellType>::ApplyStupidFilter(CallBackBase *callBackObj,
 	ErrorInfo *errObj)
 {
 	//Просто вызываем уже готовый метод, передав ему нужный фильтрующий метод.
-	return ApplyFilter(&RealMedianFilterTemplBase<CellType>::StupidFilter, callBackObj, errObj);
+	return ApplyFilter(&RealMedianFilter<CellType>::StupidFilter, callBackObj, errObj);
 }
 
 //Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
 //Для отладки. Результат записывается в выбранный destFile
 template <typename CellType>
-bool RealMedianFilterTemplBase<CellType>::ApplyStubFilter(CallBackBase *callBackObj, ErrorInfo *errObj)
+bool RealMedianFilter<CellType>::ApplyStubFilter(CallBackBase *callBackObj, ErrorInfo *errObj)
 {
 	//Новый вариант "никакого" фильтра. Работающий по кускам. Просто вызываем уже готовый
 	//метод, передав ему нужный фильтрующий метод.
-	return ApplyFilter(&RealMedianFilterTemplBase<CellType>::StubFilter, callBackObj, errObj);
+	return ApplyFilter(&RealMedianFilter<CellType>::StubFilter, callBackObj, errObj);
 }
 
 //"Тупая" визуализация матрицы, отправляется прямо в cout.
 template <typename CellType>
-void RealMedianFilterTemplBase<CellType>::SourcePrintStupidVisToCout()
+void RealMedianFilter<CellType>::SourcePrintStupidVisToCout()
 {
 	//Просто проброс вызова в объект матрицы.
 	sourceMatrix_.PrintStupidVisToCout();
@@ -668,7 +668,7 @@ void RealMedianFilterTemplBase<CellType>::SourcePrintStupidVisToCout()
 //программы. Это значит что каждый пиксел - это одна строка в файле.
 //Это "тупой" вариант вывода - метаданные нормально не сохраняются.
 template <typename CellType>
-bool RealMedianFilterTemplBase<CellType>::SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
+bool RealMedianFilter<CellType>::SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
 {
 	//Просто проброс вызова в объект матрицы.
 	return sourceMatrix_.SaveToCSVFile(fileName, errObj);
@@ -676,7 +676,7 @@ bool RealMedianFilterTemplBase<CellType>::SourceSaveToCSVFile(const std::string 
 
 //Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 template <typename CellType>
-bool RealMedianFilterTemplBase<CellType>::DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
+bool RealMedianFilter<CellType>::DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
 {
 	//Просто проброс вызова в объект матрицы.
 	return destMatrix_.SaveToCSVFile(fileName, errObj);
