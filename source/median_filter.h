@@ -166,6 +166,20 @@ private:
 	//алгоритм, единственный недостаток которого - потеря точности из за квантования.
 	void HuangFilter(const int &currYToProcess, CallBackBase *callBackObj = NULL);
 
+	//Вспомогательный метод для алгоритма Хуанга. Цикл по строке вправо.
+	inline void HuangFilter_ProcessStringToRight(int &destX, int &destY, int &sourceX,
+		int &sourceY, const int &marginSize, unsigned long &progressPosition, bool &gistIsActual,
+		bool &gistIsEmpty, uint16_t *gist, uint16_t &median, uint16_t &elemsLeftMed, int &oldY,
+		int &oldX, const uint16_t &halfMedPos, CallBackBase *callBackObj);
+
+	//Вспомогательный метод для алгоритма Хуанга. Цикл по строке влево.
+	//Два почти одинаковых метода здесь чтобы внутри не делать проверок направления
+	//за счёт чего оно может быть будет работать немного быстрее.
+	inline void HuangFilter_ProcessStringToLeft(int &destX, int &destY, int &sourceX,
+		int &sourceY, const int &marginSize, unsigned long &progressPosition, bool &gistIsActual,
+		bool &gistIsEmpty, uint16_t *gist, uint16_t &median, uint16_t &elemsLeftMed, int &oldY,
+		int &oldX, const uint16_t &halfMedPos, CallBackBase *callBackObj);
+
 	//Вспомогательный метод для алгоритма Хуанга. Заполняет гистограмму с нуля. В параметрах координаты
 	//верхнего левого угла апертуры.
 	inline void HuangFilter_FillGist(const int &leftUpY, const int &leftUpX, boost::uint16_t *gist,
@@ -183,6 +197,15 @@ private:
 	//Вспомогательный метод для алгоритма Хуанга. Выполняет шаг вниз.
 	inline void HuangFilter_DoStepDown(const int &leftUpY, const int &leftUpX, boost::uint16_t *gist,
 		const boost::uint16_t &median, boost::uint16_t &elemsLeftMed);
+
+	//Вспомогательный метод для алгоритма Хуанга. Корректирует медиану.
+	inline void HuangFilter_DoMedianCorrection(boost::uint16_t &median, boost::uint16_t &elemsLeftMed,
+		const boost::uint16_t &halfMedPos, boost::uint16_t *gist);
+
+	//Вспомогательный метод для алгоритма Хуанга. Запись нового значения пикселя в матрицу
+	//назначения.
+	inline void HuangFilter_WriteDestPixel(const int &destY, const int &destX, const int &sourceY,
+		const int &sourceX, const boost::uint16_t &median);
 
 	//Метод вычисляет минимальную и максимальную высоту в открытом изображении если это вообще нужно.
 	//Также вычисляет дельту (шаг между уровнями).

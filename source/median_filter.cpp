@@ -522,6 +522,7 @@ void RealMedianFilter<CellType>::StupidFilter(const int &currYToProcess,
 	unsigned long progressPosition = getOwnerObj().getCurrPositionY()*destMatrix_.getXSize();
 
 	//Поехали.
+	//TODO: тут явно есть что поправить в плане оптимизации, есть лишние сложения и инкремент неправильный.
 	for (destY = 0; destY < currYToProcess; destY++)
 	{
 		sourceY = destY + marginSize;
@@ -579,10 +580,222 @@ void RealMedianFilter<CellType>::HuangFilter(const int &currYToProcess, CallBack
 	//Позиция, в которой по идее должна быть расположена медиана.
 	boost::uint16_t halfMedPos = ((ownerObj_->getAperture() * ownerObj_->getAperture()) - 1) / 2;
 	//Признак значимости гистограммы. Изначально гистограмма незначима и её нужно заполнить.
-	bool histIsActual = false;
+	bool gistIsActual = false;
+	//Признак вообще наличия гистограммы. Второй признак нужен т.к. гистограмма может быть незначимой,
+	//но при этом всё же существовать в устаревшем виде, что в некоторых случаях может быть использовано
+	//для ускорения обработки (когда быстрее сделать гистограмму актуальной чем составить её с нуля).
+	bool gistIsEmpty = true;
+	//Счётчики и прочее что может понадобиться.
+	int sourceX, sourceY, destX, destY, marginSize, oldY, oldX;
+	marginSize = (getOwnerObj().getAperture() - 1) / 2;
+	//Предыдущие значения координат меньше нуля - в процессе работы такие невозможны что обозначает
+	//никакой пиксель.
+	oldY = -1;
+	oldX = -1;
+	//Позиция прогрессбара.
+	unsigned long progressPosition = getOwnerObj().getCurrPositionY()*destMatrix_.getXSize();
+
+	//Основной цикл по строкам пикселей. Каждая итерация обрабатывает до 2 строк, сначала справа налево,
+	//потом слева направо.
+	destY = 0;
+	sourceY = destY + marginSize;
+	while (destY < currYToProcess)
+	{
+		//Тут первый подцикл.
+		HuangFilter_ProcessStringToRight(destX, destY, sourceX, sourceY, marginSize, progressPosition,
+			gistIsActual, gistIsEmpty, gist, median, elemsLeftMed, oldY, oldX, halfMedPos, callBackObj);
+
+		//На следующую строку.
+		++destY;
+		++sourceY;
+		//Вываливаемся из цикла если вышли за границы.
+		if (!(destY < currYToProcess)) break;
+
+		//Тут второй подцикл.
+		HuangFilter_ProcessStringToLeft(destX, destY, sourceX, sourceY, marginSize, progressPosition,
+			gistIsActual, gistIsEmpty, gist, median, elemsLeftMed, oldY, oldX, halfMedPos, callBackObj);
+
+		//На следующую строку.
+		++destY;
+		++sourceY;
+	}
 
 	//Не забыть delete!
 	delete[] gist;
+}
+
+//Вспомогательный метод для алгоритма Хуанга. Цикл по строке вправо.
+template<typename CellType>
+inline void RealMedianFilter<CellType>::HuangFilter_ProcessStringToRight(int &destX, int &destY,
+	int &sourceX, int &sourceY, const int &marginSize, unsigned long &progressPosition,
+	bool &gistIsActual, bool &gistIsEmpty, uint16_t *gist, uint16_t &median, uint16_t &elemsLeftMed,
+	int &oldY, int &oldX, const uint16_t &halfMedPos, CallBackBase *callBackObj)
+{
+	for (destX = 0, sourceX = destX + marginSize; destX < destMatrix_.getXSize(); ++destX, ++sourceX)
+	{
+		//Прогрессбар.
+		progressPosition++;
+		//Незначимые пиксели не трогаем.
+		if (sourceMatrix_.getSignMatrixElem(sourceY, sourceX) != 1)
+		{
+
+			gistIsActual = false;
+			continue;
+		};
+		//Пиксель значим - обработаем его тем или иным образом.
+		if (gistIsActual)
+		{
+			//Гистограмма актуальна - шаг будет или вправо или вниз, смотря какой это пиксель в строке.
+			if (destX == 0)
+			{
+				//Это был шаг вниз.
+				HuangFilter_DoStepDown(destY, destX, gist, median, elemsLeftMed);
+				++oldY;
+			}
+			else
+			{
+				//Это был шаг вправо.
+				HuangFilter_DoStepRight(destY, destX, gist, median, elemsLeftMed);
+				++oldX;
+			}
+			//Корректируем медиану.
+			HuangFilter_DoMedianCorrection(median, elemsLeftMed, halfMedPos, gist);
+			//При необходимости записываем новое значение пикселя.
+			HuangFilter_WriteDestPixel(destY, destX, sourceY, sourceX, median);
+		}
+		else if ((!gistIsEmpty) && (destY == oldY) && ((destX-oldX) <= halfMedPos))
+		{
+			//Гистограмма неактуальна, но была актуальна на этой же строке и не так далеко.
+			//Сымитируем нужное количество "шагов вправо" чтобы сделать гистограмму актуальной.
+			while (oldX < destX)
+			{
+				++oldX;
+				HuangFilter_DoStepRight(destY, oldX, gist, median, elemsLeftMed);
+			}
+			//Корректируем медиану.
+			HuangFilter_DoMedianCorrection(median, elemsLeftMed, halfMedPos, gist);
+			gistIsActual = true;
+			//При необходимости записываем новое значение пикселя.
+			HuangFilter_WriteDestPixel(destY, destX, sourceY, sourceX, median);
+		}
+		else if ((!gistIsEmpty) && (destX == oldX) && (destY == oldY+1))
+		{
+			//Гистограмма неактуальна, но была актуальна на предыдущей строке и в том же столбце.
+			//Таким образом, неважно как именно мы сюда попали, но фактически нам достаточно просто
+			//сделать тут шаг вниз.
+			HuangFilter_DoStepDown(destY, destX, gist, median, elemsLeftMed);
+			++oldY;
+			//Корректируем медиану.
+			HuangFilter_DoMedianCorrection(median, elemsLeftMed, halfMedPos, gist);
+			gistIsActual = true;
+			//При необходимости записываем новое значение пикселя.
+			HuangFilter_WriteDestPixel(destY, destX, sourceY, sourceX, median);
+		}
+		else
+		{
+			//Старая гистограмма бесполезна. Придётся заполнить её с нуля.
+			HuangFilter_FillGist(destY, destX, gist, median, elemsLeftMed, halfMedPos);
+			//При необходимости записываем новое значение пикселя.
+			HuangFilter_WriteDestPixel(destY, destX, sourceY, sourceX, median);
+			//Запомнить где мы есть и состояние гистограммы.
+			oldY = destY;
+			oldX = destX;
+			gistIsEmpty = false;
+			gistIsActual = true;
+		};
+
+		//Сообщить вызвавшему коду прогресс выполнения.
+		if (callBackObj) callBackObj->CallBack(progressPosition);
+	}
+}
+
+//Вспомогательный метод для алгоритма Хуанга. Цикл по строке влево.
+//Два почти одинаковых метода здесь чтобы внутри не делать проверок направления
+//за счёт чего оно может быть будет работать немного быстрее.
+template<typename CellType>
+inline void RealMedianFilter<CellType>::HuangFilter_ProcessStringToLeft(int &destX, int &destY,
+	int &sourceX, int &sourceY, const int &marginSize, unsigned long &progressPosition,
+	bool &gistIsActual, bool &gistIsEmpty, uint16_t *gist, uint16_t &median, uint16_t &elemsLeftMed,
+	int &oldY, int &oldX, const uint16_t &halfMedPos, CallBackBase *callBackObj)
+{
+	int lastPixelX = destMatrix_.getXSize()-1;
+	for (destX = lastPixelX, sourceX = destX + marginSize; destX < destMatrix_.getXSize();
+		--destX, --sourceX)
+	{
+		//Прогрессбар.
+		progressPosition++;
+		//Незначимые пиксели не трогаем.
+		if (sourceMatrix_.getSignMatrixElem(sourceY, sourceX) != 1)
+		{
+
+			gistIsActual = false;
+			continue;
+		};
+		//Пиксель значим - обработаем его тем или иным образом.
+		if (gistIsActual)
+		{
+			//Гистограмма актуальна - шаг будет или влево или вниз, смотря какой это пиксель в строке.
+			if (destX == lastPixelX)
+			{
+				//Это был шаг вниз.
+				HuangFilter_DoStepDown(destY, destX, gist, median, elemsLeftMed);
+				++oldY;
+			}
+			else
+			{
+				//Это был шаг влево.
+				HuangFilter_DoStepLeft(destY, destX, gist, median, elemsLeftMed);
+				--oldX;
+			}
+			//Корректируем медиану.
+			HuangFilter_DoMedianCorrection(median, elemsLeftMed, halfMedPos, gist);
+			//При необходимости записываем новое значение пикселя.
+			HuangFilter_WriteDestPixel(destY, destX, sourceY, sourceX, median);
+		}
+		else if ((!gistIsEmpty) && (destY == oldY) && ((oldX-destX) <= halfMedPos))
+		{
+			//Гистограмма неактуальна, но была актуальна на этой же строке и не так далеко.
+			//Сымитируем нужное количество "шагов вправо" чтобы сделать гистограмму актуальной.
+			while (oldX > destX)
+			{
+				--oldX;
+				HuangFilter_DoStepLeft(destY, oldX, gist, median, elemsLeftMed);
+			}
+			//Корректируем медиану.
+			HuangFilter_DoMedianCorrection(median, elemsLeftMed, halfMedPos, gist);
+			gistIsActual = true;
+			//При необходимости записываем новое значение пикселя.
+			HuangFilter_WriteDestPixel(destY, destX, sourceY, sourceX, median);
+		}
+		else if ((!gistIsEmpty) && (destX == oldX) && (destY == oldY+1))
+		{
+			//Гистограмма неактуальна, но была актуальна на предыдущей строке и в том же столбце.
+			//Таким образом, неважно как именно мы сюда попали, но фактически нам достаточно просто
+			//сделать тут шаг вниз.
+			HuangFilter_DoStepDown(destY, destX, gist, median, elemsLeftMed);
+			++oldY;
+			//Корректируем медиану.
+			HuangFilter_DoMedianCorrection(median, elemsLeftMed, halfMedPos, gist);
+			gistIsActual = true;
+			//При необходимости записываем новое значение пикселя.
+			HuangFilter_WriteDestPixel(destY, destX, sourceY, sourceX, median);
+		}
+		else
+		{
+			//Старая гистограмма бесполезна. Придётся заполнить её с нуля.
+			HuangFilter_FillGist(destY, destX, gist, median, elemsLeftMed, halfMedPos);
+			//При необходимости записываем новое значение пикселя.
+			HuangFilter_WriteDestPixel(destY, destX, sourceY, sourceX, median);
+			//Запомнить где мы есть и состояние гистограммы.
+			oldY = destY;
+			oldX = destX;
+			gistIsEmpty = false;
+			gistIsActual = true;
+		};
+
+		//Сообщить вызвавшему коду прогресс выполнения.
+		if (callBackObj) callBackObj->CallBack(progressPosition);
+	}
 }
 
 //Вспомогательный метод для алгоритма Хуанга. Заполняет гистограмму с нуля. В параметрах координаты
@@ -630,7 +843,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoStepRight(const int &leftU
 	windowXRight = windowXLeft + getOwnerObj().getAperture();
 	//Тут будет текущее квантованное значение пикселя.
 	boost::uint16_t currQuantedValue;
-	
+
 	//Удаляем из гистограммы колонку левее апертуры, добавляем последнюю (самую правую) колонку.
 	for (windowY = leftUpY; windowY < windowYEnd; ++windowY)
 	{
@@ -717,6 +930,54 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoStepDown(const int &leftUp
 			++elemsLeftMed;
 		}
 	}
+}
+
+//Вспомогательный метод для алгоритма Хуанга. Корректирует медиану.
+template<typename CellType>
+inline void RealMedianFilter<CellType>::HuangFilter_DoMedianCorrection(boost::uint16_t &median,
+	boost::uint16_t &elemsLeftMed, const boost::uint16_t &halfMedPos, boost::uint16_t *gist)
+{
+	if (elemsLeftMed > halfMedPos)
+	{
+		//Медиану надо двигать вправо, т.е. уменьшать.
+		do
+		{
+			--median;
+			elemsLeftMed -= gist[median];
+		}
+		while (elemsLeftMed > median);
+	}
+	else
+	{
+		//Медиана либо уже актуальна, либо её нужно двигать влево т.е. увеличивать.
+		while (elemsLeftMed + gist[median] <= halfMedPos)
+		{
+			elemsLeftMed += gist[median];
+			++median;
+		}
+	}
+	//В любом случае теперь имеем корректную медиану.
+}
+
+//Вспомогательный метод для алгоритма Хуанга. Запись нового значения пикселя в матрицу
+//назначения.
+template<typename CellType>
+inline void RealMedianFilter<CellType>::HuangFilter_WriteDestPixel(const int &destY, const int &destX,
+	const int &sourceY,	const int &sourceX,	const boost::uint16_t &median)
+{
+	CellType newValue = QuantedValueToPixelValue(median);
+	if (GetDelta(newValue, sourceMatrix_->getMatrixElem(sourceY, sourceX))
+		< getOwnerObj().getThreshold())
+	{
+		//Отличие от медианы меньше порогового. Просто копируем пиксел.
+		destMatrix_.setMatrixElem(destY, destX,
+			sourceMatrix_.getMatrixElem(sourceY, sourceX));
+	}
+	else
+	{
+		//Отличие больше порогового - записываем в dest-пиксель медиану.
+		destMatrix_.setMatrixElem(destY, destX, newValue);
+	};
 }
 
 //Метод вычисляет минимальную и максимальную высоту в открытом изображении если это вообще нужно.
