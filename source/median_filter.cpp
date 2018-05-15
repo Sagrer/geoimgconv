@@ -534,9 +534,9 @@ void RealMedianFilter<CellType>::StupidFilter(const int &currYToProcess,
 			//Теперь надо пройти по каждому пикселю окна чтобы составить массив
 			//и сортировкой получить медиану. Наверное самый неэффективны способ.
 			medianArrPos = 0;
-			for (windowY = destY; windowY<(sourceY + marginSize); windowY++)
+			for (windowY = destY; windowY<(sourceY + marginSize + 1); windowY++)
 			{
-				for (windowX = destX; windowX<(sourceX + marginSize); windowX++)
+				for (windowX = destX; windowX<(sourceX + marginSize + 1); windowX++)
 				{
 					medianArr[medianArrPos] = sourceMatrix_.getMatrixElem(windowY, windowX);
 					medianArrPos++;
