@@ -283,6 +283,9 @@ public:
 	//Это "тупой" вариант вывода - метаданные нормально не сохраняются.
 	bool SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
 
+	//Вывод исходной квантованной матрицы в csv-файл.
+	bool QuantedSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
+
 	//Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 	bool DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
 

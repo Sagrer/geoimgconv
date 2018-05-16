@@ -417,7 +417,9 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		//Также если используется алгоритм Хуанга - нужно обновить квантованную матрицу.
 		if (CurrFilter == &RealMedianFilter<CellType>::HuangFilter)
 		{
-			FillQuantedMatrix(fillerYStart, fillerYToProcess);
+			//Копируется целиком. Можно оптимизировать и делать полную копию только в первый проход,
+			//но пока - так.
+			FillQuantedMatrix(0, filterYToProcess + 2*marginSize);
 		}
 
 		//Надо применить фильтр
@@ -432,6 +434,7 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 
 		//Для отладки - сохраним содержимое матриц.
 		//sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".csv");
+		//QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".csv");
 		//destMatrix_.SaveToCSVFile("dest" + STB.IntToString(debugFileNum, 5) + ".csv");
 		//debugFileNum++;
 
@@ -454,7 +457,12 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 			0, marginSize, TOP_MM_MATR, &sourceMatrix_, NULL);
 		destMatrix_.CreateDestMatrix(sourceMatrix_, marginSize);
 		//Всё ещё надо обработать граничные пиксели
-		this->FillMargins(marginSize, filterYToProcess, NULL);
+		FillMargins(marginSize, filterYToProcess, NULL);
+		//Также если используется алгоритм Хуанга - нужно обновить квантованную матрицу.
+		if (CurrFilter == &RealMedianFilter<CellType>::HuangFilter)
+		{
+			FillQuantedMatrix(marginSize, filterYToProcess);
+		}
 		//Всё ещё надо применить фильтр.
 		(this->*CurrFilter)(filterYToProcess,callBackObj);
 
@@ -467,6 +475,7 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 
 		//Для отладки - сохраним содержимое матриц.
 		//sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
+		//QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
 		//destMatrix_.SaveToCSVFile("dest" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
 	}
 
@@ -824,7 +833,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_FillGist(const int &leftUpY,
 		for (windowX = leftUpX; windowX < windowXEnd; ++windowX)
 		{
 			//Инкрементируем счётчик пикселей этого уровня в гистограмме.
-			//boost::uint16_t temp = sourceMatrix_.getQuantedMatrixElem(windowY, windowX);
+			boost::uint16_t temp = sourceMatrix_.getQuantedMatrixElem(windowY, windowX);
 			++(gist[sourceMatrix_.getQuantedMatrixElem(windowY, windowX)]);
 		}
 	}
@@ -986,6 +995,9 @@ inline void RealMedianFilter<CellType>::HuangFilter_WriteDestPixel(const int &de
 		//Отличие больше порогового - записываем в dest-пиксель медиану.
 		destMatrix_.setMatrixElem(destY, destX, newValue);
 	};
+	//TEST - пишем просто квантованный пиксел.
+	/*destMatrix_.setMatrixElem(destY, destX,
+		QuantedValueToPixelValue(sourceMatrix_.getQuantedMatrixElem(sourceY, sourceX)));*/
 }
 
 //Метод вычисляет минимальную и максимальную высоту в открытом изображении если это вообще нужно.
@@ -1046,16 +1058,15 @@ void RealMedianFilter<CellType>::FillQuantedMatrix(const int yStart, const int y
 		for (int x = 0; x < sourceMatrix_.getXSize(); ++x)
 		{
 			//++progressPosition;
-			if (sourceMatrix_.getSignMatrixElem(y, x) == 1)
-			{
-				//Для всех пикселей не равных нулю - преобразовать к одному из уровней в
-				//гистограмме. Нужно знать минимальную и максимальную высоту в исходной
-				//картинке. При этом также вычислится и дельта.
-				CalcMinMaxPixelValues();
-				//Заполняем значение
-				sourceMatrix_.setQuantedMatrixElem(y, x, PixelValueToQuantedValue(
-					sourceMatrix_.getMatrixElem(y, x)));
-			}
+
+			//Для всех пикселей (даже незначимых!) - преобразовать к одному из уровней в
+			//гистограмме. Нужно знать минимальную и максимальную высоту в исходной
+			//картинке. При этом также вычислится и дельта. Нулевые незначимые пиксели тут
+			//так и останутся нулевыми.
+			CalcMinMaxPixelValues();
+			//Заполняем значение
+			sourceMatrix_.setQuantedMatrixElem(y, x, PixelValueToQuantedValue(
+				sourceMatrix_.getMatrixElem(y, x)));
 		}
 	}
 }
@@ -1106,6 +1117,26 @@ bool RealMedianFilter<CellType>::SourceSaveToCSVFile(const std::string &fileName
 	return sourceMatrix_.SaveToCSVFile(fileName, errObj);
 }
 
+//Вывод исходной квантованной матрицы в csv-файл.
+template<typename CellType>
+bool RealMedianFilter<CellType>::QuantedSaveToCSVFile(const std::string & fileName, ErrorInfo * errObj)
+{
+	//Создаём временную матрицу.
+	AltMatrix<CellType> tempMatr;
+	tempMatr.CreateEmpty(sourceMatrix_.getXSize(), sourceMatrix_.getYSize());
+	//Копируем квантованную матрицу в новосозданную с преобразованием пикселей в обычные.
+	for (int currY = 0; currY < tempMatr.getYSize(); ++currY)
+	{
+		for (int currX = 0; currX < tempMatr.getXSize(); ++currX)
+		{
+			tempMatr.setMatrixElem(currY, currX, QuantedValueToPixelValue(
+				sourceMatrix_.getQuantedMatrixElem(currY, currX)));
+		}
+	}
+	//Сохраняем.
+	return tempMatr.SaveToCSVFile(fileName, errObj);
+}
+
 //Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 template <typename CellType>
 bool RealMedianFilter<CellType>::DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
@@ -1133,6 +1164,7 @@ MedianFilterBase::~MedianFilterBase()
 {
 	//Возможно создавался объект реального фильтра. Надо удалить.
 	delete pFilterObj_;
+	pFilterObj_ = NULL;
 	//Возможно нужно закрыть подключённые файлы и уничтожить объекты GDAL
 	CloseAllFiles();
 }
