@@ -414,6 +414,11 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		}
 		//Прогрессбар не используем пока там не будет реализована обработка нескольких баров в одном.
 		FillMargins(fillerYStart, fillerYToProcess, NULL);
+		//Также если используется алгоритм Хуанга - нужно обновить квантованную матрицу.
+		if (CurrFilter == &RealMedianFilter<CellType>::HuangFilter)
+		{
+			FillQuantedMatrix(fillerYStart, fillerYToProcess);
+		}
 
 		//Надо применить фильтр
 		(this->*CurrFilter)(filterYToProcess,callBackObj);
@@ -572,7 +577,7 @@ template<typename CellType>
 void RealMedianFilter<CellType>::HuangFilter(const int &currYToProcess, CallBackBase *callBackObj)
 {
 	//Создаём массив-гистограмму.
-	boost::uint16_t	*gist = new boost::uint16_t[getOwnerObj().getHuangLevelsNum()];
+	unsigned long *gist = new unsigned long[getOwnerObj().getHuangLevelsNum()];
 	//Текущее значение медианы
 	boost::uint16_t median;
 	//Количество элементов в гистограмме, которые меньше медианы (т.е. левее её).
@@ -628,8 +633,9 @@ void RealMedianFilter<CellType>::HuangFilter(const int &currYToProcess, CallBack
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_ProcessStringToRight(int &destX, int &destY,
 	int &sourceX, int &sourceY, const int &marginSize, unsigned long &progressPosition,
-	bool &gistIsActual, bool &gistIsEmpty, uint16_t *gist, uint16_t &median, uint16_t &elemsLeftMed,
-	int &oldY, int &oldX, const uint16_t &halfMedPos, CallBackBase *callBackObj)
+	bool &gistIsActual, bool &gistIsEmpty, unsigned long *gist, boost::uint16_t &median,
+	boost::uint16_t &elemsLeftMed, int &oldY, int &oldX, const boost::uint16_t &halfMedPos,
+	CallBackBase *callBackObj)
 {
 	for (destX = 0, sourceX = destX + marginSize; destX < destMatrix_.getXSize(); ++destX, ++sourceX)
 	{
@@ -715,11 +721,12 @@ inline void RealMedianFilter<CellType>::HuangFilter_ProcessStringToRight(int &de
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_ProcessStringToLeft(int &destX, int &destY,
 	int &sourceX, int &sourceY, const int &marginSize, unsigned long &progressPosition,
-	bool &gistIsActual, bool &gistIsEmpty, uint16_t *gist, uint16_t &median, uint16_t &elemsLeftMed,
-	int &oldY, int &oldX, const uint16_t &halfMedPos, CallBackBase *callBackObj)
+	bool &gistIsActual, bool &gistIsEmpty, unsigned long *gist, boost::uint16_t &median,
+	boost::uint16_t &elemsLeftMed, int &oldY, int &oldX, const boost::uint16_t &halfMedPos,
+	CallBackBase *callBackObj)
 {
 	int lastPixelX = destMatrix_.getXSize()-1;
-	for (destX = lastPixelX, sourceX = destX + marginSize; destX < destMatrix_.getXSize();
+	for (destX = lastPixelX, sourceX = destX + marginSize; destX >= 0;
 		--destX, --sourceX)
 	{
 		//Прогрессбар.
@@ -802,7 +809,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_ProcessStringToLeft(int &des
 //верхнего левого угла апертуры.
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_FillGist(const int &leftUpY, const int &leftUpX,
-	boost::uint16_t *gist, boost::uint16_t &median, boost::uint16_t &elemsLeftMed,
+	unsigned long *gist, boost::uint16_t &median, boost::uint16_t &elemsLeftMed,
 	const boost::uint16_t & halfMedPos)
 {
 	//Счётчики и границы.
@@ -817,6 +824,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_FillGist(const int &leftUpY,
 		for (windowX = leftUpX; windowX < windowXEnd; ++windowX)
 		{
 			//Инкрементируем счётчик пикселей этого уровня в гистограмме.
+			//boost::uint16_t temp = sourceMatrix_.getQuantedMatrixElem(windowY, windowX);
 			++(gist[sourceMatrix_.getQuantedMatrixElem(windowY, windowX)]);
 		}
 	}
@@ -833,7 +841,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_FillGist(const int &leftUpY,
 //Вспомогательный метод для алгоритма Хуанга. Выполняет шаг вправо.
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_DoStepRight(const int &leftUpY,
-	const int &leftUpX, boost::uint16_t *gist, const boost::uint16_t &median,
+	const int &leftUpX, unsigned long *gist, const boost::uint16_t &median,
 	boost::uint16_t &elemsLeftMed)
 {
 	//Счётчики и границы.
@@ -867,7 +875,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoStepRight(const int &leftU
 //Вспомогательный метод для алгоритма Хуанга. Выполняет шаг влево.
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_DoStepLeft(const int &leftUpY,
-	const int &leftUpX, boost::uint16_t *gist, const boost::uint16_t &median,
+	const int &leftUpX, unsigned long *gist, const boost::uint16_t &median,
 	boost::uint16_t &elemsLeftMed)
 {
 	//Счётчики и границы.
@@ -900,7 +908,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoStepLeft(const int &leftUp
 //Вспомогательный метод для алгоритма Хуанга. Выполняет шаг вниз.
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_DoStepDown(const int &leftUpY,
-	const int &leftUpX, boost::uint16_t *gist, const boost::uint16_t &median,
+	const int &leftUpX, unsigned long *gist, const boost::uint16_t &median,
 	boost::uint16_t &elemsLeftMed)
 {
 	//Счётчики и границы.
@@ -935,7 +943,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoStepDown(const int &leftUp
 //Вспомогательный метод для алгоритма Хуанга. Корректирует медиану.
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_DoMedianCorrection(boost::uint16_t &median,
-	boost::uint16_t &elemsLeftMed, const boost::uint16_t &halfMedPos, boost::uint16_t *gist)
+	boost::uint16_t &elemsLeftMed, const boost::uint16_t &halfMedPos, unsigned long *gist)
 {
 	if (elemsLeftMed > halfMedPos)
 	{
@@ -988,18 +996,18 @@ void RealMedianFilter<CellType>::CalcMinMaxPixelValues()
 	if (!minMaxCalculated_)
 	{
 		//Заставим сработать событие, сигнализирующее о начале вычисления.
-		if (ownerObj_->onMinMaxDetectionStart != NULL) ownerObj_->onMinMaxDetectionStart();
+		if (getOwnerObj().onMinMaxDetectionStart != NULL) getOwnerObj().onMinMaxDetectionStart();
 		//Запишем новое NoDataValue и вычислим min и max средствами GDAL.
-		ownerObj_->gdalSourceRaster_->SetNoDataValue((double)noDataPixelValue_);
+		getOwnerObj().getGdalSourceRaster()->SetNoDataValue((double)noDataPixelValue_);
 		double minMaxArr[2];
-		ownerObj_->gdalSourceRaster_->ComputeRasterMinMax(false, &(minMaxArr[0]));
+		getOwnerObj().getGdalSourceRaster()->ComputeRasterMinMax(false, &(minMaxArr[0]));
 		minPixelValue_ = (CellType)minMaxArr[0];
 		maxPixelValue_ = (CellType)minMaxArr[1];
 		minMaxCalculated_ = true;
 		//Дельта (шаг между уровнями) тоже вычисляется именно тут.
-		levelsDelta_ = (double)(maxPixelValue_ - minPixelValue_) / (double)(ownerObj_->getHuangLevelsNum());
+		levelsDelta_ = (double)(maxPixelValue_ - minPixelValue_) / (double)(getOwnerObj().getHuangLevelsNum()-1);
 		//И сообщим что всё готово.
-		if (ownerObj_->onMinMaxDetectionEnd != NULL) ownerObj_->onMinMaxDetectionEnd();
+		if (getOwnerObj().onMinMaxDetectionEnd != NULL) getOwnerObj().onMinMaxDetectionEnd();
 	}
 }
 
