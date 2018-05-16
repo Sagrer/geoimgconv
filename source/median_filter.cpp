@@ -316,7 +316,7 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 	int currYToProcess, filterYToProcess;
 	bool needRecalc = true;
 	int currBlocksToProcess = getOwnerObj().getBlocksInMem() - 1;
-	//int debugFileNum = 1;	//Для отладочного сохранения.
+	int debugFileNum = 1;	//Для отладочного сохранения.
 	int writeYPosition = 0;
 	for (getOwnerObj().setCurrPositionY(0); getOwnerObj().getCurrPositionY()
 		< getOwnerObj().getImageSizeY(); getOwnerObj().setCurrPositionY(
@@ -974,6 +974,18 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoMedianCorrection(boost::ui
 		}
 	}
 	//В любом случае теперь имеем корректную медиану.
+	//Проверим правильность корректировки.
+	boost::uint16_t elemsLeftMed_test = 0;
+	boost::uint16_t median_test = 0;
+	while ((elemsLeftMed_test + gist[median_test]) <= halfMedPos)
+	{
+		elemsLeftMed_test += gist[median];
+		++median_test;
+	}
+	if (median != median_test)
+	{
+		//median = median_test;
+	}
 }
 
 //Вспомогательный метод для алгоритма Хуанга. Запись нового значения пикселя в матрицу

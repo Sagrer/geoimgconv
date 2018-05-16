@@ -38,7 +38,8 @@ const std::string DEFAULT_OUTPUT_FILE_NAME = "output.tif";
 //Апертура медианного фильтра
 const int DEFAULT_MEDFILTER_APERTURE = 101;
 //Порог медианного фильтра
-const double DEFAULT_MEDFILTER_THRESHOLD = 0.5;
+//const double DEFAULT_MEDFILTER_THRESHOLD = 0.5;
+const double DEFAULT_MEDFILTER_THRESHOLD = 0;
 //Какой тип заполнения граничных пикселей применяется по умолчанию
 const MarginType DEFAULT_MEDFILTER_MARGIN_TYPE = MARGIN_MIRROR_FILLING;
 //Режим работы программы
@@ -48,7 +49,7 @@ const MemoryMode DEFAULT_MEM_MODE = MEMORY_MODE_AUTO;
 //Режим медианного фильтра по умолчанию.
 const MedfilterAlgo DEFAULT_MEDFILTER_ALGO = MEDFILTER_ALGO_STUPID;
 //Количество уровней квантования для алгоритма Хуанга по умолчанию
-const boost::uint16_t DEFAULT_HUANG_LEVELS_NUM = 256;
+const boost::uint16_t DEFAULT_HUANG_LEVELS_NUM = 15000;
 //Максимально возможное количество уровней квантования для алгоритма Хуанга.
 const boost::uint16_t HUANG_MAX_LEVELS_NUM = -1; //65535
 
