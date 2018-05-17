@@ -162,7 +162,7 @@ void RealMedianFilter<CellType>::GetMirrorPixel(const int &x, const int &y, cons
 //Заполнять пиксели простым алгоритмом в указанном направлении
 template <typename CellType>
 void RealMedianFilter<CellType>::SimpleFiller(const int &x, const int &y,
-	const PixelDirection direction, const int &marginSize)
+	const PixelDirection direction, const int &marginSize, const char &signMatrixValue)
 {
 	int currX = x;
 	int currY = y;
@@ -177,15 +177,13 @@ void RealMedianFilter<CellType>::SimpleFiller(const int &x, const int &y,
 			//Значимый пиксель, либо ушли за пределы окна. Прекращаем заполнение.
 			return;
 		}
-		else if ((sourceMatrix_.getSignMatrixElem(currY,currX) == 0) ||
-			(direction == PIXEL_DIR_UP) || (direction == PIXEL_DIR_DOWN) ||
-			(direction == PIXEL_DIR_RIGHT) || (direction == PIXEL_DIR_LEFT))
+		else if ((sourceMatrix_.getSignMatrixElem(currY, currX) == 0) ||
+			(sourceMatrix_.getSignMatrixElem(currY, currX) > signMatrixValue))
 		{
 			//Заполняем либо вообще не заполненные пиксели, либо любые незначимые
-			//если двигаемся не по диагонали чтобы возможно переписать те, что были
-			//уже заполнены диагональным заполнителем.
+			//с более низким приоритетом.
 			sourceMatrix_.setMatrixElem(currY,currX,sourceMatrix_.getMatrixElem(y,x));
-			sourceMatrix_.setSignMatrixElem(currY,currX,2); //Заполненный незначимый пиксель.
+			sourceMatrix_.setSignMatrixElem(currY,currX,signMatrixValue); //Заполненный незначимый пиксель.
 		}
 	}
 }
@@ -193,7 +191,7 @@ void RealMedianFilter<CellType>::SimpleFiller(const int &x, const int &y,
 //Заполнять пиксели зеркальным алгоритмом в указанном направлении
 template <typename CellType>
 void RealMedianFilter<CellType>::MirrorFiller(const int &x, const int &y,
-	const PixelDirection direction, const int &marginSize)
+	const PixelDirection direction, const int &marginSize, const char &signMatrixValue)
 {
 	int currX = x;
 	int currY = y;
@@ -210,15 +208,13 @@ void RealMedianFilter<CellType>::MirrorFiller(const int &x, const int &y,
 			return;
 		}
 		else if ((sourceMatrix_.getSignMatrixElem(currY,currX) == 0) ||
-			(direction == PIXEL_DIR_UP) || (direction == PIXEL_DIR_DOWN) ||
-			(direction == PIXEL_DIR_RIGHT) || (direction == PIXEL_DIR_LEFT))
+			(sourceMatrix_.getSignMatrixElem(currY, currX) > signMatrixValue))
 		{
 			//Заполняем либо вообще не заполненные пиксели, либо любые незначимые
-			//если двигаемся не по диагонали чтобы возможно переписать те, что были
-			//уже заполнены диагональным заполнителем.
+			//с более низким приоритетом.
 			GetMirrorPixel(x,y,currX,currY,mirrorX,mirrorY);	//Координаты зеркального пикселя.
 			sourceMatrix_.setMatrixElem(currY,currX,sourceMatrix_.getMatrixElem(mirrorY,mirrorX));
-			sourceMatrix_.setSignMatrixElem(currY,currX,2); //Заполненный незначимый пиксель.
+			sourceMatrix_.setSignMatrixElem(currY,currX,signMatrixValue); //Заполненный незначимый пиксель.
 		}
 	}
 }
@@ -253,14 +249,14 @@ void RealMedianFilter<CellType>::FillMargins_PixelBasedAlgo(const PixFillerMetho
 				//приоритет над диагональным, т.е. диагональные пикселы будут перезаписаны если
 				//встретятся на пути. Поехали.
 
-				(this->*FillerMethod)(x, y, PIXEL_DIR_UP, marginSize);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN, marginSize);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_RIGHT, marginSize);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_LEFT, marginSize);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_UP_RIGHT, marginSize);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_UP_LEFT, marginSize);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN_RIGHT, marginSize);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN_LEFT, marginSize);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_UP, marginSize, 2);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN, marginSize, 2);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_RIGHT, marginSize, 2);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_LEFT, marginSize, 2);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_UP_RIGHT, marginSize, 3);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_UP_LEFT, marginSize, 3);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN_RIGHT, marginSize, 3);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN_LEFT, marginSize, 3);
 				//Сообщение о прогрессе.
 				if (callBackObj) callBackObj->CallBack(progressPosition);
 			}
@@ -268,11 +264,415 @@ void RealMedianFilter<CellType>::FillMargins_PixelBasedAlgo(const PixFillerMetho
 	}
 }
 
+//Алгоритм заполнения граничных пикселей по незначимым пикселям, общий для Simple и Mirror
+template <typename CellType>
+void RealMedianFilter<CellType>::FillMargins_EmptyPixelBasedAlgo(const PixFillerMethod FillerMethod,
+	const int yStart, const int yToProcess, CallBackBase *callBackObj)
+{
+	//Двигаемся построчно слева направо затем справа налево и так далее. Для каждого
+	//незначимого и ещё ничем не заполненного пикселя проверяем наличие на расстоянии
+	//размера окна значимых пикселей. Если таковой был найден - значит данный незначимый пиксель
+	//входит в окно того значимого пикселя и обязательно должен быть заполнен. Для этого
+	//во-первых запоминаем значение найденного пикселя, во вторых ищем сначала по
+	//вертикалям и горизонталям, затем по диагоналям ближайший значимый пиксель и от него
+	//"ведём дорожку", заданную выбранным алгоритмом (т.е. заполняющим методом).
+	//Если же по этим направлениям пиксель найти не удалось - просто заполняем его запомненным
+	//ранее значимым, он в любом случае относительно близко. Пиксель, заполненные вертикальным
+	//или горизонтальным способом имеют приоритет выше, чем заполненные диагональным и выше,
+	//чем заполненные просто из запомненных. Если при "ведении дорожки" приоритет дорожки выше чем
+	//приоритет незначимого пикселя на дорожке - то он перезаписывается.
+	//При движении по строкам используется знание о том были ли значимые пиксели в предыдущем окне.
+	//Если их не было то на очередном шаге достаточно проверить только 1 столбик или строку в
+	//направлении движения.
+
+	int x, y, yEnd, marginSize, windowX, windowY, windowXEnd, windowYEnd;
+	int actualPixelY, actualPixelX, actualPixelDistance;
+	CellType tempPixelValue;
+	PixelDirection actualPixelDirection;
+	marginSize = (getOwnerObj().getAperture() - 1) / 2;
+	//Настроим объект, выводящий информацию о прогрессе обработки.
+	if (callBackObj)
+		callBackObj->setMaxProgress((sourceMatrix_.getXSize() - marginSize * 2) *
+			(sourceMatrix_.getYSize() - marginSize*2));
+	//Цикл, в каждой итерации которого обрабатывается до 2 строк:
+	y = yStart;
+	yEnd = yStart+yToProcess;
+	//Если true то можно проверять только следующий столбик или строку.
+	bool windowWasEmpty = false;
+	//Координата начала проверяемого на значимость окна.
+	windowY = y;
+	//Координата следующая за последней для проверяемого окна.
+	windowYEnd = y+marginSize+1;
+	if (windowYEnd > yEnd) windowYEnd = yEnd;
+	while (y < yEnd)
+	{
+		//По строке вправо.
+		FillMargins_EmptyPixelBasedAlgo_ProcessToRight(y, x, windowY, windowX, windowYEnd, windowXEnd,
+			actualPixelY, actualPixelX, actualPixelDirection, actualPixelDistance, tempPixelValue,
+			windowWasEmpty, marginSize, FillerMethod);
+		//Теперь смещаемся на пиксель вниз.
+		++y;
+		if ((y) > marginSize)
+		{
+			++windowY;
+		}
+		if (windowYEnd < sourceMatrix_.getYSize())
+		{
+			++windowYEnd;
+		}
+		//Вываливаемся из цикла если все строки обработаны.
+		if (!(y < yEnd)) break;
+		//Обрабатываем первый пиксел новой строки
+		FillMargins_EmptyPixelBasedAlgo_ProcessNextPixel(y, x, windowY, windowX, windowYEnd, windowXEnd,
+			actualPixelY, actualPixelX, actualPixelDistance, actualPixelDirection, PIXEL_DIR_DOWN,
+			windowWasEmpty, tempPixelValue, FillerMethod);
+		//Обрабатываем строку влево.
+		FillMargins_EmptyPixelBasedAlgo_ProcessToLeft(y, x, windowY, windowX, windowYEnd, windowXEnd,
+			actualPixelY, actualPixelX, actualPixelDirection, actualPixelDistance, tempPixelValue,
+			windowWasEmpty, marginSize, FillerMethod);
+		//И снова на пиксель вниз.
+		++y;
+		if ((y) > marginSize)
+		{
+			++windowY;
+		}
+		if (windowYEnd < sourceMatrix_.getYSize())
+		{
+			++windowYEnd;
+		}
+		//Обрабатываем первый пиксел новой строки
+		if (y < yEnd)
+		{
+			FillMargins_EmptyPixelBasedAlgo_ProcessNextPixel(y, x, windowY, windowX, windowYEnd, windowXEnd,
+				actualPixelY, actualPixelX, actualPixelDistance, actualPixelDirection, PIXEL_DIR_DOWN,
+				windowWasEmpty, tempPixelValue, FillerMethod);
+		}		
+	}
+}
+
+//Вспомогательный метод для прохода по пикселам строки вправо.
+template<typename CellType>
+inline void RealMedianFilter<CellType>::FillMargins_EmptyPixelBasedAlgo_ProcessToRight(int &y, int &x,
+	int &windowY, int &windowX,	int &windowYEnd, int &windowXEnd, int &actualPixelY, int &actualPixelX,
+	PixelDirection &actualPixelDirection, int &actualPixelDistance, CellType &tempPixelValue,
+	bool &windowWasEmpty, int marginSize, const PixFillerMethod FillerMethod)
+{
+	windowX = 0;
+	windowXEnd = marginSize+1;
+	if (windowXEnd > sourceMatrix_.getXSize())
+	{
+		windowXEnd = sourceMatrix_.getXSize();
+	}
+	for (x = 0; x < sourceMatrix_.getXSize(); ++x)
+	{
+		//Обработаем очередной пиксел.
+		FillMargins_EmptyPixelBasedAlgo_ProcessNextPixel(y, x, windowY, windowX, windowYEnd, windowXEnd,
+			actualPixelY, actualPixelX, actualPixelDistance, actualPixelDirection, PIXEL_DIR_RIGHT,
+			windowWasEmpty, tempPixelValue, FillerMethod);
+
+		//Конец итерации по очередному пикселу в строке. Теперь надо подкорректировать счётчики окна.
+		if ((x+1) > marginSize)
+		{
+			++windowX;
+		}
+		if (windowXEnd < sourceMatrix_.getXSize())
+		{
+			++windowXEnd;
+		}
+	}
+}
+
+//Вспомогательный метод для прохода по пикселам строки влево.
+template<typename CellType>
+inline void RealMedianFilter<CellType>::FillMargins_EmptyPixelBasedAlgo_ProcessToLeft(int &y, int &x,
+	int &windowY, int &windowX, int &windowYEnd, int &windowXEnd, int &actualPixelY, int &actualPixelX,
+	PixelDirection &actualPixelDirection, int &actualPixelDistance, CellType &tempPixelValue,
+	bool &windowWasEmpty, int marginSize, const PixFillerMethod FillerMethod)
+{
+	windowX = sourceMatrix_.getXSize()-1-marginSize;
+	windowXEnd = sourceMatrix_.getXSize();
+	if (windowX < 0)
+	{
+		windowX = 0;
+	}
+	for (x = sourceMatrix_.getXSize()-1; x >= 0; --x)
+	{
+		//Обработаем очередной пиксел.
+		FillMargins_EmptyPixelBasedAlgo_ProcessNextPixel(y, x, windowY, windowX, windowYEnd, windowXEnd,
+			actualPixelY, actualPixelX, actualPixelDistance, actualPixelDirection, PIXEL_DIR_LEFT,
+			windowWasEmpty, tempPixelValue, FillerMethod);
+
+		//Конец итерации по очередному пикселу в строке. Теперь надо подкорректировать счётчики окна.
+		if ((sourceMatrix_.getXSize()-1-x) > marginSize)
+		{
+			--windowXEnd;
+		}
+		if (windowX > 0)
+		{
+			--windowX;
+		}
+	}
+}
+
+//Вспомогательный метод для обработки очередного незначимого пикселя при проходе
+//в указанном направлении (currentDirection).
+template<typename CellType>
+inline void RealMedianFilter<CellType>::FillMargins_EmptyPixelBasedAlgo_ProcessNextPixel(int &y, int &x,
+	int &windowY, int &windowX, int& windowYEnd, int &windowXEnd, int &actualPixelY, int &actualPixelX,
+	int &actualPixelDistance, PixelDirection &actualPixelDirection,	const PixelDirection &currentDirection,
+	bool &windowWasEmpty, CellType &tempPixelValue,	const PixFillerMethod FillerMethod)
+{
+	if (sourceMatrix_.getSignMatrixElem(y, x) != 1)
+	{
+		//Пиксел не значим. Обработаем его.
+		//Проверим есть ли в окне вокруг значимые пиксели.
+		windowWasEmpty = FillMargins_WindowIsEmpty(windowY, windowX, windowYEnd, windowXEnd,
+			actualPixelY, actualPixelX, tempPixelValue, windowWasEmpty, currentDirection);
+		if (!windowWasEmpty)
+		{
+			//В окне есть значимый пиксел - найдём подходящий значимый и нарисуем дорожку.
+			if (FillMargins_FindNearestActualPixel(y, x, actualPixelY, actualPixelX,
+				actualPixelDirection, actualPixelDistance))
+			{
+				//Пиксель найден. Заполним дорожку от него до текущего.
+				char signValue;
+				if ((actualPixelDirection == PIXEL_DIR_UP) ||
+					(actualPixelDirection == PIXEL_DIR_DOWN) ||
+					(actualPixelDirection == PIXEL_DIR_RIGHT) ||
+					(actualPixelDirection == PIXEL_DIR_LEFT))
+				{
+					//Приоритет вертикальных и горизонтальных дорожек выше чем приоритет
+					//диагональных дорожек.
+					signValue = 2;
+				}
+				else
+				{
+					signValue = 3;
+				}
+				//Собственно, вызываем заполняющий метод. Направление должно быть противоположным
+				//найденному, т.к. дорожку рисуем не к найденному пикселю а от него!
+				(this->*FillerMethod)(actualPixelX, actualPixelY, RevertPixelDirection(actualPixelDirection),
+					actualPixelDistance, signValue);
+			}
+			else
+			{
+				//Пиксел не найден, но он был в окне. Заполним это значение в матрицу значимости
+				//с самым низким приоритетом.
+				sourceMatrix_.setSignMatrixElem(y, x, 4);
+			}
+		}
+	}
+}
+
+//Вспомогательный метод для проверки наличия в окне значимых пикселей. Вернёт true если
+//значимых пикселей не нашлось. Если нашлось - то false и координаты со значением первого
+//найденного пикселя (через не-константные ссылочные параметры). Если windowWasEmpty
+//то воспользуется direction чтобы проверить только одну строчку или колонку, считая что
+//остальное уже было проверено при предыдущем вызове этого метода.
+template <typename CellType>
+inline bool RealMedianFilter<CellType>::FillMargins_WindowIsEmpty(const int &windowY,
+	const int &windowX, const int &windowYEnd, const int &windowXEnd, int &pixelY,
+	int &pixelX, CellType &pixelValue, const bool &windowWasEmpty,
+	const PixelDirection &direction) const
+{
+	//Счётчики.
+	int y, x;
+
+	//Смотрим, можно ли сэкономить.
+	if (windowWasEmpty)
+	{
+		//Можно. Проверим только 1 новый столбик или строку.
+		if (direction == PIXEL_DIR_RIGHT)
+		{
+			//Проверяем только правый столбик окна.
+			x = windowXEnd-1;
+			for (y = windowY; y < windowYEnd; ++y)
+			{
+				//Пробуем найти значимый пиксел.
+				if (sourceMatrix_.getSignMatrixElem(y,x) == 1)
+				{
+					//Нашлось.
+					pixelY = y;
+					pixelX = x;
+					pixelValue = sourceMatrix_.getMatrixElem(y,x);
+					return false;
+				};
+			};
+			//Не нашлось.
+			return true;
+		}
+		else if (direction == PIXEL_DIR_LEFT)
+		{
+			//Проверяем только левый столбик окна.
+			for (y = windowY; y < windowYEnd; ++y)
+			{
+				//Пробуем найти значимый пиксел.
+				if (sourceMatrix_.getSignMatrixElem(y,windowX) == 1)
+				{
+					//Нашлось.
+					pixelY = y;
+					pixelX = windowX;
+					pixelValue = sourceMatrix_.getMatrixElem(y,windowX);
+					return false;
+				};
+			};
+			//Не нашлось.
+			return true;
+		}
+		else if (direction == PIXEL_DIR_DOWN)
+		{
+			//Проверяем только нижнюю строку окна.
+			y = windowYEnd-1;
+			for (x = windowX; x < windowXEnd; ++x)
+			{
+				//Пробуем найти значимый пиксел.
+				if (sourceMatrix_.getSignMatrixElem(y,x) == 1)
+				{
+					//Нашлось.
+					pixelY = y;
+					pixelX = x;
+					pixelValue = sourceMatrix_.getMatrixElem(y,x);
+					return false;
+				};
+			};
+			//Не нашлось.
+			return true;
+		};
+	};
+
+	//Нельзя сэкономить, окно придётся проверять целиком.
+	for(y = windowY; y < windowYEnd; ++y)
+	{
+		for(x = windowX; x < windowXEnd; ++x)
+		{
+			//Пробуем найти значимый пиксел.
+			if (sourceMatrix_.getSignMatrixElem(y,x) == 1)
+			{
+				//Нашлось.
+				pixelY = y;
+				pixelX = x;
+				pixelValue = sourceMatrix_.getMatrixElem(y,x);
+				return false;
+			};
+		};
+	};
+
+	//Не нашлось.
+	return true;
+}
+
+//Вспомогательный метод для поиска ближайшего к указанному незначимому значимого пикселя. Сначала
+//поиск выполняется по горизонтали и вертикали, только затем по диагоналям. Если найти пиксел не
+//удалось - вернёт false. Если удалось вернёт true, координаты пикселя, направление и дистанцию
+//на него.
+template <typename CellType>
+inline bool RealMedianFilter<CellType>::FillMargins_FindNearestActualPixel(const int &startPixelY,
+	const int &startPixelX, int &resultPixelY, int &resultPixelX, PixelDirection &resultDirection,
+	int &resultDistance)
+{
+	//Имеем 8 возможных направлений. Так что первый цикл будет по самим направлениям.
+	bool searchDone = false;
+	bool currPixelFinded = false;	//Найден ли пиксель в итерации.
+	bool pixelFinded = false;	//Найден ли пиксель вообще.
+	bool justStarted = true;	//<-- это для правильного выставления счётчиков в 1ю итерацию.
+	PixelDirection currDirection;
+	//Начальная найденная дистанция - за пределами картинки. Любая реальная будет меньше.
+	if (sourceMatrix_.getXSize() < sourceMatrix_.getYSize())
+	{
+		resultDistance = sourceMatrix_.getYSize()+1;
+	}
+	else
+	{
+		resultDistance = sourceMatrix_.getXSize()+1;
+	}
+	int currResultDistance, currResultX, currResultY;
+
+	while (!searchDone)
+	{
+		//Выберем направление. Можно было бы инкрементировать enum, но мало ли, вдруг
+		//там порядок изменится. Так что вот так:
+		if (justStarted)
+		{
+			justStarted = false;
+			currDirection = PIXEL_DIR_UP;
+		}
+		else if (currDirection == PIXEL_DIR_UP)
+		{
+			currDirection = PIXEL_DIR_DOWN;
+		}
+		else if (currDirection == PIXEL_DIR_DOWN)
+		{
+			currDirection = PIXEL_DIR_RIGHT;
+		}
+		else if (currDirection == PIXEL_DIR_RIGHT)
+		{
+			currDirection = PIXEL_DIR_LEFT;
+		}
+		else if (currDirection == PIXEL_DIR_LEFT)
+		{
+			currDirection = PIXEL_DIR_UP_RIGHT;
+		}
+		else if (currDirection == PIXEL_DIR_UP_RIGHT)
+		{
+			currDirection = PIXEL_DIR_UP_LEFT;
+		}
+		else if (currDirection == PIXEL_DIR_UP_LEFT)
+		{
+			currDirection = PIXEL_DIR_DOWN_RIGHT;
+		}
+		else if (currDirection == PIXEL_DIR_DOWN_RIGHT)
+		{
+			currDirection = PIXEL_DIR_DOWN_LEFT;
+		}
+
+		//Ищем.
+		currResultY = startPixelY;
+		currResultX = startPixelX;
+		currResultDistance = 0;
+		while ((PixelStep(currResultX, currResultY, currDirection)) && 
+			(currResultDistance < (resultDistance-1)))
+		{
+			++currResultDistance;
+			if (sourceMatrix_.getSignMatrixElem(currResultY, currResultX) == 1)
+			{
+				//Нашёлся значимый пиксель.
+				currPixelFinded = true;
+				break;
+			}
+		}
+		//Если пиксель найден - он точно расположен ближе чем найденный предыдущий, запомним его.
+		if (currPixelFinded)
+		{
+			resultPixelY = currResultY;
+			resultPixelX = currResultX;
+			resultDistance = currResultDistance;
+			resultDirection = currDirection;
+		}
+		//Готовимся к следующей итерации.
+		if (currPixelFinded)
+		{
+			pixelFinded = true;
+			currPixelFinded = false;
+		}
+		if (((currDirection == PIXEL_DIR_LEFT) && pixelFinded) ||
+			(currDirection == PIXEL_DIR_DOWN_LEFT))
+		{
+			//Пиксель был найден по не-диагоналям. Проверять диагонали смысла нет.
+			//Также продолжать поиск нет смысла если проверены уже вообще все направления.
+			searchDone = true;
+		}
+	}
+	//В любом случае - вернуть что получилось.
+	return pixelFinded;
+}
+
 //Заполнить пустые пиксели source-матрицы простым алгоритмом (сплошной цвет).
 template <typename CellType>
 void RealMedianFilter<CellType>::FillMargins_Simple(CallBackBase *callBackObj)
 {
-	FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller,
+	/*FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller,
+		callBackObj);*/
+	FillMargins_EmptyPixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller,
 		callBackObj);
 }
 
@@ -280,7 +680,9 @@ void RealMedianFilter<CellType>::FillMargins_Simple(CallBackBase *callBackObj)
 template <typename CellType>
 void RealMedianFilter<CellType>::FillMargins_Mirror(CallBackBase *callBackObj)
 {
-	FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller,
+	/*FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller,
+		callBackObj);*/
+	FillMargins_EmptyPixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller,
 		callBackObj);
 }
 
@@ -401,7 +803,7 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 
 		//Надо обработать граничные пиксели. Начальная позиция для обработки может быть разной в зависимости
 		//от того как обрабатывается текущий кусок.
-		int fillerYStart, fillerYToProcess;
+		/*int fillerYStart, fillerYToProcess;
 		if (currMM == TOP_MM_FILE2)
 		{
 			fillerYStart = 0;
@@ -413,7 +815,9 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 			fillerYToProcess = filterYToProcess + marginSize;
 		}
 		//Прогрессбар не используем пока там не будет реализована обработка нескольких баров в одном.
-		FillMargins(fillerYStart, fillerYToProcess, NULL);
+		//FillMargins(fillerYStart, fillerYToProcess, NULL);*/
+		//Для переделанного заполнителя обработка граничных пикселей делается тупо целиком.
+		FillMargins(0, filterYToProcess + 2*marginSize);
 		//Также если используется алгоритм Хуанга - нужно обновить квантованную матрицу.
 		if (CurrFilter == &RealMedianFilter<CellType>::HuangFilter)
 		{
@@ -433,8 +837,8 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		}
 
 		//Для отладки - сохраним содержимое матриц.
-		//sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".csv");
-		//QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".csv");
+		sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".csv");
+		QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".csv");
 		//destMatrix_.SaveToCSVFile("dest" + STB.IntToString(debugFileNum, 5) + ".csv");
 		//debugFileNum++;
 
@@ -474,8 +878,8 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		}
 
 		//Для отладки - сохраним содержимое матриц.
-		//sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
-		//QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
+		sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
+		QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
 		//destMatrix_.SaveToCSVFile("dest" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
 	}
 
@@ -1049,11 +1453,15 @@ void RealMedianFilter<CellType>::FillMargins(const int yStart, const int yToProc
 	switch (getOwnerObj().getMarginType())
 	{
 	case MARGIN_SIMPLE_FILLING:
-		FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller, yStart, yToProcess,
-		callBackObj);
+		/*FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller, yStart, yToProcess,
+		callBackObj);*/
+		FillMargins_EmptyPixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller, yStart, yToProcess,
+			callBackObj);
 		break;
 	case MARGIN_MIRROR_FILLING:
-		FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller, yStart, yToProcess,
+		/*FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller, yStart, yToProcess,
+			callBackObj);*/
+		FillMargins_EmptyPixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller, yStart, yToProcess,
 			callBackObj);
 	}
 }

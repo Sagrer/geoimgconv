@@ -180,4 +180,41 @@ MedfilterAlgo MedfilterAlgoStrToEnum(const std::string &inputStr)
 	return MEDFILTER_ALGO_UNKNOWN;
 }
 
+//Получить противоположное направление движения по пикселям.
+PixelDirection RevertPixelDirection(const PixelDirection & value)
+{
+	if (value == PIXEL_DIR_UP)
+	{
+		return PIXEL_DIR_DOWN;
+	}
+	else if (value == PIXEL_DIR_DOWN)
+	{
+		return PIXEL_DIR_UP;
+	}
+	else if (value == PIXEL_DIR_RIGHT)
+	{
+		return PIXEL_DIR_LEFT;
+	}
+	else if (value == PIXEL_DIR_LEFT)
+	{
+		return PIXEL_DIR_RIGHT;
+	}
+	else if (value == PIXEL_DIR_UP_RIGHT)
+	{
+		return PIXEL_DIR_DOWN_LEFT;
+	}
+	else if (value == PIXEL_DIR_DOWN_LEFT)
+	{
+		return PIXEL_DIR_UP_RIGHT;
+	}
+	else if (value == PIXEL_DIR_UP_LEFT)
+	{
+		return PIXEL_DIR_DOWN_RIGHT;
+	}
+	else if (value == PIXEL_DIR_DOWN_RIGHT)
+	{
+		return PIXEL_DIR_UP_LEFT;
+	}
+}
+
 }		//namespace geoimgconv

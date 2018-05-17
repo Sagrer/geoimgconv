@@ -118,7 +118,8 @@ private:
 
 	//Указатель на метод-заполнитель пикселей
 	typedef void(RealMedianFilter<CellType>::*PixFillerMethod)(const int &x,
-		const int &y, const PixelDirection direction, const int &marginSize);
+		const int &y, const PixelDirection direction, const int &marginSize,
+		const char &signMatrixValue);
 
 	//Указатель на метод-фильтр
 	typedef void(RealMedianFilter<CellType>::*FilterMethod)(const int &currYToProcess,
@@ -137,15 +138,56 @@ private:
 
 	//Заполнять пиксели простым алгоритмом в указанном направлении
 	void SimpleFiller(const int &x, const int &y, const PixelDirection direction,
-		const int &marginSize);
+		const int &marginSize, const char &signMatrixValue = 2);
 
 	//Заполнять пиксели зеркальным алгоритмом в указанном направлении
 	void MirrorFiller(const int &x, const int &y, PixelDirection direction,
-		const int &marginSize);
+		const int &marginSize, const char &signMatrixValue = 2);
 
 	//Костяк алгоритма, общий для Simple и Mirror
 	void FillMargins_PixelBasedAlgo(const PixFillerMethod FillerMethod, const int yStart,
 		const int yToProcess, CallBackBase *callBackObj = NULL);
+
+	//Алгоритм заполнения граничных пикселей по незначимым пикселям, общий для Simple и Mirror
+	void FillMargins_EmptyPixelBasedAlgo(const PixFillerMethod FillerMethod, const int yStart,
+		const int yToProcess, CallBackBase *callBackObj = NULL);
+
+	//Вспомогательный метод для прохода по пикселам строки вправо.
+	inline void FillMargins_EmptyPixelBasedAlgo_ProcessToRight(int &y, int &x, int &windowY, int &windowX,
+		int &windowYEnd, int &windowXEnd, int &actualPixelY, int &actualPixelX,
+		PixelDirection &actualPixelDirection, int &actualPixelDistance, CellType &tempPixelValue,
+		bool &windowWasEmpty, int marginSize, const PixFillerMethod FillerMethod);
+
+	//Вспомогательный метод для прохода по пикселам строки влево.
+	inline void FillMargins_EmptyPixelBasedAlgo_ProcessToLeft(int &y, int &x, int &windowY, int &windowX,
+		int &windowYEnd, int &windowXEnd, int &actualPixelY, int &actualPixelX,
+		PixelDirection &actualPixelDirection, int &actualPixelDistance, CellType &tempPixelValue,
+		bool &windowWasEmpty, int marginSize, const PixFillerMethod FillerMethod);
+
+	//Вспомогательный метод для обработки очередного незначимого пикселя при проходе
+	//в указанном направлении (currentDirection).
+	inline void FillMargins_EmptyPixelBasedAlgo_ProcessNextPixel(int &y, int &x, int &windowY,
+		int &windowX, int& windowYEnd, int &windowXEnd, int &actualPixelY, int &actualPixelX,
+		int &actualPixelDistance, PixelDirection &actualPixelDirection,
+		const PixelDirection &currentDirection, bool &windowWasEmpty, CellType &tempPixelValue,
+		const PixFillerMethod FillerMethod);
+
+	//Вспомогательный метод для проверки наличия в окне значимых пикселей. Вернёт true если
+	//значимых пикселей не нашлось. Если нашлось - то false и координаты со значением первого
+	//найденного пикселя (через не-константные ссылочные параметры). Если windowWasEmpty
+	//то воспользуется direction чтобы проверить только одну строчку или колонку, считая что
+	//остальное уже было проверено при предыдущем вызове этого метода.
+	inline bool FillMargins_WindowIsEmpty(const int &windowY, const int &windowX, const int &windowYEnd,
+		const int &windowXEnd, int &pixelY, int &pixelX, CellType &pixelValue,
+		const bool &windowWasEmpty, const PixelDirection &direction) const;
+
+	//Вспомогательный метод для поиска ближайшего к указанному незначимому значимого пикселя. Сначала
+	//поиск выполняется по горизонтали и вертикали, только затем по диагоналям. Если найти пиксел не
+	//удалось - вернёт false. Если удалось вернёт true, координаты пикселя, направление и дистанцию
+	//на него.
+	inline bool FillMargins_FindNearestActualPixel(const int &startPixelY, const int &startPixelX,
+		int &resultPixelY, int &resultPixelX, PixelDirection &resultDirection,
+		int &resultDistance);
 
 	//Заполнить пустые пиксели source-матрицы простым алгоритмом (сплошной цвет).
 	void FillMargins_Simple(CallBackBase *callBackObj = NULL);

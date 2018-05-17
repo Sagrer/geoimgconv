@@ -180,6 +180,9 @@ MarginType MarginTypeStrToEnum(const std::string &inputStr);
 //элементов MedfilterAlgoTexts
 MedfilterAlgo MedfilterAlgoStrToEnum(const std::string &inputStr);
 
+//Получить противоположное направление движения по пикселям.
+PixelDirection RevertPixelDirection(const PixelDirection &value);
+
 //Абстрактный класс для организации вызова калбеков. Можно было бы передавать просто
 //ссылки на функцию, но тогда эти функции будут отвязаны от данных потока в котором
 //должны выполняться. Поэтому имхо проще передать вместо ссылки на функцию ссылку на
