@@ -994,7 +994,7 @@ void RealMedianFilter<CellType>::HuangFilter(const int &currYToProcess, CallBack
 	//Текущее значение медианы
 	boost::uint16_t median;
 	//Количество элементов в гистограмме, которые меньше медианы (т.е. левее её).
-	boost::uint16_t elemsLeftMed;
+	unsigned long elemsLeftMed;
 	//Позиция, в которой по идее должна быть расположена медиана.
 	boost::uint16_t halfMedPos = ((getOwnerObj().getAperture() * getOwnerObj().getAperture()) - 1) / 2;
 	//Признак значимости гистограммы. Изначально гистограмма незначима и её нужно заполнить.
@@ -1047,7 +1047,7 @@ template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_ProcessStringToRight(int &destX, int &destY,
 	int &sourceX, int &sourceY, const int &marginSize, unsigned long &progressPosition,
 	bool &gistIsActual, bool &gistIsEmpty, unsigned long *gist, boost::uint16_t &median,
-	boost::uint16_t &elemsLeftMed, int &oldY, int &oldX, const boost::uint16_t &halfMedPos,
+	unsigned long &elemsLeftMed, int &oldY, int &oldX, const boost::uint16_t &halfMedPos,
 	CallBackBase *callBackObj)
 {
 	for (destX = 0, sourceX = destX + marginSize; destX < destMatrix_.getXSize(); ++destX, ++sourceX)
@@ -1135,7 +1135,7 @@ template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_ProcessStringToLeft(int &destX, int &destY,
 	int &sourceX, int &sourceY, const int &marginSize, unsigned long &progressPosition,
 	bool &gistIsActual, bool &gistIsEmpty, unsigned long *gist, boost::uint16_t &median,
-	boost::uint16_t &elemsLeftMed, int &oldY, int &oldX, const boost::uint16_t &halfMedPos,
+	unsigned long &elemsLeftMed, int &oldY, int &oldX, const boost::uint16_t &halfMedPos,
 	CallBackBase *callBackObj)
 {
 	int lastPixelX = destMatrix_.getXSize()-1;
@@ -1222,7 +1222,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_ProcessStringToLeft(int &des
 //верхнего левого угла апертуры.
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_FillGist(const int &leftUpY, const int &leftUpX,
-	unsigned long *gist, boost::uint16_t &median, boost::uint16_t &elemsLeftMed,
+	unsigned long *gist, boost::uint16_t &median, unsigned long &elemsLeftMed,
 	const boost::uint16_t & halfMedPos)
 {
 	//Счётчики и границы.
@@ -1255,7 +1255,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_FillGist(const int &leftUpY,
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_DoStepRight(const int &leftUpY,
 	const int &leftUpX, unsigned long *gist, const boost::uint16_t &median,
-	boost::uint16_t &elemsLeftMed)
+	unsigned long &elemsLeftMed)
 {
 	//Счётчики и границы.
 	int windowY, windowXLeft, windowXRight , windowYEnd;
@@ -1289,7 +1289,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoStepRight(const int &leftU
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_DoStepLeft(const int &leftUpY,
 	const int &leftUpX, unsigned long *gist, const boost::uint16_t &median,
-	boost::uint16_t &elemsLeftMed)
+	unsigned long &elemsLeftMed)
 {
 	//Счётчики и границы.
 	int windowY, windowXRight, windowYEnd;
@@ -1322,7 +1322,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoStepLeft(const int &leftUp
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_DoStepDown(const int &leftUpY,
 	const int &leftUpX, unsigned long *gist, const boost::uint16_t &median,
-	boost::uint16_t &elemsLeftMed)
+	unsigned long &elemsLeftMed)
 {
 	//Счётчики и границы.
 	int windowX, windowYUp, windowYDown, windowXEnd;
@@ -1356,7 +1356,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoStepDown(const int &leftUp
 //Вспомогательный метод для алгоритма Хуанга. Корректирует медиану.
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_DoMedianCorrection(boost::uint16_t &median,
-	boost::uint16_t &elemsLeftMed, const boost::uint16_t &halfMedPos, unsigned long *gist)
+	unsigned long &elemsLeftMed, const boost::uint16_t &halfMedPos, unsigned long *gist)
 {
 	if (elemsLeftMed > halfMedPos)
 	{
