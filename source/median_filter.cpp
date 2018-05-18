@@ -837,8 +837,8 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		}
 
 		//Для отладки - сохраним содержимое матриц.
-		sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".csv");
-		QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".csv");
+		//sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".csv");
+		//QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".csv");
 		//destMatrix_.SaveToCSVFile("dest" + STB.IntToString(debugFileNum, 5) + ".csv");
 		//debugFileNum++;
 
@@ -878,8 +878,8 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		}
 
 		//Для отладки - сохраним содержимое матриц.
-		sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
-		QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
+		//sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
+		//QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
 		//destMatrix_.SaveToCSVFile("dest" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
 	}
 
@@ -1366,7 +1366,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoMedianCorrection(boost::ui
 			--median;
 			elemsLeftMed -= gist[median];
 		}
-		while (elemsLeftMed > median);
+		while (elemsLeftMed > halfMedPos);
 	}
 	else
 	{
@@ -1377,19 +1377,19 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoMedianCorrection(boost::ui
 			++median;
 		}
 	}
-	//В любом случае теперь имеем корректную медиану.
+	/*//В любом случае теперь имеем корректную медиану.
 	//Проверим правильность корректировки.
 	boost::uint16_t elemsLeftMed_test = 0;
 	boost::uint16_t median_test = 0;
 	while ((elemsLeftMed_test + gist[median_test]) <= halfMedPos)
 	{
-		elemsLeftMed_test += gist[median];
+		elemsLeftMed_test += gist[median_test];
 		++median_test;
 	}
 	if (median != median_test)
 	{
-		//median = median_test;
-	}
+		median = median_test;
+	}*/
 }
 
 //Вспомогательный метод для алгоритма Хуанга. Запись нового значения пикселя в матрицу
