@@ -228,6 +228,12 @@ void RealMedianFilter<CellType>::FillMargins_PixelBasedAlgo(const PixFillerMetho
 	//т.к. они значимыми быть не могут.
 	int x, y, marginSize;
 	marginSize = (getOwnerObj().getAperture() - 1) / 2;
+	//Размер "окна" заполнения увеличен в полтора раза чтобы уменьшить вероятность того что
+	//внутри окна вокруг значимого пикселя всё-же окажутся незаполненные незначимые.
+	//Полностью избежать этого в данном алгоритме нельзя, но алгоритм гарантирующий это на 100%
+	//работает ощутимо медленнее. Небольшие неточности в прочем для медианного фильтра будут
+	//практически непринципиальны.
+	int fillerWindowSize = (int)(marginSize * 1.5);
 	//Настроим объект, выводящий информацию о прогрессе обработки.
 	if (callBackObj)
 		callBackObj->setMaxProgress((sourceMatrix_.getXSize() - marginSize * 2) *
@@ -249,14 +255,14 @@ void RealMedianFilter<CellType>::FillMargins_PixelBasedAlgo(const PixFillerMetho
 				//приоритет над диагональным, т.е. диагональные пикселы будут перезаписаны если
 				//встретятся на пути. Поехали.
 
-				(this->*FillerMethod)(x, y, PIXEL_DIR_UP, marginSize, 2);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN, marginSize, 2);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_RIGHT, marginSize, 2);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_LEFT, marginSize, 2);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_UP_RIGHT, marginSize, 3);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_UP_LEFT, marginSize, 3);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN_RIGHT, marginSize, 3);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN_LEFT, marginSize, 3);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_UP, fillerWindowSize, 2);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN, fillerWindowSize, 2);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_RIGHT, fillerWindowSize, 2);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_LEFT, fillerWindowSize, 2);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_UP_RIGHT, fillerWindowSize, 3);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_UP_LEFT, fillerWindowSize, 3);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN_RIGHT, fillerWindowSize, 3);
+				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN_LEFT, fillerWindowSize, 3);
 				//Сообщение о прогрессе.
 				if (callBackObj) callBackObj->CallBack(progressPosition);
 			}
@@ -670,20 +676,20 @@ inline bool RealMedianFilter<CellType>::FillMargins_FindNearestActualPixel(const
 template <typename CellType>
 void RealMedianFilter<CellType>::FillMargins_Simple(CallBackBase *callBackObj)
 {
-	/*FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller,
-		callBackObj);*/
-	FillMargins_EmptyPixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller,
+	FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller,
 		callBackObj);
+	/*FillMargins_EmptyPixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller,
+		callBackObj);*/
 }
 
 //Заполнить пустые пиксели source-матрицы зеркальным алгоритмом.
 template <typename CellType>
 void RealMedianFilter<CellType>::FillMargins_Mirror(CallBackBase *callBackObj)
 {
-	/*FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller,
-		callBackObj);*/
-	FillMargins_EmptyPixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller,
+	FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller,
 		callBackObj);
+	/*FillMargins_EmptyPixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller,
+		callBackObj);*/
 }
 
 //Применит указанный (ссылкой на метод) фильтр к изображению. Входящий и исходящий файлы
@@ -803,7 +809,7 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 
 		//Надо обработать граничные пиксели. Начальная позиция для обработки может быть разной в зависимости
 		//от того как обрабатывается текущий кусок.
-		/*int fillerYStart, fillerYToProcess;
+		int fillerYStart, fillerYToProcess;
 		if (currMM == TOP_MM_FILE2)
 		{
 			fillerYStart = 0;
@@ -815,9 +821,9 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 			fillerYToProcess = filterYToProcess + marginSize;
 		}
 		//Прогрессбар не используем пока там не будет реализована обработка нескольких баров в одном.
-		//FillMargins(fillerYStart, fillerYToProcess, NULL);*/
-		//Для переделанного заполнителя обработка граничных пикселей делается тупо целиком.
-		FillMargins(0, filterYToProcess + 2*marginSize);
+		FillMargins(fillerYStart, fillerYToProcess, NULL);
+		/*//Для переделанного заполнителя обработка граничных пикселей делается тупо целиком.
+		FillMargins(0, filterYToProcess + 2*marginSize);*/
 		//Также если используется алгоритм Хуанга - нужно обновить квантованную матрицу.
 		if (CurrFilter == &RealMedianFilter<CellType>::HuangFilter)
 		{
@@ -837,8 +843,8 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		}
 
 		//Для отладки - сохраним содержимое матриц.
-		//sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".csv");
-		//QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".csv");
+		sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".csv");
+		QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".csv");
 		//destMatrix_.SaveToCSVFile("dest" + STB.IntToString(debugFileNum, 5) + ".csv");
 		//debugFileNum++;
 
@@ -878,8 +884,8 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		}
 
 		//Для отладки - сохраним содержимое матриц.
-		//sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
-		//QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
+		sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
+		QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
 		//destMatrix_.SaveToCSVFile("dest" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
 	}
 
@@ -1453,16 +1459,16 @@ void RealMedianFilter<CellType>::FillMargins(const int yStart, const int yToProc
 	switch (getOwnerObj().getMarginType())
 	{
 	case MARGIN_SIMPLE_FILLING:
-		/*FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller, yStart, yToProcess,
-		callBackObj);*/
-		FillMargins_EmptyPixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller, yStart, yToProcess,
-			callBackObj);
+		FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller, yStart, yToProcess,
+		callBackObj);
+		/*FillMargins_EmptyPixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller, yStart, yToProcess,
+			callBackObj);*/
 		break;
 	case MARGIN_MIRROR_FILLING:
-		/*FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller, yStart, yToProcess,
-			callBackObj);*/
-		FillMargins_EmptyPixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller, yStart, yToProcess,
+		FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller, yStart, yToProcess,
 			callBackObj);
+		/*FillMargins_EmptyPixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller, yStart, yToProcess,
+			callBackObj);*/
 	}
 }
 
