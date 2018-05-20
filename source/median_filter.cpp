@@ -352,7 +352,7 @@ void RealMedianFilter<CellType>::FillMargins_EmptyPixelBasedAlgo(const PixFiller
 			FillMargins_EmptyPixelBasedAlgo_ProcessNextPixel(y, x, windowY, windowX, windowYEnd, windowXEnd,
 				actualPixelY, actualPixelX, actualPixelDistance, actualPixelDirection, PIXEL_DIR_DOWN,
 				windowWasEmpty, tempPixelValue, FillerMethod);
-		}		
+		}
 	}
 }
 
@@ -635,7 +635,7 @@ inline bool RealMedianFilter<CellType>::FillMargins_FindNearestActualPixel(const
 		currResultY = startPixelY;
 		currResultX = startPixelX;
 		currResultDistance = 0;
-		while ((PixelStep(currResultX, currResultY, currDirection)) && 
+		while ((PixelStep(currResultX, currResultY, currDirection)) &&
 			(currResultDistance < (resultDistance-1)))
 		{
 			++currResultDistance;
@@ -843,8 +843,8 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		}
 
 		//Для отладки - сохраним содержимое матриц.
-		sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".csv");
-		QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".csv");
+		//sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".csv");
+		//QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".csv");
 		//destMatrix_.SaveToCSVFile("dest" + STB.IntToString(debugFileNum, 5) + ".csv");
 		//debugFileNum++;
 
@@ -884,8 +884,8 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		}
 
 		//Для отладки - сохраним содержимое матриц.
-		sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
-		QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
+		//sourceMatrix_.SaveToCSVFile("source" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
+		//QuantedSaveToCSVFile("quanted" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
 		//destMatrix_.SaveToCSVFile("dest" + STB.IntToString(debugFileNum, 5) + ".LASTBLOCK.csv");
 	}
 
@@ -1628,6 +1628,8 @@ void MedianFilterBase::CalcMemSizes()
 	else
 		blockHeight = firstLastBlockHeight;
 	unsigned long long blockWidth = imageSizeX_ + (2 * firstLastBlockHeight);
+	//Надо также учесть размер массивов указателей.
+	unsigned long long matrixArrBlockSize = sizeof(void*) * blockHeight;
 	//Размер пиксела в исходного блока в байтах у нас складывается из размера типа
 	//элементов в матрице и размера элемента вспомогательной матрицы (это 1 байт).
 	//
@@ -1635,14 +1637,17 @@ void MedianFilterBase::CalcMemSizes()
 	unsigned long long minSourceBlockSize;
 	if (useHuangAlgo_)
 	{
-		minSourceBlockSize = blockHeight * blockWidth * (dataTypeSize_ + 3);
+		minSourceBlockSize = (blockHeight * blockWidth * (dataTypeSize_ + 3)) +
+			matrixArrBlockSize * 3;
 	}
 	else
 	{
-		minSourceBlockSize = blockHeight * blockWidth * (dataTypeSize_ + 1);
+		minSourceBlockSize = (blockHeight * blockWidth * (dataTypeSize_ + 1)) +
+			matrixArrBlockSize * 2;
 	}
 	//Размер блока с результатом
-	unsigned long long minDestBlockSize = imageSizeX_ * firstLastBlockHeight * dataTypeSize_;
+	unsigned long long minDestBlockSize = (imageSizeX_ * blockHeight * dataTypeSize_) +
+		matrixArrBlockSize * 2;
 	//Минимальное допустимое количество памяти.
 	minMemSize_ = (3 * minSourceBlockSize) + minDestBlockSize;
 	//Для алгоритма Хуанга - надо ещё учесть размер гистограммы.

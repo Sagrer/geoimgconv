@@ -49,7 +49,7 @@ private:
 	int ySize_;	//--''--
 	CellType **matrixArr_;	//Двумерный массив для произвольного доступа к элементам по X и Y.
 	char **signMatrixArr_;	//то же для произвольного доступа к signData_.
-	boost::uint16_t ** quantedMatrixArr_;  //то же для произвольного доступа к quantedData_.
+	boost::uint16_t **quantedMatrixArr_;  //то же для произвольного доступа к quantedData_.
 	PixelType pixelType_;	//Конструктор запишет сюда значение исходя из типа CellType.
 	bool useSignData_;	//Использовать ли вспомогательную матрицу. Если false - память под неё не выделяется.
 	bool useQuantedData_;  //Аналогично использовать ли quantedData_.
@@ -67,7 +67,7 @@ public:
 	int const& getYSize() const { return ySize_; }
 	void setYSize(const int &ySize) { xSize_ = ySize; }
 	//matrixArr
-	CellType const& getMatrixElem(const int &yCoord, const int &xCoord) const 
+	CellType const& getMatrixElem(const int &yCoord, const int &xCoord) const
 	{
 		return matrixArr_[yCoord][xCoord];
 	}
@@ -108,7 +108,7 @@ public:
 	//вернёт эту инфу и false если что-то пойдёт не так.
 	bool SaveToGDALRaster(GDALRasterBand *gdalRaster, const int &yPosition, const int &yToWrite,
 		ErrorInfo *errObj = NULL) const;
-		
+
 	//Загружает матрицу высот из файла своего формата. Вернёт true если всё ок.
 	bool LoadFromFile(const std::string &fileName, ErrorInfo *errObj = NULL);
 
@@ -117,7 +117,7 @@ public:
 	//Особое отношение к этим блокам т.к. первый из них - возможно был последним в прошлом проходе
 	//фильтра а второй - был граничным. В новом проходе первый блок будет граничным, второй будет
 	//обрабатываться, и его возможно нет смысла второй раз читать из файла.
-	//Матрица уже должна иметь достаточный для загрузки размер. 
+	//Матрица уже должна иметь достаточный для загрузки размер.
 	//gdalRaster - указатель на объект GDALRasterBand исходного изображения.
 	//yPosition - начальная строка в исходном изображении, начиная с которой надо читать.
 	//yToRead - сколько строк читать.
@@ -160,7 +160,7 @@ public:
 
 	//"Тупая" визуализация матрицы, отправляется прямо в cout.
 	void PrintStupidVisToCout() const;
-	
+
 	//Вывод матрицы в csv-файл, который должны понимать всякие картографические
 	//программы. Это значит что каждый пиксел - это одна строка в файле.
 	//Это "тупой" вариант вывода - метаданные нормально не сохраняются.
