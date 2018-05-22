@@ -29,10 +29,9 @@ _______________________________________________________________
 		cmake
 		libboost-all-dev
 		libgdal-dev
-		libicu-dev
 	
 	Делается это примерно такой командой:
-	sudo apt-get install build-essential cmake libboost-all-dev libgdal-dev libicu-dev	
+	sudo apt-get install build-essential cmake libboost-all-dev libgdal-dev
 _______________________________________________________________
 
 	Сборка и установка программы.
