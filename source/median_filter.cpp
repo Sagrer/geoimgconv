@@ -896,6 +896,41 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 	return true;
 }
 
+//Вспомогательный предикат - вернёт true если пиксель в матрице назначения надо заменить медианой и false
+//если пиксель надо просто скопировать из исходной матрицы.
+template<typename CellType>
+inline bool RealMedianFilter<CellType>::UseMedian(const CellType &median, const CellType &pixelValue)
+{
+	//Всё зависит от того включён ли режим заполнения ям.
+	if (getOwnerObj().getFillPits())
+	{
+		//Включён. Используем дельту
+		if (GetDelta(median, pixelValue) < getOwnerObj().getThreshold())
+		{
+			//Копировать.
+			return false;
+		}
+		else
+		{
+			//Использовать медиану
+			return true;
+		}
+	}
+	else
+	{
+		//Выключен. Используем разницу. Медиана должна быть строго меньше чтобы её можно было использовать.
+		if (median < pixelValue)
+		{
+			if ((pixelValue-median) >= getOwnerObj().getThreshold())
+			{
+				return true;
+			}
+		}
+		//Во всех остальных случаях будет копирование исходного пикселя.
+		return false;
+	}
+}
+
 //Метод "никакого" фильтра, который тупо копирует входящую матрицу в исходящую. Нужен для тестирования
 //и отладки. Первый аргумент указывает количество строк матрицы для реальной обработки.
 template <typename CellType>
@@ -973,17 +1008,19 @@ void RealMedianFilter<CellType>::StupidFilter(const int &currYToProcess,
 			//Сортируем, берём медиану из середины. Точностью поиска середины не
 			//заморачиваемся т.к. окна будут большие, в десятки пикселов.
 			std::nth_element(medianArr, medianPos, medianArrEnd);
-			if (GetDelta(*medianPos, sourceMatrix_.getMatrixElem(sourceY, sourceX))
-				< getOwnerObj().getThreshold())
+			//Записываем в матрицу назначения либо медиану либо исходный пиксель, смотря
+			//что там с порогом, с разницей между пикселем и медианой и включён ли режим
+			//заполнения ям.
+			if (UseMedian(*medianPos, sourceMatrix_.getMatrixElem(sourceY, sourceX)))
 			{
-				//Отличие от медианы меньше порогового. Просто копируем пиксел.
-				destMatrix_.setMatrixElem(destY, destX,
-					sourceMatrix_.getMatrixElem(sourceY, sourceX));
+				//Медиана.
+				destMatrix_.setMatrixElem(destY, destX, *medianPos);				
 			}
 			else
 			{
-				//Отличие больше порогового - записываем в dest-пиксель медиану.
-				destMatrix_.setMatrixElem(destY, destX, *medianPos);
+				//Просто копируем пиксел.
+				destMatrix_.setMatrixElem(destY, destX,
+					sourceMatrix_.getMatrixElem(sourceY, sourceX));
 			};
 			//Сообщить вызвавшему коду прогресс выполнения.
 			if (callBackObj) callBackObj->CallBack(progressPosition);
@@ -1408,21 +1445,21 @@ inline void RealMedianFilter<CellType>::HuangFilter_WriteDestPixel(const int &de
 	const int &sourceY,	const int &sourceX,	const boost::uint16_t &median)
 {
 	CellType newValue = QuantedValueToPixelValue(median);
-	if (GetDelta(newValue, sourceMatrix_.getMatrixElem(sourceY, sourceX))
-		< getOwnerObj().getThreshold())
+
+	//Записываем в матрицу назначения либо медиану либо исходный пиксель, смотря
+	//что там с порогом, с разницей между пикселем и медианой и включён ли режим
+	//заполнения ям.
+	if (UseMedian(newValue, sourceMatrix_.getMatrixElem(sourceY, sourceX)))
 	{
-		//Отличие от медианы меньше порогового. Просто копируем пиксел.
-		destMatrix_.setMatrixElem(destY, destX,
-			sourceMatrix_.getMatrixElem(sourceY, sourceX));
+		//Медиана.
+		destMatrix_.setMatrixElem(destY, destX, newValue);
 	}
 	else
 	{
-		//Отличие больше порогового - записываем в dest-пиксель медиану.
-		destMatrix_.setMatrixElem(destY, destX, newValue);
+		//Просто копируем пиксел.
+		destMatrix_.setMatrixElem(destY, destX,
+			sourceMatrix_.getMatrixElem(sourceY, sourceX));
 	};
-	//TEST - пишем просто квантованный пиксел.
-	/*destMatrix_.setMatrixElem(destY, destX,
-		QuantedValueToPixelValue(sourceMatrix_.getQuantedMatrixElem(sourceY, sourceX)));*/
 }
 
 //Метод вычисляет минимальную и максимальную высоту в открытом изображении если это вообще нужно.
@@ -1584,7 +1621,8 @@ marginType_(DEFAULT_MEDFILTER_MARGIN_TYPE), useMemChunks_(false), blocksInMem_(0
 destFileName_(""), imageSizeX_(0), imageSizeY_(0), imageIsLoaded_(false), sourceIsAttached_(false),
 destIsAttached_(false), dataType_(PIXEL_UNKNOWN), dataTypeSize_(0), pFilterObj_(NULL), minBlockSize_(0),
 minMemSize_(0), gdalSourceDataset_(NULL), gdalDestDataset_(NULL), gdalSourceRaster_(NULL),
-gdalDestRaster_(NULL), currPositionY_(0), useHuangAlgo_(useHuangAlgo), huangLevelsNum_(huangLevelsNum)
+gdalDestRaster_(NULL), currPositionY_(0), useHuangAlgo_(useHuangAlgo), huangLevelsNum_(huangLevelsNum),
+fillPits_(false)
 {
 
 }

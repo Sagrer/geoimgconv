@@ -52,8 +52,9 @@ AppConfig::AppConfig(unsigned short helpLineLength) : inputFileNameCfg_(DEFAULT_
 	medfilterAlgoCfg_(DEFAULT_MEDFILTER_ALGO), medfilterAlgoCfgIsSaving_(false),
 	medfilterAlgoCmdIsSet_(false), medfilterHuangLevelsNumCfg_(DEFAULT_HUANG_LEVELS_NUM),
 	medfilterHuangLevelsNumCfgIsSaving_(false), medfilterHuangLevelsNumCmdIsSet_(false),
-	appModeCfg_(DEFAULT_APP_MODE), appModeCfgIsSaving_(false), appModeCmdIsSet_(false),
-	memModeCfg_(DEFAULT_MEM_MODE), memSizeCfg_(0), memModeCfgIsSaving_(false),
+	medfilterFillPitsCfg_(DEFAULT_MEDFILTER_FILL_PITS), medfilterFillPitsCfgIsSaving_(false),
+	medfilterFillPitsCmdIsSet_(false),	appModeCfg_(DEFAULT_APP_MODE), appModeCfgIsSaving_(false),
+	appModeCmdIsSet_(false), memModeCfg_(DEFAULT_MEM_MODE), memSizeCfg_(0), memModeCfgIsSaving_(false),
 	memModeCmdIsSet_(false), helpAsked_(false), versionAsked_(false), argc_(0), argv_(NULL),
 	appPath_(""), currPath_(""), helpParamsDesc_(NULL), helpLineLength_(helpLineLength)
 {
@@ -97,6 +98,7 @@ void AppConfig::FillBasePO_()
 		("medfilter.margintype", po::value<std::string>(), "")
 		("medfilter.algo", po::value<std::string>(), "")
 		("medfilter.huanglevels", po::value<boost::uint16_t>(), "")
+		("medfilter.fillpits", "")
 		("appmode", po::value<std::string>(), "")
 		("memmode", po::value<std::string>(), "")
 		("test","")	//Не документировать эту опцию в справку юзера! Только для разработки.
@@ -186,6 +188,11 @@ void AppConfig::FillDependentPO_()
 параметр равен " + boost::lexical_cast<std::string>(DEFAULT_HUANG_LEVELS_NUM) + ". Максимально \
 возможное значение этого параметра: " + boost::lexical_cast<std::string>
 (HUANG_MAX_LEVELS_NUM) + ".").c_str())
+		("medfilter.fillpits", STB.Utf8ToSelectedCharset("Включить заполнение ям в медианном фильтре. \
+Смысл в том, что если точка рельефа находится значительно ниже медианы, то при данной включённой опции \
+данная точка станет равна медиане, но обычно это не имеет смысла т.к. алгоритм обычно применяется для \
+срезания с карты высот растительности и различного техногена, а вовсе не для заполнения ям и оврагов. \
+По умолчанию эта опция отключена в отличие от предыдущих версий (в которых этой опции не было).").c_str())
 //		("appmode", po::value<std::string>(),STB.Utf8ToSelectedCharset("Режим работы \
 //программы. На данный момент единственный работающий вариант - median.").c_str())
 		("memmode", po::value<std::string>(), STB.Utf8ToSelectedCharset("Режим использования \
@@ -423,6 +430,11 @@ medfilter.huanglevels не может иметь значение меньше �
 				return false;
 			}
 			medfilterHuangLevelsNumCmdIsSet_ = true;
+		};
+		if (poVarMap_.count("medfilter.fillpits"))
+		{
+			medfilterFillPitsCmd_ = true;
+			medfilterFillPitsCmdIsSet_ = true;
 		};
 		if (poVarMap_.count("memmode"))
 		{

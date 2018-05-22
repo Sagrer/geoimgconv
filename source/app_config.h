@@ -87,6 +87,12 @@ private:
 	boost::uint16_t medfilterHuangLevelsNumCmd_;
 	bool medfilterHuangLevelsNumCfgIsSaving_;
 	bool medfilterHuangLevelsNumCmdIsSet_;
+
+	//Заполняет ли медианный фильтр ямы.
+	bool medfilterFillPitsCfg_;
+	bool medfilterFillPitsCmd_;
+	bool medfilterFillPitsCfgIsSaving_;
+	bool medfilterFillPitsCmdIsSet_;
 	
 	//Режим работы программы.
 	AppMode appModeCfg_;
@@ -275,6 +281,28 @@ public:
 		medfilterHuangLevelsNumCfg_ = value;
 		medfilterHuangLevelsNumCfgIsSaving_ = true;
 		medfilterHuangLevelsNumCmdIsSet_ = false;
+	};
+
+	//medfilterFillPits
+	bool const& getMedfilterFillPits() const
+	{
+		if (medfilterFillPitsCmdIsSet_)
+			return medfilterFillPitsCmd_;
+		else return medfilterFillPitsCfg_;
+	};
+	bool const& getMedfilterFillPitsCfg() const
+	{
+		return medfilterFillPitsCfg_;
+	};
+	bool const& getMedfilterFillPitsIsSaving() const
+	{
+		return medfilterFillPitsCfgIsSaving_;
+	};
+	void setMedfilterFillPits(const bool &value)
+	{
+		medfilterFillPitsCfg_ = value;
+		medfilterFillPitsCfgIsSaving_ = true;
+		medfilterFillPitsCmdIsSet_ = false;
 	};
 	
 	//appMode

@@ -210,6 +210,10 @@ private:
 	//уже должны быть подключены. Вернёт false и инфу об ошибке если что-то пойдёт не так.
 	bool ApplyFilter(FilterMethod CurrFilter, CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
 
+	//Вспомогательный предикат - вернёт true если пиксель в матрице назначения надо заменить медианой и false
+	//если пиксель надо просто скопировать из исходной матрицы.
+	inline bool UseMedian(const CellType &median, const CellType &pixelValue);
+
 	//Метод "никакого" фильтра, который тупо копирует входящую матрицу в исходящую. Нужен для тестирования
 	//и отладки. Первый аргумент указывает количество строк матрицы для реальной обработки.
 	void StubFilter(const int &currYToProcess, CallBackBase *callBackObj = NULL);
@@ -466,6 +470,7 @@ private:
 	int currPositionY_;	//Позиция "курсора" при чтении\записи очередных блоков из файла.
 	bool useHuangAlgo_;	//Если true то размеры блоков памяти будут считаться для алгоритма Хуанга.
 	boost::uint16_t huangLevelsNum_;	//Количество уровней квантования для алгоритма Хуанга. Имеет значение для подсчёта размера требуемой памяти.
+	bool fillPits_;	//Заполнять ли "ямы" т.е. точки, которые ниже медианы.
 
 	//Приватные методы
 
@@ -543,6 +548,9 @@ public:
 	bool const& getUseHuangAlgo() const { return useHuangAlgo_; }
 	//huangLevelsNum
 	const boost::uint16_t& getHuangLevelsNum() const { return huangLevelsNum_; }
+	//fillPits
+	const bool& getFillPits() const { return fillPits_; }
+	void setFillPits(const bool &value) { fillPits_ = value; }
 
 	//Конструкторы-деструкторы
 	MedianFilterBase(bool useHuangAlgo = false, boost::uint16_t huangLevelsNum = DEFAULT_HUANG_LEVELS_NUM);

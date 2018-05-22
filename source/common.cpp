@@ -49,6 +49,8 @@ const MemoryMode DEFAULT_MEM_MODE = MEMORY_MODE_AUTO;
 const MedfilterAlgo DEFAULT_MEDFILTER_ALGO = MEDFILTER_ALGO_STUPID;
 //Количество уровней квантования для алгоритма Хуанга по умолчанию
 const boost::uint16_t DEFAULT_HUANG_LEVELS_NUM = 10000;
+//Включён ли по умолчанию режим заполнения ям в медианном фильтре.
+const bool DEFAULT_MEDFILTER_FILL_PITS = false;
 //Максимально возможное количество уровней квантования для алгоритма Хуанга.
 const boost::uint16_t HUANG_MAX_LEVELS_NUM = -1; //65535
 

@@ -606,14 +606,17 @@ int AppUIConsole::RunApp()
 	if (confObj_->getMedfilterAlgo() == MEDFILTER_ALGO_STUB)
 	{
 		medFilter_ = new MedianFilterStub();
+		PrintToConsole("\nБудет применяться медианный фильтр: stub (имитация).\n");
 	}
 	else if (confObj_->getMedfilterAlgo() == MEDFILTER_ALGO_STUPID)
 	{
 		medFilter_ = new MedianFilterStupid();
+		PrintToConsole("\nБудет применяться медианный фильтр: stupid (реализация \"в лоб\").\n");
 	}
 	else if (confObj_->getMedfilterAlgo() == MEDFILTER_ALGO_HUANG)
 	{
 		medFilter_ = new MedianFilterHuang(confObj_->getMedfilterHuangLevelsNum());
+		PrintToConsole("\nБудет применяться медианный фильтр: huang (быстрый алгоритм Хуанга).\n");
 	}
 	else
 	{
@@ -622,6 +625,18 @@ int AppUIConsole::RunApp()
 		ConsolePrintError(errObj);
 		return 1;
 	};
+	//При необходимости включим режим заполнения ям (фактически это будет обычный медианный фильтр).
+	PrintToConsole("Режим заполнения ям: ");
+	if (confObj_->getMedfilterFillPits())
+	{
+		medFilter_->setFillPits(true);
+		PrintToConsole("включен.\n\n");
+	}
+	else
+	{
+		medFilter_->setFillPits(false);
+		PrintToConsole("отключен.\n\n");
+	}
 	//Настраиваем медианный фильтр и пути к файлам.
 	filesystem::path inputFilePath = filesystem::absolute(STB.Utf8ToWstring(confObj_->getInputFileName()), STB.Utf8ToWstring(getCurrPath()));
 	filesystem::path outputFilePath = filesystem::absolute(STB.Utf8ToWstring(confObj_->getOutputFileName()), STB.Utf8ToWstring(getCurrPath()));
