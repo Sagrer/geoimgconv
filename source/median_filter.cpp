@@ -1630,24 +1630,32 @@ void MedianFilterBase::CalcMemSizes()
 	unsigned long long blockWidth = imageSizeX_ + (2 * firstLastBlockHeight);
 	//Надо также учесть размер массивов указателей.
 	unsigned long long matrixArrBlockSize = sizeof(void*) * blockHeight;
-	//Размер пиксела в исходного блока в байтах у нас складывается из размера типа
+	//Размер пиксела в исходном блоке в байтах у нас складывается из размера типа
 	//элементов в матрице и размера элемента вспомогательной матрицы (это 1 байт).
-	//
-	//Размер исходного блока - зависит от того используем ли алгоритм Хуанга.
-	unsigned long long minSourceBlockSize;
+	//Плюс возможно сюда добавятся структуры данных для алгоритма Хуанга.
+	unsigned long long additionalBytesPerElem = 0;
+	unsigned char matrixArrBlocksNum = 2;
 	if (useHuangAlgo_)
 	{
-		minSourceBlockSize = (blockHeight * blockWidth * (dataTypeSize_ + 3)) +
-			matrixArrBlockSize * 3;
+		//Если используется алгоритм Хуанга - потребуется дополнительная матрица с элементами
+		//по 2 байта. matrixArrBlockSize будет нужно тоже на 1 больше.
+		additionalBytesPerElem = 2;
+		++matrixArrBlocksNum;
 	}
-	else
-	{
-		minSourceBlockSize = (blockHeight * blockWidth * (dataTypeSize_ + 1)) +
-			matrixArrBlockSize * 2;
-	}
+	//Итого, размер исходного блока:
+	unsigned long long minSourceBlockSize = (blockHeight * blockWidth * (dataTypeSize_ + 1 +
+		additionalBytesPerElem)) + matrixArrBlockSize * matrixArrBlocksNum;
+	//Важный момент - поскольку GDAL в момент чтения инфы может аллоцировать памяти от 0 до 100%
+	//от объёма памяти, нужного под dest-матрицу - умножим на коэффициент размер dest-блока. И позже
+	//при вычислении максимального расхода памяти это тоже учтём. Может конечно получиться такое, что
+	//программа будет потреблять меньше памяти чем могла бы при сохранении эффективности, но неиллюзорная
+	//опасность выйти за пределы адресного пространства на 32 битах гораздо опаснее, да и в своппинг уйти
+	//тоже не сильно весело.
+	long double destMatrCoeff = 2.3;
 	//Размер блока с результатом
 	unsigned long long minDestBlockSize = (imageSizeX_ * blockHeight * dataTypeSize_) +
 		matrixArrBlockSize * 2;
+	minDestBlockSize = (unsigned long long)((long double)minDestBlockSize * destMatrCoeff);
 	//Минимальное допустимое количество памяти.
 	minMemSize_ = (3 * minSourceBlockSize) + minDestBlockSize;
 	//Для алгоритма Хуанга - надо ещё учесть размер гистограммы.
@@ -1664,8 +1672,8 @@ void MedianFilterBase::CalcMemSizes()
 	minBlockSize_ = minSourceBlockSize + minDestBlockSize;
 	//Общее количество памяти, которое может потребоваться для для работы над изображением.
 	maxMemSize_ = (2 * minSourceBlockSize) +		//2 граничных source-блока
-		(imageSizeX_ * imageSizeY_ * dataTypeSize_) +	//dest-матрица
-		(blockWidth * imageSizeY_ * (dataTypeSize_ + 1));	//остальная source-матрица.
+		(unsigned long long)((long double)(imageSizeX_ * imageSizeY_ * dataTypeSize_) * destMatrCoeff) + //dest-матрица
+		(blockWidth * imageSizeY_ * (dataTypeSize_ + 1 + additionalBytesPerElem));	//остальная source-матрица.
 
 }
 

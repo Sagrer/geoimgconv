@@ -668,11 +668,11 @@ int AppUIConsole::RunApp()
 	//PrintToConsole("Устарела и пока не работает :(\n\n");
 	PrintToConsole("Готово. Начинаю обработку...\n\n");
 
-	PrintToConsole("Программа будет обрабатывать файл, используя " +
+	PrintToConsole("Программа будет обрабатывать файл, используя до " +
 		STB.BytesNumToInfoSizeStr(maxMemCanBeUsed_) + " памяти, частями по\n" +
 		lexical_cast<std::string>(maxBlocksCanBeUsed_) + " блока(ов).\n");
 	if (confObj_->getMemMode() != MEMORY_MODE_ONECHUNK)
-		PrintToConsole("Размер блока: " + STB.BytesNumToInfoSizeStr(medFilter_->getMinBlockSize()) + ".\n");
+		PrintToConsole("Размер блока: до " + STB.BytesNumToInfoSizeStr(medFilter_->getMinBlockSize()) + ".\n");
 	cout << endl;
 
 	//Собственно, запуск фильтра.
