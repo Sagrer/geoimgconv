@@ -214,6 +214,7 @@ PixelDirection RevertPixelDirection(const PixelDirection & value)
 	{
 		return PIXEL_DIR_UP_LEFT;
 	}
+	else return PIXEL_DIR_UNKNOWN;
 }
 
 }		//namespace geoimgconv

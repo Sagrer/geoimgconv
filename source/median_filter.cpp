@@ -228,12 +228,15 @@ void RealMedianFilter<CellType>::FillMargins_PixelBasedAlgo(const PixFillerMetho
 	//т.к. они значимыми быть не могут.
 	int x, y, marginSize;
 	marginSize = (getOwnerObj().getAperture() - 1) / 2;
-	//Размер "окна" заполнения увеличен в полтора раза чтобы уменьшить вероятность того что
+	/*//Размер "окна" заполнения увеличен в полтора раза чтобы уменьшить вероятность того что
 	//внутри окна вокруг значимого пикселя всё-же окажутся незаполненные незначимые.
 	//Полностью избежать этого в данном алгоритме нельзя, но алгоритм гарантирующий это на 100%
 	//работает ощутимо медленнее. Небольшие неточности в прочем для медианного фильтра будут
 	//практически непринципиальны.
-	int fillerWindowSize = (int)(marginSize * 1.5);
+	int fillerWindowSize = (int)(marginSize * 1.5);*/
+	//Но при сильном разбиении изображения на куски это похоже создаёт больше проблем чем пользы :(
+	//Поэтому вот так. В этом варианте деформаций всё же меньше.
+	int fillerWindowSize = marginSize;
 	//Настроим объект, выводящий информацию о прогрессе обработки.
 	if (callBackObj)
 		callBackObj->setMaxProgress((sourceMatrix_.getXSize() - marginSize * 2) *
@@ -724,7 +727,7 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 	int currYToProcess, filterYToProcess;
 	bool needRecalc = true;
 	int currBlocksToProcess = getOwnerObj().getBlocksInMem() - 1;
-	int debugFileNum = 1;	//Для отладочного сохранения.
+	//int debugFileNum = 1;	//Для отладочного сохранения.
 	int writeYPosition = 0;
 	for (getOwnerObj().setCurrPositionY(0); getOwnerObj().getCurrPositionY()
 		< getOwnerObj().getImageSizeY(); getOwnerObj().setCurrPositionY(

@@ -64,7 +64,8 @@ enum PixelDirection
 	PIXEL_DIR_UP_RIGHT,
 	PIXEL_DIR_UP_LEFT,
 	PIXEL_DIR_DOWN_RIGHT,
-	PIXEL_DIR_DOWN_LEFT
+	PIXEL_DIR_DOWN_LEFT,
+	PIXEL_DIR_UNKNOWN
 };
 
 //Режим работы программы, задаваемый при запуске
