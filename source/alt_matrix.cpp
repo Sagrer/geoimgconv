@@ -241,7 +241,7 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 		else if (useSignData_)
 			memset(signData_, 0, blocksSize);
 		if (useQuantedData_ && sourceMatrix->useQuantedData_)
-			memcpy(quantedData_, (boost::uint16_t*)sourceMatrix->signData_ + sourceOffset,
+			memcpy(quantedData_, (boost::uint16_t*)sourceMatrix->quantedData_ + sourceOffset,
 				blocksQuantedBytes);
 		else if (useQuantedData_)
 			memset(quantedData_, 0, blocksQuantedBytes);
