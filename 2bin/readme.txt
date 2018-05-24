@@ -168,8 +168,8 @@ _______________________________________________________________
 		* libwinpthread-1 v.git-6.0.0.5098.2464b7e6-1.
 	* Прочее:
 		* boost v. 1.66. http://www.boost.org/
-		* gdal v. 2.2.3. http://site.icu-project.org/
-		* libiconv v. 1.15. http://www.gdal.org/
+		* gdal v. 2.2.3. http://www.gdal.org/
+		* libiconv v. 1.15. https://www.gnu.org/software/libiconv/
 _______________________________________________________________
 This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
