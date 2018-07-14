@@ -2,7 +2,7 @@
 ##                                                       ##
 ##                  GeoImageConverter                    ##
 ##       Преобразователь изображений с геоданными        ##
-##       Copyright © 2017 Александр (Sagrer) Гриднев     ##
+##    Copyright © 2017-2018 Александр (Sagrer) Гриднев   ##
 ##              Распространяется на условиях             ##
 ##                 GNU GPL v3 или выше                   ##
 ##                  см. файл gpl.txt                     ##
@@ -26,8 +26,8 @@ set(CMAKE_CODEBLOCKS_EXCLUDE_EXTERNAL_FILES ON)
 #Подключаем локальную директорию с модулями CMake.
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
 
-#Включим требование к стандарту с++11
-set(CMAKE_CXX_STANDARD 11)
+#Включим требование к стандарту с++14
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #Проект.
