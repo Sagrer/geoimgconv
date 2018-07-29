@@ -28,6 +28,7 @@ copy /Y %DevLibsVs2017_x64%\lib\boost_thread*.dll Debug\
 copy /Y %DevLibsVs2017_x64%\lib\boost_filesystem*.dll Debug\
 copy /Y %DevLibsVs2017_x64%\lib\boost_date_time*.dll Debug\
 copy /Y %DevLibsVs2017_x64%\lib\boost_program_options*.dll Debug\
+copy /Y %DevLibsVs2017_x64%\lib\boost_unit_test_framework*.dll Debug\
 copy /Y %DevLibsVs2017_x64%\bin\icuuc*.dll Debug\
 copy /Y %DevLibsVs2017_x64%\bin\icudt*.dll Debug\
 copy /Y %DevLibsVs2017_x64%\bin\icuin*.dll Debug\

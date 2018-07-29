@@ -38,6 +38,7 @@ copy /Y %DevLibsMingw64%\lib\libboost_chrono*.dll bin\
 copy /Y %DevLibsMingw64%\lib\libboost_thread*.dll bin\
 copy /Y %DevLibsMingw64%\lib\libboost_filesystem*.dll bin\
 copy /Y %DevLibsMingw64%\lib\libboost_program_options*.dll bin\
+copy /Y %DevLibsMingw64%\lib\libboost_unit_test_framework*.dll bin\
 copy /Y %DevLibsMingw64%\lib\icuuc?*.dll bin\
 copy /Y %DevLibsMingw64%\lib\icudt?*.dll bin\
 copy /Y %DevLibsMingw64%\lib\icuin?*.dll bin\

@@ -30,8 +30,12 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-#Проект.
-project(geoimgconv VERSION 0.0.1 LANGUAGES CXX C)
+#Проект с юнит-тестами.
+enable_testing()
+project(geoimgconv_tests VERSION 0.4.1 LANGUAGES CXX C)
+#Основной проект. Должен быть объявлен последним, т.к. отсюда берётся
+#имя файла проекта разными генераторами всяких там sln и cbp для IDE-шек.
+project(geoimgconv VERSION 0.4.1 LANGUAGES CXX C)
 
 ##Для gcc особо указать отладочные флаги.
 #if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -57,7 +61,7 @@ if(WIN32)
 	#лютые глюки в boost::locale и фасетах.
 	set(Boost_USE_STATIC_LIBS OFF)
 endif()
-find_package(Boost COMPONENTS locale system chrono thread filesystem date_time program_options REQUIRED)
+find_package(Boost COMPONENTS locale system chrono thread filesystem date_time program_options unit_test_framework REQUIRED)
 if(MSVC)
 	link_directories(${Boost_LIBRARY_DIRS})
 endif()
@@ -80,6 +84,14 @@ add_executable(geoimgconv
 	common.h
 	app_config.cpp
 	app_config.h)
+
+#Список файлов с юнит-тестами.
+add_executable(geoimgconv_tests
+	tests/main_tests.cpp
+	tests/median_filter_tests.cpp)
+	
+#Добавляем тест в виде запуска тестового приложения.
+add_test (geoimgconv_tests geoimgconv_tests)
 	
 #Подключаем библиотеки
 ##Curses - пока не нужно.
@@ -103,8 +115,10 @@ add_executable(geoimgconv
 
 #Boost. dynamic_linking - для принудительной динамической линковки под Visual Studio.
 include_directories(${Boost_INCLUDE_DIRS})
-target_link_libraries(geoimgconv Boost::locale Boost::system Boost::chrono Boost::thread Boost::filesystem
-	Boost::date_time Boost::program_options Boost::dynamic_linking)
+set(BOOST_LIBS_TO_LINK Boost::locale Boost::system Boost::chrono Boost::thread Boost::filesystem
+	Boost::date_time Boost::program_options Boost::dynamic_linking Boost::unit_test_framework)
+target_link_libraries(geoimgconv ${BOOST_LIBS_TO_LINK})
+target_link_libraries(geoimgconv_tests ${BOOST_LIBS_TO_LINK})
 #При необходимости добавим define, отключающий ругань буста на компиллятор.
 if(BOOST_SUPR_OUTDATED)
 	add_definitions(-DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
@@ -119,6 +133,7 @@ endif()
 find_package(GDAL REQUIRED)
 include_directories(${GDAL_INCLUDE_DIR})
 target_link_libraries(geoimgconv ${GDAL_LIBRARY})
+target_link_libraries(geoimgconv_tests ${GDAL_LIBRARY})
 
 if(WIN32)
 	if("${CMAKE_SIZEOF_VOID_P}" STREQUAL "4")
@@ -137,8 +152,22 @@ include(cotire)
 #Запрещаем cotire использовать unity build т.к. он ускоряет скорее только полную сборку а не
 #сборку отдельных изменившихся файлов + создаёт кучу проблем.
 set_target_properties(geoimgconv PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
+set_target_properties(geoimgconv_tests PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
 #Добавляем в прекомпилированный заголовок редко изменяющиеся заголовки из состава файлов проекта.
 set_target_properties(geoimgconv PROPERTIES
 	COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/small_tools_box.h")
-#Включаем cotire для проекта.
+set_target_properties(geoimgconv_tests PROPERTIES
+	COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/small_tools_box.h")
+#Запрещаем включать заголовки Boost для тестов, иначе всё ломается. Cotire не умеет тут в регулярки,
+#приходится приклеивать путь ко всем возможным путям-инклудам в цикле.
+get_property(ALL_INCLUDE_DIRECTORIES DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
+set(COTIRE_TEST_IGNORE "")
+foreach(CURR_DIR ${ALL_INCLUDE_DIRECTORIES})
+	list(APPEND COTIRE_TEST_IGNORE "${CURR_DIR}/boost;")
+endforeach(CURR_DIR)
+message(${COTIRE_TEST_IGNORE})
+set_target_properties(geoimgconv_tests PROPERTIES
+	COTIRE_PREFIX_HEADER_IGNORE_PATH "${COTIRE_TEST_IGNORE}")
+#Включаем cotire для проектов.
 cotire(geoimgconv)
+cotire(geoimgconv_tests)
