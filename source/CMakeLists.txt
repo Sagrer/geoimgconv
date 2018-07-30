@@ -30,11 +30,10 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-#Проект с юнит-тестами.
+#Будут использоваться тесты.
 enable_testing()
-project(geoimgconv_tests VERSION 0.4.1 LANGUAGES CXX C)
-#Основной проект. Должен быть объявлен последним, т.к. отсюда берётся
-#имя файла проекта разными генераторами всяких там sln и cbp для IDE-шек.
+
+#Проект.
 project(geoimgconv VERSION 0.4.1 LANGUAGES CXX C)
 
 ##Для gcc особо указать отладочные флаги.
@@ -66,9 +65,11 @@ if(MSVC)
 	link_directories(${Boost_LIBRARY_DIRS})
 endif()
 
-#Список входящих в проект файлов.
-add_executable(geoimgconv 
-	main.cpp
+#Список входящих в проект файлов. Основная часть файлов выделена в отдельную статическкую
+#библиотеку чтобы cotire не бунтовал при компилляции одних и тех же cpp в разные executable.
+#С этой же библиотекой будут линковаться и все прочие библиотеки. В основном executable
+#должен остаться только main.
+add_library(geoimgconv_lib STATIC
 	small_tools_box.cpp
 	small_tools_box.h
 	appui_console.cpp
@@ -84,14 +85,20 @@ add_executable(geoimgconv
 	common.h
 	app_config.cpp
 	app_config.h)
+add_executable(geoimgconv 
+	main.cpp)
 
 #Список файлов с юнит-тестами.
 add_executable(geoimgconv_tests
 	tests/main_tests.cpp
 	tests/median_filter_tests.cpp)
 	
+#Линкуем основную библиотеку к двум получающимся бинарникам.
+target_link_libraries(geoimgconv geoimgconv_lib)
+target_link_libraries(geoimgconv_tests geoimgconv_lib)
+	
 #Добавляем тест в виде запуска тестового приложения.
-add_test (geoimgconv_tests geoimgconv_tests)
+add_test(geoimgconv_tests geoimgconv_tests)
 	
 #Подключаем библиотеки
 ##Curses - пока не нужно.
@@ -113,12 +120,13 @@ add_test (geoimgconv_tests geoimgconv_tests)
 #	target_link_libraries(geoimgconv ${CURSES_LIBRARIES})
 #endif()
 
-#Boost. dynamic_linking - для принудительной динамической линковки под Visual Studio.
+#Boost.
+#dynamic_linking - для принудительной динамической линковки под Visual Studio.
 include_directories(${Boost_INCLUDE_DIRS})
-set(BOOST_LIBS_TO_LINK Boost::locale Boost::system Boost::chrono Boost::thread Boost::filesystem
-	Boost::date_time Boost::program_options Boost::dynamic_linking Boost::unit_test_framework)
-target_link_libraries(geoimgconv ${BOOST_LIBS_TO_LINK})
-target_link_libraries(geoimgconv_tests ${BOOST_LIBS_TO_LINK})
+target_link_libraries(geoimgconv_lib Boost::locale Boost::system Boost::chrono Boost::thread Boost::filesystem
+	Boost::date_time Boost::program_options Boost::dynamic_linking)
+#К тестовому проекту нужно прилинковать дополнительно Boost.Test.
+target_link_libraries(geoimgconv_tests Boost::unit_test_framework)
 #При необходимости добавим define, отключающий ругань буста на компиллятор.
 if(BOOST_SUPR_OUTDATED)
 	add_definitions(-DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
@@ -132,8 +140,7 @@ endif()
 #GDAL
 find_package(GDAL REQUIRED)
 include_directories(${GDAL_INCLUDE_DIR})
-target_link_libraries(geoimgconv ${GDAL_LIBRARY})
-target_link_libraries(geoimgconv_tests ${GDAL_LIBRARY})
+target_link_libraries(geoimgconv_lib ${GDAL_LIBRARY})
 
 if(WIN32)
 	if("${CMAKE_SIZEOF_VOID_P}" STREQUAL "4")
@@ -152,9 +159,12 @@ include(cotire)
 #Запрещаем cotire использовать unity build т.к. он ускоряет скорее только полную сборку а не
 #сборку отдельных изменившихся файлов + создаёт кучу проблем.
 set_target_properties(geoimgconv PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
+set_target_properties(geoimgconv_lib PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
 set_target_properties(geoimgconv_tests PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
 #Добавляем в прекомпилированный заголовок редко изменяющиеся заголовки из состава файлов проекта.
 set_target_properties(geoimgconv PROPERTIES
+	COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/small_tools_box.h")
+set_target_properties(geoimgconv_lib PROPERTIES
 	COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/small_tools_box.h")
 set_target_properties(geoimgconv_tests PROPERTIES
 	COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/small_tools_box.h")
@@ -165,9 +175,9 @@ set(COTIRE_TEST_IGNORE "")
 foreach(CURR_DIR ${ALL_INCLUDE_DIRECTORIES})
 	list(APPEND COTIRE_TEST_IGNORE "${CURR_DIR}/boost;")
 endforeach(CURR_DIR)
-message(${COTIRE_TEST_IGNORE})
 set_target_properties(geoimgconv_tests PROPERTIES
 	COTIRE_PREFIX_HEADER_IGNORE_PATH "${COTIRE_TEST_IGNORE}")
-#Включаем cotire для проектов.
+#Включаем cotire для всего, что мы тут собираем.
 cotire(geoimgconv)
+cotire(geoimgconv_lib)
 cotire(geoimgconv_tests)
