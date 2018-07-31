@@ -74,6 +74,7 @@ add_library(geoimgconv_lib STATIC
 	small_tools_box.h
 	appui_console.cpp
 	appui_console.h
+	alt_matrix_base.h
 	alt_matrix.cpp
 	alt_matrix.h
 	errors.cpp

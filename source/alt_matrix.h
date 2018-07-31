@@ -25,47 +25,23 @@
 #include <gdal_priv.h>
 #pragma warning(pop)
 #include <boost/cstdint.hpp>
+#include "alt_matrix_base.h"
 
 namespace geoimgconv
 {
 
-template <typename CellType> class AltMatrix
+template <typename CellType> class AltMatrix : public AltMatrixBase
 {
-private:
-	//Приватные поля
-	int dataElemsNum_;
-	void *data_;		//Ссылка на сырые данные. Обращаться лучше через matrixArr_ - это тот же кусок памяти.
-	char *signData_;	//Ссылка на вспомогательный массив. Каждый байт соответствует пикселу в *data_ и
-						//содержит код типа пиксела. 0 - неизвестно, 1 - значимий пиксел, 2 - пиксел был
-						//заполнен значением для нормальной работы фильтра, но сам по себе незначим и после
-						//завершения фильтрации должен быть опустошён. За пустой незначимый пиксел принимаются
-						//пикселы с нулевым значением (в data_ а не в signData_!).
-	boost::uint16_t *quantedData_;	//Ссылка на данные "квантованных" пикселей, нужных для работы алгоритма
-									//Хуанга. Для 1 и 2-байтных типов пикселя использование этого массива
-									//вероятно будет не оптимально, но преждевременная оптимизация тоже
-									//не есть хорошо, так что пока я не городил изврат с ещё бОльшим количеством
-									//шаблонов и этот массив создаётся в т.ч для матриц с однобайтовыми ячейками.
-	int xSize_;	//Размер матрицы по X и Y
-	int ySize_;	//--''--
-	CellType **matrixArr_;	//Двумерный массив для произвольного доступа к элементам по X и Y.
-	char **signMatrixArr_;	//то же для произвольного доступа к signData_.
-	boost::uint16_t **quantedMatrixArr_;  //то же для произвольного доступа к quantedData_.
-	PixelType pixelType_;	//Конструктор запишет сюда значение исходя из типа CellType.
-	bool useSignData_;	//Использовать ли вспомогательную матрицу. Если false - память под неё не выделяется.
-	bool useQuantedData_;  //Аналогично использовать ли quantedData_.
 public:
 	//Конструкторы-деструкторы.
 	AltMatrix(const bool useSignData = true, const bool useQuantedData = false);
-	~AltMatrix();
+	~AltMatrix() override;
 
 	//Доступ к приватным полям.
 
-	//xSize
-	int const& getXSize() const { return xSize_; }
-	void setXSize(const int &xSize) { xSize_ = xSize; }
-	//ySize
-	int const& getYSize() const { return ySize_; }
-	void setYSize(const int &ySize) { xSize_ = ySize; }
+	//int xSize - от предка.
+	//int ySize - от предка.
+	//PixelType pixelType - от предка.
 	//matrixArr
 	CellType const& getMatrixElem(const int &yCoord, const int &xCoord) const
 	{
@@ -127,8 +103,8 @@ public:
 	//sourceMatrix - ссылка на матрицу из которой берутся блоки в режиме TOP_MM_MATR.
 	//errObj - информация об ошибке если она была.
 	bool LoadFromGDALRaster(GDALRasterBand *gdalRaster, const int &yPosition, const int &yToRead,
-		const int &marginSize, TopMarginMode marginMode, AltMatrix<CellType> *sourceMatrix = NULL,
-		ErrorInfo *errObj = NULL);
+		const int &marginSize, TopMarginMode marginMode, AltMatrixBase *sourceMatrix = NULL,
+		ErrorInfo *errObj = NULL) override;
 
 	//Создаёт в аргументе новую матрицу, вероятно меньшего размера. Старая матрица, если она
 	//там была - удаляется. В созданную матрицу копируется кусок this-матрицы указанного размера.
@@ -143,10 +119,10 @@ public:
 		const int &yStart, const int &xEnd, const int &yEnd, ErrorInfo *errObj = NULL) const;
 
 	//В соответствии с названием - очищает содержимое объекта чтобы он представлял пустую матрицу.
-	void Clear();
+	void Clear() override;
 
 	//Уничтожает содержащуюся в объекте матрицу и создаёт пустую новую указанного размера.
-	void CreateEmpty(const int &newX, const int &newY);
+	void CreateEmpty(const int &newX, const int &newY) override;
 
 	//Выделить память под пустую матрицу того же размера что и матрица в аргументе, а затем при
 	//необходимости скопировать информацию о значимых пикселях из этой матрицы в новосозданную.
@@ -165,6 +141,26 @@ public:
 	//программы. Это значит что каждый пиксел - это одна строка в файле.
 	//Это "тупой" вариант вывода - метаданные нормально не сохраняются.
 	bool SaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL) const;
+
+private:
+	//Приватные поля
+	int dataElemsNum_;
+	void *data_;		//Ссылка на сырые данные. Обращаться лучше через matrixArr_ - это тот же кусок памяти.
+	char *signData_;	//Ссылка на вспомогательный массив. Каждый байт соответствует пикселу в *data_ и
+						//содержит код типа пиксела. 0 - неизвестно, 1 - значимий пиксел, 2 - пиксел был
+						//заполнен значением для нормальной работы фильтра, но сам по себе незначим и после
+						//завершения фильтрации должен быть опустошён. За пустой незначимый пиксел принимаются
+						//пикселы с нулевым значением (в data_ а не в signData_!).
+	boost::uint16_t *quantedData_;	//Ссылка на данные "квантованных" пикселей, нужных для работы алгоритма
+									//Хуанга. Для 1 и 2-байтных типов пикселя использование этого массива
+									//вероятно будет не оптимально, но преждевременная оптимизация тоже
+									//не есть хорошо, так что пока я не городил изврат с ещё бОльшим количеством
+									//шаблонов и этот массив создаётся в т.ч для матриц с однобайтовыми ячейками.
+	CellType **matrixArr_;	//Двумерный массив для произвольного доступа к элементам по X и Y.
+	char **signMatrixArr_;	//то же для произвольного доступа к signData_.
+	boost::uint16_t **quantedMatrixArr_;  //то же для произвольного доступа к quantedData_.
+	bool useSignData_;	//Использовать ли вспомогательную матрицу. Если false - память под неё не выделяется.
+	bool useQuantedData_;  //Аналогично использовать ли quantedData_.
 };
 
 }	//namespace geoimgconv
