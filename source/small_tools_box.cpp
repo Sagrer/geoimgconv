@@ -31,6 +31,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/predef.h>
 #include <cctype>
+#include <type_traits>
 
 //Для определения количества памяти нужен платформозависимый код :(
 #ifdef _WIN32
@@ -701,6 +702,33 @@ unsigned short SmallToolsBox::GetConsoleWidth() const
 		//#error Unknown target OS. Cant preprocess console width detecting code :(
 		return 0;
 	#endif
+}
+
+//Возвращает используемый в данной системе разделитель путей к файлам, в виде обычной строки.
+const std::string& SmallToolsBox::GetFilesystemSeparator()
+{
+	if (filesystemSeparator_ != "") return filesystemSeparator_;
+	
+	//Если разделитель ещё не был инициализирован - вытащим его из boost::filesystem и запомним.
+	//Придётся напрямую копировать память.
+	namespace b_fs = boost::filesystem;
+	if (std::is_same<decltype(b_fs::path::preferred_separator), char>::value)
+	{
+		//Обычный char. Делаем двухбайтовый буфер (последний символ - ноль) и копируем первый байт.
+		//Значение первого символа по умолчанию - просто наиболее вероятное.
+		char charBuf[] = "/";
+		memcpy(charBuf, &b_fs::path::preferred_separator, sizeof(char));
+		filesystemSeparator_ = std::string(charBuf);
+		return filesystemSeparator_;
+	}
+	else
+	{
+		//wchar. В целом, аналогично.
+		wchar_t charBuf[] = L"\\";
+		memcpy(charBuf, &b_fs::path::preferred_separator, sizeof(wchar_t));
+		filesystemSeparator_ = WstringToUtf8(std::wstring(charBuf));
+		return filesystemSeparator_;
+	}
 }
 
 }	//namespace geoimgconv

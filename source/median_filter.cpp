@@ -1831,6 +1831,7 @@ bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *err
 		default:
 			pFilterObj_ = NULL;
 			dataTypeSize_ = 0;
+			break;
 	}
 	if (pFilterObj_)
 	{
@@ -1843,6 +1844,7 @@ bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *err
 	else
 	{
 		if (errObj) errObj->SetError(CMNERR_UNKNOWN_ERROR, "MedianFilterBase::OpenInputFile() error creating pFilterObj_!",true);
+		GDALClose(gdalSourceDataset_);
 		gdalSourceDataset_ = NULL;
 		gdalSourceRaster_ = NULL;
 		return false;

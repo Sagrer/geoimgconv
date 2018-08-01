@@ -62,6 +62,7 @@ class SmallToolsBox
 		bool encodingsInited_;
 		std::locale utf8Locale_;
 		bool consoleEncodingIsSelected_;	//Выбор между console и system кодировками.
+		std::string filesystemSeparator_ = "";
 	public:
 		//Конструктор и деструктор
 		SmallToolsBox();
@@ -165,6 +166,9 @@ class SmallToolsBox
 
 		//Узнать текущую ширину консоли. Вернёт 0 в случае ошибки.
 		unsigned short GetConsoleWidth() const;
+
+		//Возвращает используемый в данной системе разделитель путей к файлам, в виде обычной строки.
+		const std::string& GetFilesystemSeparator();
 };
 
 extern SmallToolsBox STB;

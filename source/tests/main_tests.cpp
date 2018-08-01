@@ -23,20 +23,62 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/mpl/list.hpp>
 #include <boost/test/debug.hpp>
-//#include "image_comparer.h"
+#include <boost/dll.hpp>
+#include "image_comparer.h"
 #include "..\alt_matrix.h"
+#include "common_vars.h"
+#include "..\small_tools_box.h"
 
 namespace b_ut = boost::unit_test;
 namespace b_tt = boost::test_tools;
+namespace b_fs = boost::filesystem;
 using namespace geoimgconv;
 
-//Отключим детектор утечек памяти, поскольку работает он только в debug-сборках,
-//сделанных компиллятором вижлы + детектятся утечки в boost::locale которые если
-//верить форумам - не сильно то и утечки. При необходимости поиск утечек можно
-//будет временно включить прямо тут.
+//Глобальная фикстура. Объект этого класса тестовый движок инициализует до запуска
+//каких-либо тестов.
 struct GlobalFixture {
-	GlobalFixture() {
+	GlobalFixture()
+	{
+		//Отключим детектор утечек памяти, поскольку работает он только в debug-сборках,
+		//сделанных компиллятором вижлы + детектятся утечки в boost::locale которые если
+		//верить форумам - не сильно то и утечки. При необходимости поиск утечек можно
+		//будет временно включить прямо тут.
 		boost::debug::detect_memory_leaks(false);
+
+		//Узнаем и запомним пути - к исполнимому файлу, текущий путь и путь к тестовым данным.
+		CommonVars &commonVars = CommonVars::Instance();
+		//make_preferred - чтобы поправить кривые пути типа C:/somedir\blabla\loolz.txt
+		b_fs::path appPath = boost::dll::program_location().
+			parent_path().make_preferred();
+		commonVars.setAppPath(STB.WstringToUtf8(appPath.wstring()));
+		commonVars.setCurrPath(STB.WstringToUtf8(b_fs::current_path().wstring()));
+		//Путь к тестовым данным может различаться. Он может начинаться как на 1 уровень выше
+		//текущего каталога, так и на 2 уровня. Проверяем по наличию директории source.
+		auto dataPath = b_fs::path(appPath.parent_path().wstring() + L"/source/tests/test_data")
+			.make_preferred();
+		if (!b_fs::exists(dataPath))
+		{
+			//Значит, возможно, оно на 2 уровня выше.
+			dataPath = b_fs::path(appPath.parent_path().parent_path().wstring() +
+				L"/source/tests/test_data").make_preferred();
+		}
+		if (b_fs::exists(dataPath))
+		{
+			//Путь найден. Всё ок.
+			commonVars.setDataPath(STB.WstringToUtf8(dataPath.wstring()));
+		}
+		else
+		{
+			//Путь не найдён - будем надеяться что тестовые данные есть по текущему пути.
+			//Иначе кирдык, который проявится зафейленными тестами.
+			commonVars.setDataPath(commonVars.getCurrPath());
+		}
+
+		//Регистрация драйвера GDAL.
+		GDALRegister_GTiff();
+		//Явное включение именно консольной кодировки. К сожалению, Test Explorer вижлы не понимает
+		//cp886 от Boost.Test. А если поставить там другую кодировку - нифига не будет видно из консоли.
+		STB.SelectConsoleEncoding();
 	}
 	~GlobalFixture() {  }
 };
@@ -51,7 +93,7 @@ using TestTypes = boost::mpl::list<double, float, boost::int8_t, boost::uint8_t,
 	boost::int16_t, boost::uint16_t, boost::int32_t, boost::uint32_t>;
 
 //Проверяем работоспособность сравнения 2 матриц в AltMatrix. Оно нужно для других тестов.
-BOOST_AUTO_TEST_CASE_TEMPLATE(altmatrix_comparing_test, T, TestTypes)
+BOOST_AUTO_TEST_CASE_TEMPLATE(check_altmatrix_comparing, T, TestTypes)
 {
 	AltMatrix<T> testMatr1, testMatr2;
 	const int matrSize = 10;
@@ -121,5 +163,29 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(altmatrix_comparing_test, T, TestTypes)
 	}
 	result = testMatr3.CompareWithAnother(&testMatr4);
 	BOOST_TEST_INFO("Checking: wrong type comparing.");
+	BOOST_TEST(result == 0.0, b_tt::tolerance(0.00001));
+}
+
+//Тестируем работоспособность класса-сравнивалки картинок.
+BOOST_AUTO_TEST_CASE(check_image_comparer)
+{
+	//Подразумевается что путь к тестовым данным был успешно найден фикстурой.
+
+	//Сравнение одной и той же картинки должно быть успешным.
+	CommonVars &commonVars = CommonVars::Instance();
+	ErrorInfo errObj;
+	double result = ImageComparer::CompareGeoTIFF(commonVars.getDataPath() + STB.GetFilesystemSeparator() + "in_uint8.tif",
+		commonVars.getDataPath() + STB.GetFilesystemSeparator() + "in_uint8.tif", &errObj);
+	BOOST_TEST_INFO("Checking: same pictures");
+	if ((result >= -0.00001) && (result <= 0.00001))
+		BOOST_TEST_INFO("Error was: "+ STB.Utf8ToConsoleCharset(errObj.getErrorText()));
+	BOOST_TEST(result == 1.0, b_tt::tolerance(0.00001));
+
+	//Сравнение разных картинок должно быть безуспешным.
+	result = ImageComparer::CompareGeoTIFF(commonVars.getDataPath() + STB.GetFilesystemSeparator() + "in_uint8.tif",
+		commonVars.getDataPath() + STB.GetFilesystemSeparator() + "in_float32.tif", &errObj);
+	BOOST_TEST_INFO("Checking: different pictures");
+	if ((result >= 0.99999) && (result <= 1.00001))
+		BOOST_TEST_INFO("Error was: "+ STB.Utf8ToConsoleCharset(errObj.getErrorText()));
 	BOOST_TEST(result == 0.0, b_tt::tolerance(0.00001));
 }

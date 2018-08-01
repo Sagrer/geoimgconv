@@ -94,7 +94,8 @@ add_executable(geoimgconv_tests
 	tests/main_tests.cpp
 	tests/median_filter_tests.cpp
 	tests/image_comparer.cpp
-	tests/image_comparer.h)
+	tests/image_comparer.h
+	tests/common_vars.h)
 	
 #Линкуем основную библиотеку к двум получающимся бинарникам.
 target_link_libraries(geoimgconv geoimgconv_lib)
