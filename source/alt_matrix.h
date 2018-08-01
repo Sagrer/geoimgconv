@@ -142,6 +142,11 @@ public:
 	//Это "тупой" вариант вывода - метаданные нормально не сохраняются.
 	bool SaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL) const;
 
+	//Проверить степень совпадения данных данной матрицы и некоей второй. Возвращает число от 0.0 (нет
+	//совпадения) до 1.0 (идеальное совпадение). Если матрицы не совпадают по типу и\или размеру - сразу
+	//вернёт 0.0.
+	double CompareWithAnother(AltMatrixBase *anotherMatr) const override;
+
 private:
 	//Приватные поля
 	int dataElemsNum_;

@@ -55,6 +55,7 @@ template <typename CellType> void AntiUnrExtsHelper()
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveToCSVFile);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::CreateDestMatrix);
 	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::CreateEmpty);
+	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::CompareWithAnother);
 }
 
 //Функция-костыль. Заставляет компиллятор создать реально используемые
@@ -532,6 +533,44 @@ bool AltMatrix<CellType>::SaveToCSVFile(const std::string &fileName, ErrorInfo *
 	}
 	fileStream.close();
 	return true;
-};
+}
+
+//Проверить степень совпадения данных данной матрицы и некоей второй. Возвращает число от 0.0 (нет
+//совпадения) до 1.0 (идеальное совпадение). Если матрицы не совпадают по типу и\или размеру - сразу
+//вернёт 0.0.
+template<typename CellType>
+double AltMatrix<CellType>::CompareWithAnother(AltMatrixBase *anotherMatr) const
+{
+	//Во-первых, другая матрица должна быть.
+	if (!anotherMatr)
+	{
+		return 0.0;
+	}
+
+	//Во-вторых она должна быть приводима к типу текущей матрицы.
+	AltMatrix<CellType> *anotherMatrix = dynamic_cast<AltMatrix<CellType> *>(anotherMatr);
+	if (!anotherMatrix)
+	{
+		return 0.0;
+	}
+
+	//В третьих, размеры матриц должны совпадать.
+	if ((getXSize() != anotherMatrix->getXSize()) || (getYSize() != anotherMatrix->getYSize()))
+	{
+		return 0.0;
+	}
+
+	//И только теперь посчитаем сколько пикселей совпадают, а сколько нет.
+	std::uint64_t pixelsNum = getXSize()*getYSize();
+	std::uint64_t samePixelsNum = 0;
+	CellType *i;
+	CellType *j;
+	for (i = static_cast<CellType*>(data_), j = static_cast<CellType*>(anotherMatrix->data_);
+		i < static_cast<CellType*>(data_)+pixelsNum; ++i, ++j)
+	{
+		if (*i == *j) ++samePixelsNum;
+	}
+	return ((double)samePixelsNum / (double)pixelsNum);
+}
 
 }	//namespace geoimgconv
