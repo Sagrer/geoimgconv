@@ -135,6 +135,8 @@ target_link_libraries(geoimgconv_tests Boost::unit_test_framework)
 if(BOOST_SUPR_OUTDATED)
 	add_definitions(-DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
 endif()
+#А вот без этого нормально не работает Boost.DLL:
+target_link_libraries(geoimgconv_lib ${CMAKE_DL_LIBS})
 
 ##ICU - скорее всего явно подключать его не нужно.
 #find_package(ICU COMPONENTS uc dt in io tu test REQUIRED)

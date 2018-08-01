@@ -25,9 +25,9 @@
 #include <boost/test/debug.hpp>
 #include <boost/dll.hpp>
 #include "image_comparer.h"
-#include "..\alt_matrix.h"
+#include "../alt_matrix.h"
 #include "common_vars.h"
-#include "..\small_tools_box.h"
+#include "../small_tools_box.h"
 
 namespace b_ut = boost::unit_test;
 namespace b_tt = boost::test_tools;

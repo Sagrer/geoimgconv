@@ -271,7 +271,7 @@ const unsigned long long SmallToolsBox::InfoSizeToBytesNum(const std::string &in
 		else if (lastChar == 't')
 			result *= 1099511627776;
 	};
-	
+
 	return result;
 }
 
@@ -326,7 +326,7 @@ const bool SmallToolsBox::CheckInfoSizeStr(const std::string &inputStr) const
 	}
 	if (!CheckUnsIntStr(tempStr))
 		return false;
-	
+
 	//Надо проверить последний символ.
 	lastChar = tolower(lastChar);
 	if ((lastChar != 'b') && (lastChar != 'k') && (lastChar != 'm') && (lastChar != 'g') &&
@@ -708,16 +708,20 @@ unsigned short SmallToolsBox::GetConsoleWidth() const
 const std::string& SmallToolsBox::GetFilesystemSeparator()
 {
 	if (filesystemSeparator_ != "") return filesystemSeparator_;
-	
+
 	//Если разделитель ещё не был инициализирован - вытащим его из boost::filesystem и запомним.
 	//Придётся напрямую копировать память.
 	namespace b_fs = boost::filesystem;
-	if (std::is_same<decltype(b_fs::path::preferred_separator), char>::value)
+	//Вот это шаманство с auto и копированием сепаратора - связано с тем, что как минимум
+	//под Boost 1.62 напрямую компиллятор preferred_separator не видит при линковке, вероятно
+	//это как-то связано с constexpr в недрах буста. Хотя на Boost 1.66 всё было норм :).
+	auto prefSep = b_fs::path::preferred_separator;
+	if (std::is_same<decltype(prefSep), char>::value)
 	{
 		//Обычный char. Делаем двухбайтовый буфер (последний символ - ноль) и копируем первый байт.
 		//Значение первого символа по умолчанию - просто наиболее вероятное.
 		char charBuf[] = "/";
-		memcpy(charBuf, &b_fs::path::preferred_separator, sizeof(char));
+		memcpy(charBuf, &prefSep, sizeof(char));
 		filesystemSeparator_ = std::string(charBuf);
 		return filesystemSeparator_;
 	}
@@ -725,7 +729,7 @@ const std::string& SmallToolsBox::GetFilesystemSeparator()
 	{
 		//wchar. В целом, аналогично.
 		wchar_t charBuf[] = L"\\";
-		memcpy(charBuf, &b_fs::path::preferred_separator, sizeof(wchar_t));
+		memcpy(charBuf, &prefSep, sizeof(wchar_t));
 		filesystemSeparator_ = WstringToUtf8(std::wstring(charBuf));
 		return filesystemSeparator_;
 	}
