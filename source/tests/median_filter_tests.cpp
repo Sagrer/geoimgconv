@@ -72,10 +72,10 @@ struct MedfilterTestsFixture
 		}
 	}
 
-	static void MedFilterPrepare(MedianFilterBase &medFilter)
+	static void MedFilterPrepare(MedianFilterBase &medFilter, const int &aperture = DEFAULT_MEDFILTER_APERTURE)
 	{
 		medFilter.setFillPits(DEFAULT_MEDFILTER_FILL_PITS);
-		medFilter.setAperture(DEFAULT_MEDFILTER_APERTURE);
+		medFilter.setAperture(aperture);
 		medFilter.setThreshold(DEFAULT_MEDFILTER_THRESHOLD);
 		medFilter.setMarginType(DEFAULT_MEDFILTER_MARGIN_TYPE);
 		medFilter.setUseMemChunks(false);
@@ -120,12 +120,13 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(check_unsupported, T, FilterTypes, MedfilterTes
 //inputFileName - имя файла-эталона, с которым сравниваем.
 //minValue - минимальная допустимая степень похожести образца на эталон.
 template <typename T>
-void CheckFile(const string &inputFileName, const string &sampleFileName, const double &minValue)
+void CheckFile(const string &inputFileName, const string &sampleFileName, const double &minValue,
+	const int &aperture = DEFAULT_MEDFILTER_APERTURE)
 {
 	//Подготовка фильтра.
 	T medFilter;
 	//MedianFilterStub medFilter;
-	MedfilterTestsFixture::MedFilterPrepare(medFilter);
+	MedfilterTestsFixture::MedFilterPrepare(medFilter, aperture);
 	CommonVars &commonVars = CommonVars::Instance();
 	ErrorInfo errObj;
 
@@ -196,8 +197,19 @@ const TestFileStruct stubTestFiles[] = {
 	{ "in_uint32.tif", "in_uint32.tif", 0.99 }
 };
 
-//Массив структур для data driven. Общий для всех типов кроме stub.
-const TestFileStruct testFiles[] = {
+//Массив структур для data driven. Для алгоритма stupid.
+const TestFileStruct stupidTestFiles[] = {
+	{ "in_float32.tif", "out_31_float32.tif", 0.99 },
+	{ "in_float64.tif", "out_31_float64.tif", 0.99 },
+	{ "in_int16.tif", "out_31_int16.tif", 0.99 },
+	{ "in_int32.tif", "out_31_int32.tif", 0.99 },
+	{ "in_uint8.tif", "out_31_uint8.tif", 0.99 },
+	{ "in_uint16.tif", "out_31_uint16.tif", 0.99 },
+	{ "in_uint32.tif", "out_31_uint32.tif", 0.99 }
+};
+
+//Массив структур для data driven. Для алгоритма Huang.
+const TestFileStruct huangTestFiles[] = {
 	{ "in_float32.tif", "out_101_float32.tif", 0.99 },
 	{ "in_float64.tif", "out_101_float64.tif", 0.99 },
 	{ "in_int16.tif", "out_101_int16.tif", 0.99 },
@@ -214,13 +226,14 @@ BOOST_DATA_TEST_CASE_F(MedfilterTestsFixture, check_stub, b_ut::data::make(stubT
 }
 
 //Проверяем stupid-фильтр.
-BOOST_DATA_TEST_CASE_F(MedfilterTestsFixture, check_stupid, b_ut::data::make(testFiles))
+BOOST_DATA_TEST_CASE_F(MedfilterTestsFixture, check_stupid, b_ut::data::make(stupidTestFiles))
 {
-	CheckFile<MedianFilterStupid>(sample.inputFile, sample.sampleFile, sample.minValue);
+	//В данном случае апертура 31.
+	CheckFile<MedianFilterStupid>(sample.inputFile, sample.sampleFile, sample.minValue, 31);
 }
 
 //Проверяем huang-фильтр.
-BOOST_DATA_TEST_CASE_F(MedfilterTestsFixture, check_huang, b_ut::data::make(testFiles))
+BOOST_DATA_TEST_CASE_F(MedfilterTestsFixture, check_huang, b_ut::data::make(huangTestFiles))
 {
 	CheckFile<MedianFilterHuangDefault>(sample.inputFile, sample.sampleFile, sample.minValue);
 }
