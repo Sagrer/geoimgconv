@@ -164,10 +164,16 @@ unique_ptr<AltMatrixBase> ImageComparer::LoadMatrFromGeoTIFF(const string &fileN
 		nullptr, errObj))
 	{
 		//Не удалось загрузить. errObj уже заполнен сообщением об ошибке.
+		GDALClose(sourceDataset);
+		sourceDataset = nullptr;
+		sourceRaster = nullptr;
 		return unique_ptr<AltMatrixBase>(nullptr);
 	}
 
 	//Готово, возвращаем то что получилось.
+	GDALClose(sourceDataset);
+	sourceDataset = nullptr;
+	sourceRaster = nullptr;
 	return result;
 }
 

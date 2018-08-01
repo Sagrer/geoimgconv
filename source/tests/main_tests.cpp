@@ -18,6 +18,8 @@
 //Тут - только обращение к скриптам, которые сгенерируют главную функцию
 //и всю такую прочую обвязку.
 
+//ВНИМАНИЕ! НА Debug-версии тесты долгие! Запускайте на Release!
+
 #define BOOST_TEST_MODULE geoimgconv_tests
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
