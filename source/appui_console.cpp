@@ -44,17 +44,6 @@ namespace geoimgconv
 ///////////////////////////////////////
 
 //--------------------------------//
-//   Конструкторы-деструкторы     //
-//--------------------------------//
-
-AppUIConsoleCallBack::AppUIConsoleCallBack() : skipCounter_(0), skipNumber_(1),
-	isStarted_(false), isNotClean_(false), isPrinted100_(false), lastTextSize_(0),
-	pixelsPerSecond_(0.0), updatePeriod_(DEFAULT_PROGRESS_UPDATE_PERIOD)
-{
-
-}
-
-//--------------------------------//
 //        Прочие методы           //
 //--------------------------------//
 
@@ -175,11 +164,6 @@ void AppUIConsoleCallBack::OperationEnd()
 //--------------------------------//
 //   Конструкторы-деструкторы     //
 //--------------------------------//
-
-AppUIConsole::AppUIConsole() : confObj_(NULL), maxMemCanBeUsed_(0),
-	maxBlocksCanBeUsed_(0), medFilter_(NULL)
-{
-}
 
 AppUIConsole::~AppUIConsole()
 {

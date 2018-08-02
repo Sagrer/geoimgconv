@@ -40,16 +40,6 @@ namespace geoimgconv
 //           RealMedianFilter             //
 ////////////////////////////////////////////
 
-//Нельзя создать объект не дав ссылку на MedianFilterBase
-template <typename CellType>
-RealMedianFilter<CellType>::RealMedianFilter(MedianFilterBase *ownerObj) :
-	RealMedianFilterBase(ownerObj),	sourceMatrix_(true, ownerObj->getUseHuangAlgo()),
-	destMatrix_(false,false), minMaxCalculated_(false), noDataPixelValue_(0),
-	minPixelValue_(0), maxPixelValue_(0), levelsDelta_(0.0)
-{
-
-};
-
 //--------------------------------//
 //       Приватные методы         //
 //--------------------------------//
@@ -1614,18 +1604,6 @@ bool RealMedianFilter<CellType>::DestSaveToCSVFile(const std::string &fileName, 
 ////////////////////////////////////////
 //          MedianFilterBase          //
 ////////////////////////////////////////
-
-MedianFilterBase::MedianFilterBase(bool useHuangAlgo, boost::uint16_t huangLevelsNum) :
-aperture_(DEFAULT_MEDFILTER_APERTURE), threshold_(DEFAULT_MEDFILTER_THRESHOLD),
-marginType_(DEFAULT_MEDFILTER_MARGIN_TYPE), useMemChunks_(false), blocksInMem_(0), sourceFileName_(""),
-destFileName_(""), imageSizeX_(0), imageSizeY_(0), imageIsLoaded_(false), sourceIsAttached_(false),
-destIsAttached_(false), dataType_(PIXEL_UNKNOWN), dataTypeSize_(0), pFilterObj_(NULL), minBlockSize_(0),
-minMemSize_(0), gdalSourceDataset_(NULL), gdalDestDataset_(NULL), gdalSourceRaster_(NULL),
-gdalDestRaster_(NULL), currPositionY_(0), useHuangAlgo_(useHuangAlgo), huangLevelsNum_(huangLevelsNum),
-fillPits_(false)
-{
-
-}
 
 MedianFilterBase::~MedianFilterBase()
 {

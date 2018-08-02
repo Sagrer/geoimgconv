@@ -89,7 +89,7 @@ private:
 	//Приватные поля
 	int xSize_ = 0;	//Размер матрицы по X и Y
 	int ySize_ = 0;	//--''--
-	PixelType pixelType_;	//Конструктор должен записать сюда значение исходя из типа CellType (типа пикселя в производном классе).
+	PixelType pixelType_ = PIXEL_UNKNOWN;	//Конструктор должен записать сюда значение исходя из типа CellType (типа пикселя в производном классе).
 };
 
 }	//namespace geoimgconv

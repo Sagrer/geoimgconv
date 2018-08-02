@@ -47,81 +47,82 @@ private:
 	//изменение поля делает Cmd-поле незаданным а Cfg-поле сохраняемым.
 	
 	//Входной файл
-	std::string inputFileNameCfg_;
+	std::string inputFileNameCfg_ = DEFAULT_INPUT_FILE_NAME;
 	std::string inputFileNameCmd_;
-	bool inputFileNameCfgIsSaving_;
-	bool inputFileNameCmdIsSet_;
+	bool inputFileNameCfgIsSaving_ = false;
+	bool inputFileNameCmdIsSet_ = false;
 	
 	//Выходной файл
-	std::string outputFileNameCfg_;
+	std::string outputFileNameCfg_ = DEFAULT_OUTPUT_FILE_NAME;
 	std::string outputFileNameCmd_;
-	bool outputFileNameCfgIsSaving_;
-	bool outputFileNameCmdIsSet_;
+	bool outputFileNameCfgIsSaving_ = false;
+	bool outputFileNameCmdIsSet_ = false;
 	
 	//Длина стороны окна медианного фильтра.
-	int medfilterApertureCfg_;
+	int medfilterApertureCfg_ = DEFAULT_MEDFILTER_APERTURE;
 	int medfilterApertureCmd_;
-	bool medfilterApertureCfgIsSaving_;
-	bool medfilterApertureCmdIsSet_;
+	bool medfilterApertureCfgIsSaving_= false;
+	bool medfilterApertureCmdIsSet_ = false;
 	
 	//Порог медианного фильтра.
-	double medfilterThresholdCfg_;
+	double medfilterThresholdCfg_ = DEFAULT_MEDFILTER_THRESHOLD;
 	double medfilterThresholdCmd_;
-	bool medfilterThresholdCfgIsSaving_;
-	bool medfilterThresholdCmdIsSet_;	
+	bool medfilterThresholdCfgIsSaving_ = false;
+	bool medfilterThresholdCmdIsSet_ = false;	
 	
 	//Тип заполнителя краевых областей для медианного фильтра.
-	MarginType medfilterMarginTypeCfg_;
+	MarginType medfilterMarginTypeCfg_ = DEFAULT_MEDFILTER_MARGIN_TYPE;
 	MarginType medfilterMarginTypeCmd_;
-	bool medfilterMarginTypeCfgIsSaving_;
-	bool medfilterMarginTypeCmdIsSet_;
+	bool medfilterMarginTypeCfgIsSaving_ = false;
+	bool medfilterMarginTypeCmdIsSet_ = false;
 
 	//Режим работы медианного фильтра.
-	MedfilterAlgo medfilterAlgoCfg_;
+	MedfilterAlgo medfilterAlgoCfg_ = DEFAULT_MEDFILTER_ALGO;
 	MedfilterAlgo medfilterAlgoCmd_;
-	bool medfilterAlgoCfgIsSaving_;
-	bool medfilterAlgoCmdIsSet_;
+	bool medfilterAlgoCfgIsSaving_ = false;
+	bool medfilterAlgoCmdIsSet_ = false;
 
 	//Количество уровней квантования для алгоритма Хуанга (медианный фильтр).
-	boost::uint16_t medfilterHuangLevelsNumCfg_;
+	boost::uint16_t medfilterHuangLevelsNumCfg_ = DEFAULT_HUANG_LEVELS_NUM;
 	boost::uint16_t medfilterHuangLevelsNumCmd_;
-	bool medfilterHuangLevelsNumCfgIsSaving_;
-	bool medfilterHuangLevelsNumCmdIsSet_;
+	bool medfilterHuangLevelsNumCfgIsSaving_ = false;
+	bool medfilterHuangLevelsNumCmdIsSet_ = false;
 
 	//Заполняет ли медианный фильтр ямы.
-	bool medfilterFillPitsCfg_;
+	bool medfilterFillPitsCfg_ = DEFAULT_MEDFILTER_FILL_PITS;
 	bool medfilterFillPitsCmd_;
-	bool medfilterFillPitsCfgIsSaving_;
-	bool medfilterFillPitsCmdIsSet_;
+	bool medfilterFillPitsCfgIsSaving_ = false;
+	bool medfilterFillPitsCmdIsSet_ = false;
 	
 	//Режим работы программы.
-	AppMode appModeCfg_;
+	AppMode appModeCfg_ = DEFAULT_APP_MODE;
 	AppMode appModeCmd_;
-	bool appModeCfgIsSaving_;
-	bool appModeCmdIsSet_;
+	bool appModeCfgIsSaving_ = false;
+	bool appModeCmdIsSet_ = false;
 
 	//Режим использования памяти.
-	MemoryMode memModeCfg_;
+	MemoryMode memModeCfg_ = DEFAULT_MEM_MODE;
 	MemoryMode memModeCmd_;
-	unsigned long long memSizeCfg_;
+	unsigned long long memSizeCfg_ = 0;
 	unsigned long long memSizeCmd_;
-	bool memModeCfgIsSaving_;
-	bool memModeCmdIsSet_;
+	bool memModeCfgIsSaving_ = false;
+	bool memModeCmdIsSet_ = false;
 	
 	//Остальные поля (не поля конфига).
-	bool helpAsked_;	//Была ли в командной строке запрошена справка.
-	bool versionAsked_;	//Была ли в командной строке запрошена версия.
-	int argc_;	//argc и argv запоминаются при разборе командной строки.
-	char **argv_;	//--"--
-	std::string appPath_;	//Путь к исполнимому бинарнику и теущий путь.
-	std::string currPath_;	//--"--
-	unsigned short helpLineLength_;	//Ширина генерируемой справки.
+	bool helpAsked_ = false;	//Была ли в командной строке запрошена справка.
+	bool versionAsked_ = false;	//Была ли в командной строке запрошена версия.
+	int argc_ = 0;	//argc и argv запоминаются при разборе командной строки.
+	char **argv_ = nullptr;	//--"--
+	std::string appPath_ = "";	//Путь к исполнимому бинарнику и теущий путь.
+	std::string currPath_ = "";	//--"--
+	unsigned short helpLineLength_ = 0;	//Ширина генерируемой справки.
 	
 	//Объекты для вывода справки и чтения\записи настроек.
 	//Инициализируются частично в конструкторе и частично отдельным
 	//методом (который зависит от настроенных в STB кодировок).
 	boost::program_options::options_description cmdLineParamsDesc_;
-	boost::program_options::options_description *helpParamsDesc_;	//По указателю т.к. создавать объект в конструкторе нельзя, только позже, когда будет известна кодировка.
+	//По указателю т.к. создавать объект в конструкторе нельзя, только позже, когда будет известна кодировка.
+	boost::program_options::options_description *helpParamsDesc_ = nullptr;	
 	boost::program_options::options_description configParamsDesc_;
 	boost::program_options::positional_options_description positionalDesc_;
 	boost::program_options::variables_map poVarMap_;

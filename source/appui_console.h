@@ -22,6 +22,8 @@
 
 //Пока чисто консолька, без curses.
 
+//TODO по-хорошему это всё надо-бы разделить на View и Presenter например (по MVP).
+
 #include <string>
 #include "common.h"
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -39,13 +41,13 @@ class AppUIConsoleCallBack : public CallBackBase
 private:
 	//Многие приватные поля здесь для того чтобы инициализировать их всего раз
 	//а не при каждом вызове CallBack(...). Возможно это немного всё ускорит.
-	size_t skipCounter_;   //Счётчик сколько пикселов уже было пропущено.
-	size_t skipNumber_;	//По сколько пикселов пропускать до следующего пересчёта.
-	bool isStarted_;		//Признак того что текст с инфой был уже выведен хотя бы раз.
-	bool isNotClean_;	//Clear() очистит объект только если здесь true.
-	bool isPrinted100_;	//Признак того что 100% уже напечатано.
+	size_t skipCounter_ = 0;   //Счётчик сколько пикселов уже было пропущено.
+	size_t skipNumber_ = 1;	//По сколько пикселов пропускать до следующего пересчёта.
+	bool isStarted_ = false;		//Признак того что текст с инфой был уже выведен хотя бы раз.
+	bool isNotClean_ = false;	//Clear() очистит объект только если здесь true.
+	bool isPrinted100_ = false;	//Признак того что 100% уже напечатано.
 	std::string text_;	//Строка для вывода в консоль
-	std::string::size_type lastTextSize_;	//Длина текста, выведенная в прошлый раз.
+	std::string::size_type lastTextSize_ = 0;	//Длина текста, выведенная в прошлый раз.
 	std::string::size_type tempSize_;
 	boost::posix_time::ptime lastPrintTime_;	//Для калибровки skipNumber_ чтобы вывод был раз в 2 секунды примерно.
 	boost::posix_time::ptime nowTime_;	//---""---
@@ -53,9 +55,9 @@ private:
 	boost::posix_time::time_duration timeLeft_;		//Приблизительное время, оставшееся до конца обработки.
 	boost::posix_time::ptime startTime_;		//Время начала...
 	boost::posix_time::ptime endTime_;		//... и завершения выполнения.
-	double pixelsPerSecond_;	//Может быть дробным, что логично ).
+	double pixelsPerSecond_ = 0.0;	//Может быть дробным, что логично ).
 	boost::posix_time::time_duration::tick_type currMilliseconds_;
-	double updatePeriod_;		//Настройка. Раз в сколько секунд обновлять информацию.
+	double updatePeriod_ = DEFAULT_PROGRESS_UPDATE_PERIOD;		//Настройка. Раз в сколько секунд обновлять информацию.
 
 	//"Перерисовать" "прогрессбар".
 	void UpdateBar(const unsigned long &progressPosition);
@@ -68,7 +70,7 @@ public:
 	void setUpdatePeriod(const double &updatePeriod) { updatePeriod_ = updatePeriod; }
 
 	//Переопределяем конструктор.
-	AppUIConsoleCallBack();
+	AppUIConsoleCallBack() {}
 	//Возвращает объект в состояние как будто только после инициализации.
 	void Clear();
 	//CallBack-метод, который будет выводить в консоль количество и процент уже
@@ -95,11 +97,11 @@ private:
 
 	//Приватные поля
 	std::string GDALErrorMsgBuffer;
-	AppConfig *confObj_;
-	unsigned long long maxMemCanBeUsed_;	//сюда детектится количество памяти которое можно занимать
-	int maxBlocksCanBeUsed_;	//Сюда детектится максимальное количество блоков, которое можно загружать в память для применяемого сейчас фильтра.
+	AppConfig *confObj_ = nullptr;
+	unsigned long long maxMemCanBeUsed_ = 0;	//сюда детектится количество памяти которое можно занимать
+	int maxBlocksCanBeUsed_ = 0;	//Сюда детектится максимальное количество блоков, которое можно загружать в память для применяемого сейчас фильтра.
 	SysResInfo sysResInfo_;		//Характеристики компа.
-	MedianFilterBase *medFilter_;	//Ссылка на текущий объект фильтра. Хранить как поле - удобно чтобы деструктор уничтожил потом объект по этой ссылке.
+	MedianFilterBase *medFilter_ = nullptr;	//Ссылка на текущий объект фильтра. Хранить как поле - удобно чтобы деструктор уничтожил потом объект по этой ссылке.
 
 	//Приватные методы
 
@@ -128,7 +130,7 @@ private:
 	void ConsolePrintError(ErrorInfo &errObj);
 public:
 	//Конструкторы-деструкторы.
-	AppUIConsole();
+	AppUIConsole() {}
 	~AppUIConsole();
 
 	//Геттеры-сеттеры

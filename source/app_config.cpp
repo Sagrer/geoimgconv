@@ -37,26 +37,10 @@ namespace geoimgconv
 //   Конструкторы-деструкторы     //
 //--------------------------------//
 
-//Конструктор по умолчанию просто проставляет умолчальные собственно значения туда,
-//где это вообще может иметь смысл.
-//helpLineLength если равно 0 то ширина генерируемой справки остаётся на усмотрение объекта, если
-//же там некое число колонок - то ширина справки будет ему соответствовать.
-AppConfig::AppConfig(unsigned short helpLineLength) : inputFileNameCfg_(DEFAULT_INPUT_FILE_NAME),
-	inputFileNameCfgIsSaving_(false), inputFileNameCmdIsSet_(false),
-	outputFileNameCfg_(DEFAULT_OUTPUT_FILE_NAME), outputFileNameCfgIsSaving_(false),
-	outputFileNameCmdIsSet_(false), medfilterApertureCfg_(DEFAULT_MEDFILTER_APERTURE),
-	medfilterApertureCfgIsSaving_(false), medfilterApertureCmdIsSet_(false),
-	medfilterThresholdCfg_(DEFAULT_MEDFILTER_THRESHOLD), medfilterThresholdCfgIsSaving_(false),
-	medfilterThresholdCmdIsSet_(false), medfilterMarginTypeCfg_(DEFAULT_MEDFILTER_MARGIN_TYPE),
-	medfilterMarginTypeCfgIsSaving_(false), medfilterMarginTypeCmdIsSet_(false),
-	medfilterAlgoCfg_(DEFAULT_MEDFILTER_ALGO), medfilterAlgoCfgIsSaving_(false),
-	medfilterAlgoCmdIsSet_(false), medfilterHuangLevelsNumCfg_(DEFAULT_HUANG_LEVELS_NUM),
-	medfilterHuangLevelsNumCfgIsSaving_(false), medfilterHuangLevelsNumCmdIsSet_(false),
-	medfilterFillPitsCfg_(DEFAULT_MEDFILTER_FILL_PITS), medfilterFillPitsCfgIsSaving_(false),
-	medfilterFillPitsCmdIsSet_(false),	appModeCfg_(DEFAULT_APP_MODE), appModeCfgIsSaving_(false),
-	appModeCmdIsSet_(false), memModeCfg_(DEFAULT_MEM_MODE), memSizeCfg_(0), memModeCfgIsSaving_(false),
-	memModeCmdIsSet_(false), helpAsked_(false), versionAsked_(false), argc_(0), argv_(NULL),
-	appPath_(""), currPath_(""), helpParamsDesc_(NULL), helpLineLength_(helpLineLength)
+//Конструктор. helpLineLength если равно 0 то ширина генерируемой справки остаётся на усмотрение
+//объекта, если же там некое число колонок - то ширина справки будет ему соответствовать.
+AppConfig::AppConfig(unsigned short helpLineLength) : 
+	helpLineLength_(helpLineLength)
 {
 	//Надо сразу заполнить базовые объекты program_options
 	FillBasePO_();

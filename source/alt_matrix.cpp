@@ -82,9 +82,7 @@ void AntiUnresolvedExternals()
 //--------------------------------//
 
 template <typename CellType> AltMatrix<CellType>::AltMatrix(const bool useSignData,
-	const bool useQuantedData) : data_(NULL), signData_(NULL), quantedData_(NULL),
-matrixArr_(NULL), signMatrixArr_(NULL), quantedMatrixArr_(NULL),
-dataElemsNum_(0), useSignData_(useSignData), useQuantedData_(useQuantedData)
+	const bool useQuantedData) : useSignData_(useSignData), useQuantedData_(useQuantedData)
 {
 	//Объект должен точно знать какого типа у него пиксели.
 	if (typeid(CellType) == typeid(double))

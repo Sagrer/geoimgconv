@@ -195,11 +195,11 @@ PixelDirection RevertPixelDirection(const PixelDirection &value);
 class CallBackBase
 {
 	private:
-		unsigned long maxProgress_;	//Значение при котором прогресс считается 100%
+		unsigned long maxProgress_ = 100;	//Значение при котором прогресс считается 100%
 	public:
 		
-		CallBackBase() : maxProgress_(100) {};
-		~CallBackBase() {};
+		CallBackBase() {};
+		virtual ~CallBackBase() {};
 
 		//Доступ к полям
 

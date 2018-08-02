@@ -57,16 +57,16 @@ class SmallToolsBox
 {
 	private:
 		//Поля
-		std::string consoleEncoding_;
-		std::string systemEncoding_;
-		bool encodingsInited_;
+		std::string consoleEncoding_ = "";
+		std::string systemEncoding_ = "";
+		bool encodingsInited_ = false;
 		std::locale utf8Locale_;
-		bool consoleEncodingIsSelected_;	//Выбор между console и system кодировками.
+		bool consoleEncodingIsSelected_ = false;	//Выбор между console и system кодировками.
 		std::string filesystemSeparator_ = "";
 	public:
 		//Конструктор и деструктор
-		SmallToolsBox();
-		~SmallToolsBox();
+		SmallToolsBox() {}
+		~SmallToolsBox() {}
 
 		//Геттеры-сеттеры.
 		std::string const& GetConsoleEncoding() const { return consoleEncoding_; };

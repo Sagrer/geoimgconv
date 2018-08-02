@@ -69,15 +69,6 @@ namespace geoimgconv
 
 SmallToolsBox STB;
 
-SmallToolsBox::SmallToolsBox() : encodingsInited_(false),
-	consoleEncodingIsSelected_(true)
-{
-}
-
-SmallToolsBox::~SmallToolsBox()
-{
-}
-
 //Переключает глобальную локаль на текущую, в которой запущено приложение.\
 //Узнаёт и запоминает кодировки - в консоли и системную. Желательно вызвать
 //до обращения к функциям перекодировки.

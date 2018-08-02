@@ -64,15 +64,18 @@ private:
 	//Поэтому будем просто держать тут ссылку на основной объект класса и брать значения полей
 	//оттуда.
 	MedianFilterBase *ownerObj_;
-
-	//Запретим конструктор по умолчанию и копирующий конструктор.
-	RealMedianFilterBase() {};
-	RealMedianFilterBase(RealMedianFilterBase&) {};
 public:
 	//Доступ к ссылке на объект-хозяин
 	MedianFilterBase& getOwnerObj() const { return *ownerObj_; }
 
-	//Нельзя создать объект не дав ссылку на MedianFilterBase
+	//Запретим конструктор по умолчанию, копирующий и переносящие конструкторы и аналогичные
+	//им операторы присваивания.
+	RealMedianFilterBase() = delete;
+	RealMedianFilterBase(const RealMedianFilterBase&) = delete;
+	RealMedianFilterBase(RealMedianFilterBase&&) = delete;
+	RealMedianFilterBase& operator=(const RealMedianFilterBase&) = delete;
+	RealMedianFilterBase& operator=(RealMedianFilterBase&&) = delete;
+	//Cоздать объект можно только передав ссылку на MedianFilterBase
 	RealMedianFilterBase(MedianFilterBase *ownerObj) : ownerObj_(ownerObj) {};
 	virtual ~RealMedianFilterBase() {};
 
@@ -111,19 +114,19 @@ private:
 	//Приватные поля.
 
 	//Матрица для исходного изображения.
-	AltMatrix<CellType> sourceMatrix_;
+	AltMatrix<CellType> sourceMatrix_;	//Инициализация в конструкторе.
 	//Матрица для результата.
-	AltMatrix<CellType> destMatrix_;
+	AltMatrix<CellType> destMatrix_ = AltMatrix<CellType>(false,false);
 	//Вычислялись ли уже минимальное и максимальное значения высот для картинки.
-	bool minMaxCalculated_;
+	bool minMaxCalculated_ = false;
 	//Значение высоты пикселя, для которого пиксель считается незначимым.
-	CellType noDataPixelValue_;
+	CellType noDataPixelValue_ = 0;
 	//Минимальная высота, встречающаяся в изображении.
-	CellType minPixelValue_;
+	CellType minPixelValue_ = 0;
 	//Максимальная высота, встречающаяся в изображении.
-	CellType maxPixelValue_;
+	CellType maxPixelValue_ = 0;
 	//Дельта - шаг между уровнями квантования.
-	double levelsDelta_;
+	double levelsDelta_ = 0.0;
 
 	//Приватные типы
 
@@ -289,8 +292,16 @@ private:
 	}
 
 public:
-	//Нельзя создать объект не дав ссылку на MedianFilterBase
-	RealMedianFilter(MedianFilterBase *ownerObj);
+	//Запретим конструктор по умолчанию, копирующий и переносящие конструкторы и аналогичные
+	//им операторы присваивания.
+	RealMedianFilter() = delete;
+	RealMedianFilter(const RealMedianFilter&) = delete;
+	RealMedianFilter(RealMedianFilter&&) = delete;
+	RealMedianFilter& operator=(const RealMedianFilter&) = delete;
+	RealMedianFilter& operator=(RealMedianFilter&&) = delete;
+	//Cоздать объект можно только передав ссылку на MedianFilterBase
+	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterBase(ownerObj),
+		sourceMatrix_(true, ownerObj->getUseHuangAlgo()) {}
 
 	//Доступ к полям.
 
@@ -442,35 +453,35 @@ class MedianFilterBase : public BaseFilter
 {
 private:
 	//Поля
-	int aperture_;		//Окно фильтра (длина стороны квадрата в пикселах). Должно быть нечётным.
-	double threshold_;			//Порог фильтра. Если медиана отличается от значения пиксела меньше чем на порог - значение не будет изменено.
+	int aperture_ = DEFAULT_MEDFILTER_APERTURE;		//Окно фильтра (длина стороны квадрата в пикселах). Должно быть нечётным.
+	double threshold_ = DEFAULT_MEDFILTER_THRESHOLD; //Порог фильтра. Если медиана отличается от значения пиксела меньше чем на порог - значение не будет изменено.
 	//bool useMultiThreading_;		//Включает многопоточную обработку. Пока не реализовано.
 	//unsigned int threadsNumber_;	//Количество потоков при многопоточной обработке. 0 - автоопределение. Пока не реализовано.
-	MarginType marginType_;		//Тип заполнения краевых пикселей.
-	bool useMemChunks_;		//Использовать ли режим обработки файла по кускам для экономии памяти.
-	int blocksInMem_;	//Количество блоков, которое можно загружать в память. Граничные верхний и нижний блоки сюда тоже входят.
-	std::string sourceFileName_;	//Имя и путь файла с исходными данными.
-	std::string destFileName_;	//Имя и путь файла назначения.
-	int imageSizeX_;	//Ширина картинки (0 если картинка не подсоединялась)
-	int imageSizeY_;	//Высота картинки (0 если картинка не подсоединялась)
-	bool imageIsLoaded_;	//Загружена ли картинка целиком в матрицу
-	bool sourceIsAttached_;	//Настроен ли файл с источником.
-	bool destIsAttached_;	//Настроен ли файл с назначением
-	PixelType dataType_;	//Тип пикселя в картинке.
-	size_t dataTypeSize_;	//Размер типа данных пикселя.
-	RealMedianFilterBase *pFilterObj_;	//Сюда будет создаваться объект для нужного типа данных.
-	unsigned long long minBlockSize_;	//Размер минимального блока, которыми обрабатывается файл.
-	unsigned long long minBlockSizeHuang_;	//То же но для алгоритма Хуанга.
-	unsigned long long minMemSize_;  //Минимальное количество памяти, без которого фильтр вообще не сможет обработать данное изображение.
-	unsigned long long maxMemSize_;  //Максимальное количество памяти, которое может потребоваться для обработки изображения.
-	GDALDataset *gdalSourceDataset_;	//GDAL-овский датасет с исходным файлом.
-	GDALDataset *gdalDestDataset_;	//GDAL-овский датасет с файлом назначения.
-	GDALRasterBand *gdalSourceRaster_;	//GDAL-овский объект для работы с пикселами исходного файла.
-	GDALRasterBand *gdalDestRaster_;		//GDAL-овский объект для работы с пикселами файла назначения.
-	int currPositionY_;	//Позиция "курсора" при чтении\записи очередных блоков из файла.
-	bool useHuangAlgo_;	//Если true то размеры блоков памяти будут считаться для алгоритма Хуанга.
-	boost::uint16_t huangLevelsNum_;	//Количество уровней квантования для алгоритма Хуанга. Имеет значение для подсчёта размера требуемой памяти.
-	bool fillPits_;	//Заполнять ли "ямы" т.е. точки, которые ниже медианы.
+	MarginType marginType_ = DEFAULT_MEDFILTER_MARGIN_TYPE;		//Тип заполнения краевых пикселей.
+	bool useMemChunks_ = false;		//Использовать ли режим обработки файла по кускам для экономии памяти.
+	int blocksInMem_ = 0;	//Количество блоков, которое можно загружать в память. Граничные верхний и нижний блоки сюда тоже входят.
+	std::string sourceFileName_ = "";	//Имя и путь файла с исходными данными.
+	std::string destFileName_ = "";	//Имя и путь файла назначения.
+	int imageSizeX_ = 0;	//Ширина картинки (0 если картинка не подсоединялась)
+	int imageSizeY_ = 0;	//Высота картинки (0 если картинка не подсоединялась)
+	bool imageIsLoaded_ = false;	//Загружена ли картинка целиком в матрицу
+	bool sourceIsAttached_ = false;	//Настроен ли файл с источником.
+	bool destIsAttached_ = false;	//Настроен ли файл с назначением
+	PixelType dataType_ = PIXEL_UNKNOWN;	//Тип пикселя в картинке.
+	size_t dataTypeSize_ = 0;	//Размер типа данных пикселя.
+	RealMedianFilterBase *pFilterObj_ = nullptr;	//Сюда будет создаваться объект для нужного типа данных.
+	unsigned long long minBlockSize_ = 0;	//Размер минимального блока, которыми обрабатывается файл.
+	unsigned long long minBlockSizeHuang_ = 0;	//То же но для алгоритма Хуанга.
+	unsigned long long minMemSize_ = 0;  //Минимальное количество памяти, без которого фильтр вообще не сможет обработать данное изображение.
+	unsigned long long maxMemSize_ = 0;  //Максимальное количество памяти, которое может потребоваться для обработки изображения.
+	GDALDataset *gdalSourceDataset_ = nullptr;	//GDAL-овский датасет с исходным файлом.
+	GDALDataset *gdalDestDataset_ = nullptr;	//GDAL-овский датасет с файлом назначения.
+	GDALRasterBand *gdalSourceRaster_ = nullptr;	//GDAL-овский объект для работы с пикселами исходного файла.
+	GDALRasterBand *gdalDestRaster_ = nullptr;		//GDAL-овский объект для работы с пикселами файла назначения.
+	int currPositionY_ = 0;	//Позиция "курсора" при чтении\записи очередных блоков из файла.
+	bool useHuangAlgo_ = false;	//Если true то размеры блоков памяти будут считаться для алгоритма Хуанга.
+	boost::uint16_t huangLevelsNum_ = DEFAULT_HUANG_LEVELS_NUM;	//Количество уровней квантования для алгоритма Хуанга. Имеет значение для подсчёта размера требуемой памяти.
+	bool fillPits_ = false;	//Заполнять ли "ямы" т.е. точки, которые ниже медианы.
 
 	//Приватные методы
 
@@ -553,7 +564,8 @@ public:
 	void setFillPits(const bool &value) { fillPits_ = value; }
 
 	//Конструкторы-деструкторы
-	MedianFilterBase(bool useHuangAlgo = false, boost::uint16_t huangLevelsNum = DEFAULT_HUANG_LEVELS_NUM);
+	MedianFilterBase(bool useHuangAlgo = false, boost::uint16_t huangLevelsNum = DEFAULT_HUANG_LEVELS_NUM) :
+		useHuangAlgo_(useHuangAlgo), huangLevelsNum_(huangLevelsNum) {}
 	~MedianFilterBase();
 
 	//Прочий функционал

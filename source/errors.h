@@ -49,11 +49,11 @@ class ErrorInfo
 {
 private:
 	//Код и текст ошибки
-	CommonErrors errorCode_;
+	CommonErrors errorCode_ = CMNERR_NO_ERROR;
 	std::string errorText_;
 public:	
-	ErrorInfo() : errorCode_(CMNERR_NO_ERROR) {};
-	~ErrorInfo() {};
+	ErrorInfo() {};
+	virtual ~ErrorInfo() {};
 
 	//Доступ к полям.
 
