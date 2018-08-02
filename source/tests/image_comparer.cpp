@@ -19,6 +19,10 @@
 #include "image_comparer.h"
 #include <boost/filesystem.hpp>
 #include "../small_tools_box.h"
+#pragma warning(push)
+#pragma warning(disable:4251)
+#include <gdal_priv.h>
+#pragma warning(pop)
 
 using std::string;
 using std::unique_ptr;

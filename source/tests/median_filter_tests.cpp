@@ -25,14 +25,14 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/data/monomorphic.hpp>
+#include <boost/mpl/list.hpp>
 #include <boost/filesystem.hpp>
 #include <string>
 #include "../median_filter.h"
-#include "image_comparer.h"
-#include "common_vars.h"
 #include "../small_tools_box.h"
 #include "../common.h"
-#include <boost/mpl/list.hpp>
+#include "image_comparer.h"
+#include "common_vars.h"
 
 namespace b_ut = boost::unit_test;
 namespace b_fs = boost::filesystem;
@@ -136,6 +136,7 @@ void CheckFile(const string &inputFileName, const string &sampleFileName, const 
 	BOOST_TEST_INFO("Opening: " + inputFileName);
 	if (!result)
 	{
+		medFilter.CloseAllFiles();
 		BOOST_TEST_INFO("Error was: " + STB.Utf8ToConsoleCharset(errObj.getErrorText()));
 	}
 	BOOST_TEST_REQUIRE(result);
@@ -145,6 +146,7 @@ void CheckFile(const string &inputFileName, const string &sampleFileName, const 
 	BOOST_TEST_INFO("Opening: " + outfileName);
 	if (!result)
 	{
+		medFilter.CloseAllFiles();
 		BOOST_TEST_INFO("Error was: " + STB.Utf8ToConsoleCharset(errObj.getErrorText()));
 	}
 	BOOST_TEST_REQUIRE(result);
@@ -154,11 +156,12 @@ void CheckFile(const string &inputFileName, const string &sampleFileName, const 
 	BOOST_TEST_INFO("Filtering: " + inputFileName + " to " + outfileName);
 	if (!result)
 	{
+		medFilter.CloseAllFiles();
 		BOOST_TEST_INFO("Error was: " + STB.Utf8ToConsoleCharset(errObj.getErrorText()));
 	}
 	BOOST_TEST_REQUIRE(result);
 
-	//Закрываем все файлы.
+	//Фильтр больше не нужен, закроем все файлы.
 	medFilter.CloseAllFiles();
 
 	//Сверяем полученное изображение с эталоном.

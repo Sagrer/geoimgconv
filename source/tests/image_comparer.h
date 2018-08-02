@@ -19,16 +19,8 @@
 //Класс для сравнивания двух файлов с геоданными. Работает через GDAL и AltMatrix.
 
 #include "../errors.h"
-#include "../common.h"
-#pragma warning(push)
-#pragma warning(disable:4251)
-#include <gdal_priv.h>
-#pragma warning(pop)
-#include <boost/cstdint.hpp>
 #include "../alt_matrix.h"
 #include <string>
-#include "../errors.h"
-#include <memory>
 
 namespace geoimgconv
 {
