@@ -144,19 +144,19 @@ public:
 	//destFileName
 	std::string const& getDestFileName() const { return destFileName_; }
 	//imageSizeX
-	int const& getImageSizeX() const { return imageSizeX_; }
+	int const& getImageSizeX() const override { return imageSizeX_; }
 	//void setImageSizeX(const int &imageSizeX) { imageSizeX_ = imageSizeX; }
 	//imageSizeY
-	int const& getImageSizeY() const { return imageSizeY_; }
+	int const& getImageSizeY() const override { return imageSizeY_; }
 	//void setImageSizeY(const int &imageSizeY) { imageSizeY_ = imageSizeY; }
 	//minBlockSize
-	unsigned long long const& getMinBlockSize() const { return minBlockSize_; }
+	unsigned long long const& getMinBlockSize() const override { return minBlockSize_; }
 	//void setMinBlockSize(const unsigned long long &value) { minBlockSize_ = value; }
 	//minMemSize
-	unsigned long long const& getMinMemSize() const { return minMemSize_; }
+	unsigned long long const& getMinMemSize() const override { return minMemSize_; }
 	//void setMinMemSize(const unsigned long long &value) { minMemSize_ = value; }
 	//maxMemSize
-	unsigned long long const& getMaxMemSize() const { return maxMemSize_; }
+	unsigned long long const& getMaxMemSize() const override { return maxMemSize_; }
 	//gdalSourceRaster_
 	GDALRasterBand* getGdalSourceRaster() { return gdalSourceRaster_; }
 	//gdalDestRaster_
@@ -220,7 +220,7 @@ public:
 	//Конструктор по умолчанию. Другие использовать нельзя.
 	MedianFilterStub() : MedianFilterBase() {}
 	//Применить "никакой" медианный фильтр.
-	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
+	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) override;
 };
 
 //Наследник, реализующий "тупой" фильтр. Алгоритм медианной фильтрации работает "в лоб".
@@ -231,7 +231,7 @@ public:
 	//Конструктор по умолчанию. Другие использовать нельзя.
 	MedianFilterStupid() : MedianFilterBase() {}
 	//Применить "тупой" медианный фильтр.
-	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
+	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) override;
 };
 
 //Наследник, "реализующий" медианную фильтрацию алгоритмом Хуанга.
@@ -242,7 +242,7 @@ public:
 	//Конструктор по умолчанию. Другие использовать нельзя.
 	MedianFilterHuang(boost::uint16_t levelsNum) : MedianFilterBase(true, levelsNum) {}
 	//Обработать изображение медианным фильтром по алгоритму Хуанга
-	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
+	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) override;
 };
 
 //Базовый абстрактный класс для шаблонных классов.
@@ -492,6 +492,7 @@ public:
 	//Cоздать объект можно только передав ссылку на MedianFilterBase
 	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterBase(ownerObj),
 		sourceMatrix_(true, ownerObj->getUseHuangAlgo()) {}
+	//Виртуальный деструктор пущай его будет.
 
 	//Доступ к полям.
 
@@ -517,35 +518,35 @@ public:
 
 	//Заполняет граничные (пустые пиксели) области вокруг значимых пикселей в соответствии с
 	//выбранным алгоритмом.
-	void FillMargins(const int yStart, const int yToProcess, CallBackBase *callBackObj = NULL);
+	void FillMargins(const int yStart, const int yToProcess, CallBackBase *callBackObj = NULL) override;
 
 	//Заполняет матрицу квантованных пикселей в указанном промежутке, получая их из значений
 	//оригинальных пикселей в исходной матрице. Нужно для алгоритма Хуанга.
 	void FillQuantedMatrix(const int yStart, const int yToProcess);
 
 	//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
-	bool ApplyStupidFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
+	bool ApplyStupidFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) override;
 
 	//Обрабатывает выбранный исходный файл алгоритмом Хуанга. Результат записывается в выбранный destFile.
-	bool ApplyHuangFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
+	bool ApplyHuangFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) override;
 
 	//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
 	//Для отладки. Результат записывается в выбранный destFile
-	bool ApplyStubFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL);
+	bool ApplyStubFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) override;
 
 	//"Тупая" визуализация матрицы, отправляется прямо в cout.
-	void SourcePrintStupidVisToCout();
+	void SourcePrintStupidVisToCout() override;
 
 	//Вывод исходной матрицы в csv-файл, который должны понимать всякие картографические
 	//программы. Это значит что каждый пиксел - это одна строка в файле.
 	//Это "тупой" вариант вывода - метаданные нормально не сохраняются.
-	bool SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
+	bool SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL) override;
 
 	//Вывод исходной квантованной матрицы в csv-файл.
 	bool QuantedSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
 
 	//Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
-	bool DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
+	bool DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL) override;
 
 	//Вернёт положительную разницу между двумя значениями пикселя независимо от
 	//типа данных в ячейках. Версия для неизвестного типа.

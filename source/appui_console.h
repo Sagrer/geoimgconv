@@ -69,17 +69,18 @@ public:
 	double const& getUpdatePeriod() const { return updatePeriod_; }
 	void setUpdatePeriod(const double &updatePeriod) { updatePeriod_ = updatePeriod; }
 
-	//Переопределяем конструктор.
+	//Конструктор и деструктор.
 	AppUIConsoleCallBack() {}
+	~AppUIConsoleCallBack() override {}
 	//Возвращает объект в состояние как будто только после инициализации.
 	void Clear();
 	//CallBack-метод, который будет выводить в консоль количество и процент уже
 	//обработанных пикселей.
-	void CallBack(const unsigned long &progressPosition);
+	void CallBack(const unsigned long &progressPosition) override;
 	//Сообщить объекту о том что операция начинается
-	void OperationStart();
+	void OperationStart() override;
 	//Сообщить объекту о том что операция завершена.
-	void OperationEnd();
+	void OperationEnd() override;
 };
 
 //Главный класс консольной версии приложения.
