@@ -33,49 +33,15 @@ using namespace boost;
 
 namespace geoimgconv{
 
-//чОрное колдунство!
-#pragma warning(push)
-#pragma warning(disable:4068)
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
-//Дополнение к костылю ниже. Заставляет компиллятор генерить код для всех методов.
-template <typename CellType> void AntiUnrExtsHelper()
-{
-	AltMatrix<CellType> temp;
-	typedef void(AltMatrix<CellType>::*MethodPointer)(...);
-	MethodPointer pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveToFile);
-	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveToGDALRaster);
-	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::LoadFromFile);
-	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::LoadFromGDALRaster);
-	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveChunkToMatrix);
-	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveChunkToFile);
-	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::Clear);
-	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::IsClear);
-	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::PrintStupidVisToCout);
-	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::SaveToCSVFile);
-	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::CreateDestMatrix);
-	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::CreateEmpty);
-	pMethod = reinterpret_cast<MethodPointer>(&AltMatrix<CellType>::CompareWithAnother);
-}
-
-//Функция-костыль. Заставляет компиллятор создать реально используемые
-//реализации шаблонного класса без того чтобы добавлять реализацию всех
-//методов в хидер. Ну вот не хочу я замусоривать хидер, а список типов, которые
-//требуется подставлять в шаблон - фиксирован и известен заранее.
-void AntiUnresolvedExternals()
-{
-	AntiUnrExtsHelper<double>();
-	AntiUnrExtsHelper<float>();
-	AntiUnrExtsHelper<boost::int8_t>();
-	AntiUnrExtsHelper<boost::uint8_t>();
-	AntiUnrExtsHelper<boost::int16_t>();
-	AntiUnrExtsHelper<boost::uint16_t>();
-	AntiUnrExtsHelper<boost::int32_t>();
-	AntiUnrExtsHelper<boost::uint32_t>();
-}
-#pragma GCC pop_options
-#pragma warning(pop)
-//END OF THE BLACK MAGIC
+//Делаем инстанциацию для всех вариантов класса, какие легально будет использовать.
+template class AltMatrix<double>;
+template class AltMatrix<float>;
+template class AltMatrix<boost::int8_t>;
+template class AltMatrix<boost::uint8_t>;
+template class AltMatrix<boost::int16_t>;
+template class AltMatrix<boost::uint16_t>;
+template class AltMatrix<boost::int32_t>;
+template class AltMatrix<boost::uint32_t>;
 
 //--------------------------------//
 //   Конструкторы-деструкторы     //
