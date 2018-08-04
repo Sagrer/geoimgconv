@@ -26,7 +26,6 @@
 #pragma warning(disable:4251)
 #include <gdal_priv.h>
 #pragma warning(pop)
-#include <boost/cstdint.hpp>
 
 namespace geoimgconv
 {

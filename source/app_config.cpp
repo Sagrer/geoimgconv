@@ -81,7 +81,7 @@ void AppConfig::FillBasePO_()
 		("medfilter.threshold", po::value<double>(), "")
 		("medfilter.margintype", po::value<std::string>(), "")
 		("medfilter.algo", po::value<std::string>(), "")
-		("medfilter.huanglevels", po::value<boost::uint16_t>(), "")
+		("medfilter.huanglevels", po::value<uint16_t>(), "")
 		("medfilter.fillpits", "")
 		("appmode", po::value<std::string>(), "")
 		("memmode", po::value<std::string>(), "")
@@ -167,7 +167,7 @@ void AppConfig::FillDependentPO_()
 немного ускорить обработку \"неровных\" изображений. Работает значительно быстрее чем обработка \
 изображения \"в лоб\", т.к на каждом следующем пикселе используется часть информации, полученной при \
 обработке предыдущего.").c_str())
-		("medfilter.huanglevels", po::value<boost::uint16_t>(), STB.Utf8ToSelectedCharset(
+		("medfilter.huanglevels", po::value<uint16_t>(), STB.Utf8ToSelectedCharset(
 "Количество уровней квантования для медианной фильтрации алгоритмом Хуанга. По умолчанию этот \
 параметр равен " + boost::lexical_cast<std::string>(DEFAULT_HUANG_LEVELS_NUM) + ". Максимально \
 возможное значение этого параметра: " + boost::lexical_cast<std::string>
@@ -405,7 +405,7 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 		};
 		if (poVarMap_.count("medfilter.huanglevels"))
 		{
-			medfilterHuangLevelsNumCmd_ = poVarMap_["medfilter.huanglevels"].as<boost::uint16_t>();
+			medfilterHuangLevelsNumCmd_ = poVarMap_["medfilter.huanglevels"].as<uint16_t>();
 			if (medfilterHuangLevelsNumCmd_ < 3)
 			{
 				//Нельзя использовать совсем уж мало уровней.

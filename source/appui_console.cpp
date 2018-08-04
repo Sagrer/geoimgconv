@@ -33,7 +33,7 @@
 #include <cmath>
 #include "common.h"
 
-using namespace boost;
+namespace b_fs = boost::filesystem;
 using namespace std;
 
 namespace geoimgconv
@@ -67,8 +67,8 @@ void AppUIConsoleCallBack::Clear()
 void AppUIConsoleCallBack::UpdateBar(const unsigned long &progressPosition)
 {
 	cout << "\r";	//Переводим вывод на начало текущей строки.
-	text_ = lexical_cast<string>(progressPosition) + "/" + lexical_cast<string>(getMaxProgress()) +
-		" ( " + lexical_cast<string>(progressPosition / (getMaxProgress() / 100)) + "% ) "
+	text_ = boost::lexical_cast<string>(progressPosition) + "/" + boost::lexical_cast<string>(getMaxProgress()) +
+		" ( " + boost::lexical_cast<string>(progressPosition / (getMaxProgress() / 100)) + "% ) "
 		+ STB.DoubleToString(pixelsPerSecond_, 2) + " пикс/с, до завершения: "
 		+ to_simple_string(timeLeft_);
 	tempSize_ = text_.size();
@@ -431,7 +431,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		{
 			maxMemCanBeUsed_ = 90 * (sysMemFreeSize / 100);
 			if (!((maxMemCanBeUsed_ >= filterObj.getMinMemSize()) && (swapMode == SWAPMODE_ASK)
-				&& ConsoleAnsweredYes(lexical_cast<string>(confObj_->getMemSize()) + "% \
+				&& ConsoleAnsweredYes(boost::lexical_cast<string>(confObj_->getMemSize()) + "% \
 свободной памяти недостаточно для работы фильтра. Попробовать взять\n90%?")))
 			{
 				//Нельзя пробовать брать больше памяти. Вся надежда на то что разрешат подкачку.
@@ -622,8 +622,8 @@ int AppUIConsole::RunApp()
 		PrintToConsole("отключен.\n\n");
 	}
 	//Настраиваем медианный фильтр и пути к файлам.
-	filesystem::path inputFilePath = filesystem::absolute(STB.Utf8ToWstring(confObj_->getInputFileName()), STB.Utf8ToWstring(getCurrPath()));
-	filesystem::path outputFilePath = filesystem::absolute(STB.Utf8ToWstring(confObj_->getOutputFileName()), STB.Utf8ToWstring(getCurrPath()));
+	b_fs::path inputFilePath = b_fs::absolute(STB.Utf8ToWstring(confObj_->getInputFileName()), STB.Utf8ToWstring(getCurrPath()));
+	b_fs::path outputFilePath = b_fs::absolute(STB.Utf8ToWstring(confObj_->getOutputFileName()), STB.Utf8ToWstring(getCurrPath()));
 	string inputFileName = STB.WstringToUtf8(inputFilePath.wstring());
 	string outputFileName = STB.WstringToUtf8(outputFilePath.wstring());
 	medFilter_->setAperture(confObj_->getMedfilterAperture());
@@ -669,7 +669,7 @@ int AppUIConsole::RunApp()
 
 	PrintToConsole("Программа будет обрабатывать файл, используя до " +
 		STB.BytesNumToInfoSizeStr(maxMemCanBeUsed_) + " памяти, частями по\n" +
-		lexical_cast<std::string>(maxBlocksCanBeUsed_) + " блока(ов).\n");
+		boost::lexical_cast<std::string>(maxBlocksCanBeUsed_) + " блока(ов).\n");
 	if (confObj_->getMemMode() != MEMORY_MODE_ONECHUNK)
 		PrintToConsole("Размер блока: до " + STB.BytesNumToInfoSizeStr(medFilter_->getMinBlockSize()) + ".\n");
 	cout << endl;

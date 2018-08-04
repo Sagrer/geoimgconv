@@ -23,7 +23,6 @@
 #pragma warning(disable:4251)
 #include <gdal_priv.h>
 #pragma warning(pop)
-#include <boost/cstdint.hpp>
 
 namespace geoimgconv
 {
@@ -143,11 +142,11 @@ extern const MemoryMode DEFAULT_MEM_MODE;
 //Режим медианного фильтра по умолчанию.
 extern const MedfilterAlgo DEFAULT_MEDFILTER_ALGO;
 //Количество уровней квантования для алгоритма Хуанга по умолчанию
-extern const boost::uint16_t DEFAULT_HUANG_LEVELS_NUM;
+extern const uint16_t DEFAULT_HUANG_LEVELS_NUM;
 //Включён ли по умолчанию режим заполнения ям в медианном фильтре.
 extern const bool DEFAULT_MEDFILTER_FILL_PITS;
 //Максимально возможное количество уровней квантования для алгоритма Хуанга.
-extern const boost::uint16_t HUANG_MAX_LEVELS_NUM;
+extern const uint16_t HUANG_MAX_LEVELS_NUM;
 
 //Функции всякие, но такие что нельзя засунуть в small_tools_box т.к. специфичны
 //для данной конкретной программы.

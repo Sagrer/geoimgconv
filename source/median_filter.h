@@ -16,7 +16,6 @@
 
 ////////////////////////////////////////////////////////////////////////
 
-#include <boost/cstdint.hpp>
 #include <boost/static_assert.hpp>
 #include "alt_matrix.h"
 #include "common.h"
@@ -89,7 +88,7 @@ private:
 	GDALRasterBand *gdalDestRaster_ = nullptr;		//GDAL-овский объект для работы с пикселами файла назначения.
 	int currPositionY_ = 0;	//Позиция "курсора" при чтении\записи очередных блоков из файла.
 	bool useHuangAlgo_ = false;	//Если true то размеры блоков памяти будут считаться для алгоритма Хуанга.
-	boost::uint16_t huangLevelsNum_ = DEFAULT_HUANG_LEVELS_NUM;	//Количество уровней квантования для алгоритма Хуанга. Имеет значение для подсчёта размера требуемой памяти.
+	uint16_t huangLevelsNum_ = DEFAULT_HUANG_LEVELS_NUM;	//Количество уровней квантования для алгоритма Хуанга. Имеет значение для подсчёта размера требуемой памяти.
 	bool fillPits_ = false;	//Заполнять ли "ямы" т.е. точки, которые ниже медианы.
 
 	//Приватные методы
@@ -167,13 +166,13 @@ public:
 	//useHuangAlgo
 	bool const& getUseHuangAlgo() const { return useHuangAlgo_; }
 	//huangLevelsNum
-	const boost::uint16_t& getHuangLevelsNum() const { return huangLevelsNum_; }
+	const uint16_t& getHuangLevelsNum() const { return huangLevelsNum_; }
 	//fillPits
 	const bool& getFillPits() const { return fillPits_; }
 	void setFillPits(const bool &value) { fillPits_ = value; }
 
 	//Конструкторы-деструкторы
-	MedianFilterBase(bool useHuangAlgo = false, boost::uint16_t huangLevelsNum = DEFAULT_HUANG_LEVELS_NUM) :
+	MedianFilterBase(bool useHuangAlgo = false, uint16_t huangLevelsNum = DEFAULT_HUANG_LEVELS_NUM) :
 		useHuangAlgo_(useHuangAlgo), huangLevelsNum_(huangLevelsNum) {}
 	~MedianFilterBase();
 
@@ -240,7 +239,7 @@ class MedianFilterHuang : public MedianFilterBase
 {
 public:
 	//Конструктор по умолчанию. Другие использовать нельзя.
-	MedianFilterHuang(boost::uint16_t levelsNum) : MedianFilterBase(true, levelsNum) {}
+	MedianFilterHuang(uint16_t levelsNum) : MedianFilterBase(true, levelsNum) {}
 	//Обработать изображение медианным фильтром по алгоритму Хуанга
 	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) override;
 };
@@ -422,43 +421,43 @@ private:
 	//Вспомогательный метод для алгоритма Хуанга. Цикл по строке вправо.
 	inline void HuangFilter_ProcessStringToRight(int &destX, int &destY, int &sourceX,
 		int &sourceY, const int &marginSize, unsigned long &progressPosition, bool &gistIsActual,
-		bool &gistIsEmpty, unsigned long *gist, boost::uint16_t &median, unsigned long &elemsLeftMed,
-		int &oldY, int &oldX, const boost::uint16_t &halfMedPos, CallBackBase *callBackObj);
+		bool &gistIsEmpty, unsigned long *gist, uint16_t &median, unsigned long &elemsLeftMed,
+		int &oldY, int &oldX, const uint16_t &halfMedPos, CallBackBase *callBackObj);
 
 	//Вспомогательный метод для алгоритма Хуанга. Цикл по строке влево.
 	//Два почти одинаковых метода здесь чтобы внутри не делать проверок направления
 	//за счёт чего оно может быть будет работать немного быстрее.
 	inline void HuangFilter_ProcessStringToLeft(int &destX, int &destY, int &sourceX,
 		int &sourceY, const int &marginSize, unsigned long &progressPosition, bool &gistIsActual,
-		bool &gistIsEmpty, unsigned long *gist, boost::uint16_t &median, unsigned long &elemsLeftMed,
-		int &oldY, int &oldX, const boost::uint16_t &halfMedPos, CallBackBase *callBackObj);
+		bool &gistIsEmpty, unsigned long *gist, uint16_t &median, unsigned long &elemsLeftMed,
+		int &oldY, int &oldX, const uint16_t &halfMedPos, CallBackBase *callBackObj);
 
 	//Вспомогательный метод для алгоритма Хуанга. Заполняет гистограмму с нуля. В параметрах координаты
 	//верхнего левого угла апертуры.
 	inline void HuangFilter_FillGist(const int &leftUpY, const int &leftUpX, unsigned long *gist,
-		boost::uint16_t &median, unsigned long &elemsLeftMed,
-		const boost::uint16_t &halfMedPos);
+		uint16_t &median, unsigned long &elemsLeftMed,
+		const uint16_t &halfMedPos);
 
 	//Вспомогательный метод для алгоритма Хуанга. Выполняет шаг вправо.
 	inline void HuangFilter_DoStepRight(const int &leftUpY, const int &leftUpX, unsigned long *gist,
-		const boost::uint16_t &median, unsigned long &elemsLeftMed);
+		const uint16_t &median, unsigned long &elemsLeftMed);
 
 	//Вспомогательный метод для алгоритма Хуанга. Выполняет шаг влево.
 	inline void HuangFilter_DoStepLeft(const int &leftUpY, const int &leftUpX, unsigned long *gist,
-		const boost::uint16_t &median, unsigned long &elemsLeftMed);
+		const uint16_t &median, unsigned long &elemsLeftMed);
 
 	//Вспомогательный метод для алгоритма Хуанга. Выполняет шаг вниз.
 	inline void HuangFilter_DoStepDown(const int &leftUpY, const int &leftUpX, unsigned long *gist,
-		const boost::uint16_t &median, unsigned long &elemsLeftMed);
+		const uint16_t &median, unsigned long &elemsLeftMed);
 
 	//Вспомогательный метод для алгоритма Хуанга. Корректирует медиану.
 	inline void HuangFilter_DoMedianCorrection(boost::uint16_t &median, unsigned long &elemsLeftMed,
-		const boost::uint16_t &halfMedPos, unsigned long *gist);
+		const uint16_t &halfMedPos, unsigned long *gist);
 
 	//Вспомогательный метод для алгоритма Хуанга. Запись нового значения пикселя в матрицу
 	//назначения.
 	inline void HuangFilter_WriteDestPixel(const int &destY, const int &destX, const int &sourceY,
-		const int &sourceX, const boost::uint16_t &median);
+		const int &sourceX, const uint16_t &median);
 
 	//Метод вычисляет минимальную и максимальную высоту в открытом изображении если это вообще нужно.
 	//Также вычисляет дельту (шаг между уровнями).
@@ -467,7 +466,7 @@ private:
 	//Преобразование значение пикселя в квантованное значение. minMaxCalculated_ не проверяется (чтобы
 	//не тратить на это время, метод будет очень часто вызываться), однако оно должно быть true,
 	//иначе получится ерунда.
-	boost::uint16_t PixelValueToQuantedValue(const CellType &value)
+	uint16_t PixelValueToQuantedValue(const CellType &value)
 	{
 		//Код в header-е чтобы инлайнился.
 		if (value == noDataPixelValue_)
@@ -476,8 +475,8 @@ private:
 		}
 		else
 		{
-			boost::uint16_t temp = (boost::uint16_t)(((value-minPixelValue_)/levelsDelta_));
-			return ((boost::uint16_t)((value-minPixelValue_)/levelsDelta_));
+			uint16_t temp = (uint16_t)(((value-minPixelValue_)/levelsDelta_));
+			return ((uint16_t)((value-minPixelValue_)/levelsDelta_));
 		}
 	}
 
@@ -559,7 +558,7 @@ public:
 	//Преобразовать QuantedValue в CellType. Эта версия предполагает что CellType
 	//- целочисленный тип и результат требует округления. Эта версия используется
 	//для всех CellType кроме double и float
-	inline CellType QuantedValueToPixelValue(const boost::uint16_t &value)
+	inline CellType QuantedValueToPixelValue(const uint16_t &value)
 	{
 		return ((CellType)(std::lround((double)(value)* levelsDelta_)) + minPixelValue_);
 	}
@@ -583,36 +582,36 @@ GetDelta(const float &value1, const float &value2)
 }
 
 //Вернёт положительную разницу между двумя значениями пикселя. Версия для boost::int8_t.
-template <> inline boost::int8_t RealMedianFilter<boost::int8_t>::
-GetDelta(const boost::int8_t &value1, const boost::int8_t &value2)
+template <> inline int8_t RealMedianFilter<int8_t>::
+GetDelta(const int8_t &value1, const int8_t &value2)
 {
 	return std::abs(value1-value2);
 }
 
 //Вернёт положительную разницу между двумя значениями пикселя. Версия для boost::int16_t.
-template <> inline boost::int16_t RealMedianFilter<boost::int16_t>::
-GetDelta(const boost::int16_t &value1, const boost::int16_t &value2)
+template <> inline int16_t RealMedianFilter<int16_t>::
+GetDelta(const int16_t &value1, const int16_t &value2)
 {
 	return std::abs(value1-value2);
 }
 
 //Вернёт положительную разницу между двумя значениями пикселя. Версия для boost::int32_t.
-template <> inline boost::int32_t RealMedianFilter<boost::int32_t>::
-GetDelta(const boost::int32_t &value1, const boost::int32_t &value2)
+template <> inline int32_t RealMedianFilter<int32_t>::
+GetDelta(const int32_t &value1, const int32_t &value2)
 {
 	return std::abs(value1-value2);
 }
 
 //Преобразовать QuantedValue в double.
 template <> inline double RealMedianFilter<double>::
- QuantedValueToPixelValue(const boost::uint16_t &value)
+ QuantedValueToPixelValue(const uint16_t &value)
 {
 	return ((double)value * levelsDelta_) + minPixelValue_;
 }
 
 //Преобразовать QuantedValue в float.
 template <> inline float RealMedianFilter<float>::
-QuantedValueToPixelValue(const boost::uint16_t &value)
+QuantedValueToPixelValue(const uint16_t &value)
 {
 	return ((float)((double)value * levelsDelta_)) + minPixelValue_;
 }
@@ -621,12 +620,12 @@ QuantedValueToPixelValue(const boost::uint16_t &value)
 //Все они испольуются внутри median_filter.cpp а значит их код точно сгенерируется по шаблону.
 typedef RealMedianFilter<double> RealMedianFilterFloat64;
 typedef RealMedianFilter<float> RealMedianFilterFloat32;
-typedef RealMedianFilter<boost::int8_t> RealMedianFilterInt8;
-typedef RealMedianFilter<boost::uint8_t> RealMedianFilterUInt8;
-typedef RealMedianFilter<boost::int16_t> RealMedianFilterInt16;
-typedef RealMedianFilter<boost::uint16_t> RealMedianFilterUInt16;
-typedef RealMedianFilter<boost::int32_t> RealMedianFilterInt32;
-typedef RealMedianFilter<boost::uint32_t> RealMedianFilterUInt32;
+typedef RealMedianFilter<int8_t> RealMedianFilterInt8;
+typedef RealMedianFilter<uint8_t> RealMedianFilterUInt8;
+typedef RealMedianFilter<int16_t> RealMedianFilterInt16;
+typedef RealMedianFilter<uint16_t> RealMedianFilterUInt16;
+typedef RealMedianFilter<int32_t> RealMedianFilterInt32;
+typedef RealMedianFilter<uint32_t> RealMedianFilterUInt32;
 
 //Обязательно надо проверить и запретить дальнейшую компиляцию если double и float
 //означают не то что мы думаем. Типы из boost не используются т.к. простых дефайнов

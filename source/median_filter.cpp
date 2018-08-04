@@ -26,9 +26,8 @@
 #include <algorithm>
 #include <cstdlib>
 #include "small_tools_box.h"
-#include "common.h"
 
-using namespace boost;
+namespace b_fs = boost::filesystem;
 using namespace std;
 
 namespace geoimgconv
@@ -1028,11 +1027,11 @@ void RealMedianFilter<CellType>::HuangFilter(const int &currYToProcess, CallBack
 	//Создаём массив-гистограмму.
 	unsigned long *gist = new unsigned long[getOwnerObj().getHuangLevelsNum()];
 	//Текущее значение медианы
-	boost::uint16_t median;
+	uint16_t median;
 	//Количество элементов в гистограмме, которые меньше медианы (т.е. левее её).
 	unsigned long elemsLeftMed;
 	//Позиция, в которой по идее должна быть расположена медиана.
-	boost::uint16_t halfMedPos = ((getOwnerObj().getAperture() * getOwnerObj().getAperture()) - 1) / 2;
+	uint16_t halfMedPos = ((getOwnerObj().getAperture() * getOwnerObj().getAperture()) - 1) / 2;
 	//Признак значимости гистограммы. Изначально гистограмма незначима и её нужно заполнить.
 	bool gistIsActual = false;
 	//Признак вообще наличия гистограммы. Второй признак нужен т.к. гистограмма может быть незначимой,
@@ -1082,8 +1081,8 @@ void RealMedianFilter<CellType>::HuangFilter(const int &currYToProcess, CallBack
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_ProcessStringToRight(int &destX, int &destY,
 	int &sourceX, int &sourceY, const int &marginSize, unsigned long &progressPosition,
-	bool &gistIsActual, bool &gistIsEmpty, unsigned long *gist, boost::uint16_t &median,
-	unsigned long &elemsLeftMed, int &oldY, int &oldX, const boost::uint16_t &halfMedPos,
+	bool &gistIsActual, bool &gistIsEmpty, unsigned long *gist, uint16_t &median,
+	unsigned long &elemsLeftMed, int &oldY, int &oldX, const uint16_t &halfMedPos,
 	CallBackBase *callBackObj)
 {
 	for (destX = 0, sourceX = destX + marginSize; destX < destMatrix_.getXSize(); ++destX, ++sourceX)
@@ -1170,8 +1169,8 @@ inline void RealMedianFilter<CellType>::HuangFilter_ProcessStringToRight(int &de
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_ProcessStringToLeft(int &destX, int &destY,
 	int &sourceX, int &sourceY, const int &marginSize, unsigned long &progressPosition,
-	bool &gistIsActual, bool &gistIsEmpty, unsigned long *gist, boost::uint16_t &median,
-	unsigned long &elemsLeftMed, int &oldY, int &oldX, const boost::uint16_t &halfMedPos,
+	bool &gistIsActual, bool &gistIsEmpty, unsigned long *gist, uint16_t &median,
+	unsigned long &elemsLeftMed, int &oldY, int &oldX, const uint16_t &halfMedPos,
 	CallBackBase *callBackObj)
 {
 	int lastPixelX = destMatrix_.getXSize()-1;
@@ -1258,8 +1257,8 @@ inline void RealMedianFilter<CellType>::HuangFilter_ProcessStringToLeft(int &des
 //верхнего левого угла апертуры.
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_FillGist(const int &leftUpY, const int &leftUpX,
-	unsigned long *gist, boost::uint16_t &median, unsigned long &elemsLeftMed,
-	const boost::uint16_t & halfMedPos)
+	unsigned long *gist, uint16_t &median, unsigned long &elemsLeftMed,
+	const uint16_t & halfMedPos)
 {
 	//Счётчики и границы.
 	int windowY, windowX, windowYEnd, windowXEnd;
@@ -1273,7 +1272,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_FillGist(const int &leftUpY,
 		for (windowX = leftUpX; windowX < windowXEnd; ++windowX)
 		{
 			//Инкрементируем счётчик пикселей этого уровня в гистограмме.
-			boost::uint16_t temp = sourceMatrix_.getQuantedMatrixElem(windowY, windowX);
+			uint16_t temp = sourceMatrix_.getQuantedMatrixElem(windowY, windowX);
 			++(gist[sourceMatrix_.getQuantedMatrixElem(windowY, windowX)]);
 		}
 	}
@@ -1290,7 +1289,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_FillGist(const int &leftUpY,
 //Вспомогательный метод для алгоритма Хуанга. Выполняет шаг вправо.
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_DoStepRight(const int &leftUpY,
-	const int &leftUpX, unsigned long *gist, const boost::uint16_t &median,
+	const int &leftUpX, unsigned long *gist, const uint16_t &median,
 	unsigned long &elemsLeftMed)
 {
 	//Счётчики и границы.
@@ -1299,7 +1298,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoStepRight(const int &leftU
 	windowXLeft = leftUpX - 1;
 	windowXRight = windowXLeft + getOwnerObj().getAperture();
 	//Тут будет текущее квантованное значение пикселя.
-	boost::uint16_t currQuantedValue;
+	uint16_t currQuantedValue;
 
 	//Удаляем из гистограммы колонку левее апертуры, добавляем последнюю (самую правую) колонку.
 	for (windowY = leftUpY; windowY < windowYEnd; ++windowY)
@@ -1324,7 +1323,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoStepRight(const int &leftU
 //Вспомогательный метод для алгоритма Хуанга. Выполняет шаг влево.
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_DoStepLeft(const int &leftUpY,
-	const int &leftUpX, unsigned long *gist, const boost::uint16_t &median,
+	const int &leftUpX, unsigned long *gist, const uint16_t &median,
 	unsigned long &elemsLeftMed)
 {
 	//Счётчики и границы.
@@ -1332,7 +1331,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoStepLeft(const int &leftUp
 	windowYEnd = leftUpY + getOwnerObj().getAperture();
 	windowXRight = leftUpX + getOwnerObj().getAperture();
 	//Тут будет текущее квантованное значение пикселя.
-	boost::uint16_t currQuantedValue;
+	uint16_t currQuantedValue;
 
 	//Удаляем из гистограммы колонку правее апертуры, добавляем первую (самую левую) колонку.
 	for (windowY = leftUpY; windowY < windowYEnd; ++windowY)
@@ -1357,7 +1356,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoStepLeft(const int &leftUp
 //Вспомогательный метод для алгоритма Хуанга. Выполняет шаг вниз.
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_DoStepDown(const int &leftUpY,
-	const int &leftUpX, unsigned long *gist, const boost::uint16_t &median,
+	const int &leftUpX, unsigned long *gist, const uint16_t &median,
 	unsigned long &elemsLeftMed)
 {
 	//Счётчики и границы.
@@ -1366,7 +1365,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoStepDown(const int &leftUp
 	windowYUp = leftUpY - 1;
 	windowYDown = windowYUp + getOwnerObj().getAperture();
 	//Тут будет текущее квантованное значение пикселя.
-	boost::uint16_t currQuantedValue;
+	uint16_t currQuantedValue;
 
 	//Удаляем из гистограммы строку выше апертуры, добавляем последнюю (самую нижнюю)
 	//строку апертуры.
@@ -1391,8 +1390,8 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoStepDown(const int &leftUp
 
 //Вспомогательный метод для алгоритма Хуанга. Корректирует медиану.
 template<typename CellType>
-inline void RealMedianFilter<CellType>::HuangFilter_DoMedianCorrection(boost::uint16_t &median,
-	unsigned long &elemsLeftMed, const boost::uint16_t &halfMedPos, unsigned long *gist)
+inline void RealMedianFilter<CellType>::HuangFilter_DoMedianCorrection(uint16_t &median,
+	unsigned long &elemsLeftMed, const uint16_t &halfMedPos, unsigned long *gist)
 {
 	if (elemsLeftMed > halfMedPos)
 	{
@@ -1415,8 +1414,8 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoMedianCorrection(boost::ui
 	}
 	/*//В любом случае теперь имеем корректную медиану.
 	//Проверим правильность корректировки.
-	boost::uint16_t elemsLeftMed_test = 0;
-	boost::uint16_t median_test = 0;
+	uint16_t elemsLeftMed_test = 0;
+	uint16_t median_test = 0;
 	while ((elemsLeftMed_test + gist[median_test]) <= halfMedPos)
 	{
 		elemsLeftMed_test += gist[median_test];
@@ -1432,7 +1431,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_DoMedianCorrection(boost::ui
 //назначения.
 template<typename CellType>
 inline void RealMedianFilter<CellType>::HuangFilter_WriteDestPixel(const int &destY, const int &destX,
-	const int &sourceY,	const int &sourceX,	const boost::uint16_t &median)
+	const int &sourceY,	const int &sourceX,	const uint16_t &median)
 {
 	CellType newValue = QuantedValueToPixelValue(median);
 
@@ -1720,8 +1719,8 @@ bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *err
 	}
 
 	//А был ли файл?
-	filesystem::path filePath = STB.Utf8ToWstring(fileName);
-	if (!filesystem::is_regular_file(filePath))
+	b_fs::path filePath = STB.Utf8ToWstring(fileName);
+	if (!b_fs::is_regular_file(filePath))
 	{
 		if (errObj)	errObj->SetError(CMNERR_FILE_NOT_EXISTS, ": " + fileName);
 		return false;
@@ -1776,27 +1775,27 @@ bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *err
 	{
 		case PIXEL_INT8:
 			pFilterObj_ = new RealMedianFilterInt8(this);
-			dataTypeSize_ = sizeof(boost::int8_t);
+			dataTypeSize_ = sizeof(int8_t);
 			break;
 		case PIXEL_UINT8:
 			pFilterObj_ = new RealMedianFilterUInt8(this);
-			dataTypeSize_ = sizeof(boost::uint8_t);
+			dataTypeSize_ = sizeof(uint8_t);
 			break;
 		case PIXEL_INT16:
 			pFilterObj_ = new RealMedianFilterInt16(this);
-			dataTypeSize_ = sizeof(boost::int16_t);
+			dataTypeSize_ = sizeof(int16_t);
 			break;
 		case PIXEL_UINT16:
 			pFilterObj_ = new RealMedianFilterUInt16(this);
-			dataTypeSize_ = sizeof(boost::uint16_t);
+			dataTypeSize_ = sizeof(uint16_t);
 			break;
 		case PIXEL_INT32:
 			pFilterObj_ = new RealMedianFilterInt32(this);
-			dataTypeSize_ = sizeof(boost::int32_t);
+			dataTypeSize_ = sizeof(int32_t);
 			break;
 		case PIXEL_UINT32:
 			pFilterObj_ = new RealMedianFilterUInt32(this);
-			dataTypeSize_ = sizeof(boost::uint32_t);
+			dataTypeSize_ = sizeof(uint32_t);
 			break;
 		case PIXEL_FLOAT32:
 			pFilterObj_ = new RealMedianFilterFloat32(this);
@@ -1847,13 +1846,13 @@ bool MedianFilterBase::OpenOutputFile(const std::string &fileName, const bool &f
 	}
 
 	//Готовим пути.
-	filesystem::path destFilePath, sourceFilePath;
+	b_fs::path destFilePath, sourceFilePath;
 	destFilePath = STB.Utf8ToWstring(fileName);
 	sourceFilePath = STB.Utf8ToWstring(sourceFileName_);
 
 	//Проверяем есть ли уже такой файл.
-	system::error_code errCode;
-	if (filesystem::exists(destFilePath, errCode))
+	boost::system::error_code errCode;
+	if (b_fs::exists(destFilePath, errCode))
 	{
 		if (!forceRewrite)
 		{
@@ -1862,7 +1861,7 @@ bool MedianFilterBase::OpenOutputFile(const std::string &fileName, const bool &f
 			return false;
 		}
 		//Удаляем старый файл.
-		if (!filesystem::remove(destFilePath, errCode))
+		if (!b_fs::remove(destFilePath, errCode))
 		{
 			if (errObj) errObj->SetError(CMNERR_WRITE_ERROR, ": " +
 				STB.SystemCharsetToUtf8(errCode.message()));
@@ -1871,7 +1870,7 @@ bool MedianFilterBase::OpenOutputFile(const std::string &fileName, const bool &f
 	}
 
 	//Всё, файла быть не должно. Копируем исходный файл.
-	filesystem::copy_file(sourceFilePath, destFilePath, errCode);
+	b_fs::copy_file(sourceFilePath, destFilePath, errCode);
 	if (errCode.value())
 	{
 		if (errObj) errObj->SetError(CMNERR_WRITE_ERROR, ": " +

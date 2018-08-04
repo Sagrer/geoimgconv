@@ -24,7 +24,6 @@
 #pragma warning(disable:4251)
 #include <gdal_priv.h>
 #pragma warning(pop)
-#include <boost/cstdint.hpp>
 #include "alt_matrix_base.h"
 
 namespace geoimgconv
@@ -61,12 +60,12 @@ public:
 		signMatrixArr_[yCoord][xCoord] = value;
 	}
 	//quantedMatrixArr
-	boost::uint16_t const& getQuantedMatrixElem(const int &yCoord, const int &xCoord) const
+	uint16_t const& getQuantedMatrixElem(const int &yCoord, const int &xCoord) const
 	{
 		return quantedMatrixArr_[yCoord][xCoord];
 	}
 	void setQuantedMatrixElem(const int &yCoord, const int &xCoord,
-		const boost::uint16_t &value)
+		const uint16_t &value)
 	{
 		quantedMatrixArr_[yCoord][xCoord] = value;
 	}
@@ -156,14 +155,14 @@ private:
 						//заполнен значением для нормальной работы фильтра, но сам по себе незначим и после
 						//завершения фильтрации должен быть опустошён. За пустой незначимый пиксел принимаются
 						//пикселы с нулевым значением (в data_ а не в signData_!).
-	boost::uint16_t *quantedData_ = nullptr;	//Ссылка на данные "квантованных" пикселей, нужных для работы алгоритма
+	uint16_t *quantedData_ = nullptr;	//Ссылка на данные "квантованных" пикселей, нужных для работы алгоритма
 									//Хуанга. Для 1 и 2-байтных типов пикселя использование этого массива
 									//вероятно будет не оптимально, но преждевременная оптимизация тоже
 									//не есть хорошо, так что пока я не городил изврат с ещё бОльшим количеством
 									//шаблонов и этот массив создаётся в т.ч для матриц с однобайтовыми ячейками.
 	CellType **matrixArr_ = nullptr;	//Двумерный массив для произвольного доступа к элементам по X и Y.
 	char **signMatrixArr_ = nullptr;	//то же для произвольного доступа к signData_.
-	boost::uint16_t **quantedMatrixArr_ = nullptr;  //то же для произвольного доступа к quantedData_.
+	uint16_t **quantedMatrixArr_ = nullptr;  //то же для произвольного доступа к quantedData_.
 	bool useSignData_ = true;	//Использовать ли вспомогательную матрицу. Если false - память под неё не выделяется.
 	bool useQuantedData_ = false;  //Аналогично использовать ли quantedData_.
 };

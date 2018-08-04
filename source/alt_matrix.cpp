@@ -17,8 +17,6 @@
 //Класс для объектов, в которых будут храниться матрицы высот.
 
 #include "alt_matrix.h"
-#include <boost/cstdint.hpp>
-#include <boost/filesystem.hpp>
 #include <typeinfo>
 #include <iostream>
 #include <cmath>
@@ -29,19 +27,18 @@ using std::string;
 using std::cout;
 using std::endl;
 using std::ios_base;
-using namespace boost;
 
 namespace geoimgconv{
 
 //Делаем инстанциацию для всех вариантов класса, какие легально будет использовать.
 template class AltMatrix<double>;
 template class AltMatrix<float>;
-template class AltMatrix<boost::int8_t>;
-template class AltMatrix<boost::uint8_t>;
-template class AltMatrix<boost::int16_t>;
-template class AltMatrix<boost::uint16_t>;
-template class AltMatrix<boost::int32_t>;
-template class AltMatrix<boost::uint32_t>;
+template class AltMatrix<int8_t>;
+template class AltMatrix<uint8_t>;
+template class AltMatrix<int16_t>;
+template class AltMatrix<uint16_t>;
+template class AltMatrix<int32_t>;
+template class AltMatrix<uint32_t>;
 
 //--------------------------------//
 //   Конструкторы-деструкторы     //
@@ -190,7 +187,7 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 		if (useSignData_)
 			memset(signData_, 0, blockSize);
 		if (useQuantedData_)
-			memset(quantedData_, 0, blockSize * sizeof(boost::uint16_t));
+			memset(quantedData_, 0, blockSize * sizeof(uint16_t));
 		yStart = marginSize;
 	}
 		break;
@@ -209,7 +206,7 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 		size_t blocksSizeBytes = blocksSize * sizeof(CellType);
 		size_t blocksQuantedBytes;
 		if (useQuantedData_)
-			blocksQuantedBytes = blocksSize * sizeof(boost::uint16_t);
+			blocksQuantedBytes = blocksSize * sizeof(uint16_t);
 		size_t sourceOffset = (getYSize() - yStart)*getXSize();
 		size_t sourceOffsetBytes = sourceOffset * sizeof(CellType);
 		memcpy(data_, (char*)realSourceMatrix->data_ + sourceOffsetBytes, blocksSizeBytes);
@@ -218,7 +215,7 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 		else if (useSignData_)
 			memset(signData_, 0, blocksSize);
 		if (useQuantedData_ && realSourceMatrix->useQuantedData_)
-			memcpy(quantedData_, (boost::uint16_t*)realSourceMatrix->quantedData_ + sourceOffset,
+			memcpy(quantedData_, (uint16_t*)realSourceMatrix->quantedData_ + sourceOffset,
 				blocksQuantedBytes);
 		else if (useQuantedData_)
 			memset(quantedData_, 0, blocksQuantedBytes);
@@ -231,7 +228,7 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 	if (useSignData_)
 		memset(signMatrixArr_[yStart], 0, blocksToNullSize);
 	if (useQuantedData_)
-		memset(quantedMatrixArr_[yStart], 0, blocksToNullSize*sizeof(boost::uint16_t));
+		memset(quantedMatrixArr_[yStart], 0, blocksToNullSize*sizeof(uint16_t));
 
 	//Теперь надо прочитать информацию из файла.
 
@@ -264,7 +261,7 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 		if (useSignData_)
 			memset((void*)(signMatrixArr_[yProcessed]), 0, elemsNum);
 		if (useQuantedData_)
-			memset((void*)(quantedMatrixArr_[yProcessed]), 0, elemsNum*sizeof(boost::uint16_t));
+			memset((void*)(quantedMatrixArr_[yProcessed]), 0, elemsNum*sizeof(uint16_t));
 	}
 
 	//Осталось пробежаться по всем пикселям и отклассифицировать их на значимые и незначимые.
@@ -379,8 +376,8 @@ void AltMatrix<CellType>::CreateEmpty(const int &newX, const int &newY)
 	//Матрица для алгоритма Хуанга.
 	if (useQuantedData_)
 	{
-		quantedData_ = new boost::uint16_t[dataElemsNum_]();
-		quantedMatrixArr_ = new boost::uint16_t*[getYSize()];
+		quantedData_ = new uint16_t[dataElemsNum_]();
+		quantedMatrixArr_ = new uint16_t*[getYSize()];
 		for (i = 0; i < getYSize(); i++)
 		{
 			j = i * getXSize();

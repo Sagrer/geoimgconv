@@ -19,7 +19,6 @@
 #include "common.h"
 #include <string>
 #include "small_tools_box.h"
-#include <boost/lexical_cast.hpp>
 
 namespace geoimgconv
 {
@@ -48,11 +47,11 @@ const MemoryMode DEFAULT_MEM_MODE = MEMORY_MODE_AUTO;
 //Режим медианного фильтра по умолчанию.
 const MedfilterAlgo DEFAULT_MEDFILTER_ALGO = MEDFILTER_ALGO_STUPID;
 //Количество уровней квантования для алгоритма Хуанга по умолчанию
-const boost::uint16_t DEFAULT_HUANG_LEVELS_NUM = 10000;
+const uint16_t DEFAULT_HUANG_LEVELS_NUM = 10000;
 //Включён ли по умолчанию режим заполнения ям в медианном фильтре.
 const bool DEFAULT_MEDFILTER_FILL_PITS = false;
 //Максимально возможное количество уровней квантования для алгоритма Хуанга.
-const boost::uint16_t HUANG_MAX_LEVELS_NUM = -1; //65535
+const uint16_t HUANG_MAX_LEVELS_NUM = -1; //65535
 
 //Текстовое представление для AppMode
 const std::string AppModeTexts[] = {"median",	//0
