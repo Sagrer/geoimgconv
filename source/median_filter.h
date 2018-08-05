@@ -74,7 +74,7 @@ private:
 	bool imageIsLoaded_ = false;	//Загружена ли картинка целиком в матрицу
 	bool sourceIsAttached_ = false;	//Настроен ли файл с источником.
 	bool destIsAttached_ = false;	//Настроен ли файл с назначением
-	PixelType dataType_ = PIXEL_UNKNOWN;	//Тип пикселя в картинке.
+	PixelType dataType_ = PixelType::Unknown;	//Тип пикселя в картинке.
 	size_t dataTypeSize_ = 0;	//Размер типа данных пикселя.
 	RealMedianFilterBase *pFilterObj_ = nullptr;	//Сюда будет создаваться объект для нужного типа данных.
 	unsigned long long minBlockSize_ = 0;	//Размер минимального блока, которыми обрабатывается файл.

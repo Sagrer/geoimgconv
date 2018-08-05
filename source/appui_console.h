@@ -89,12 +89,12 @@ class AppUIConsole
 {
 private:
 	//Приватные типы
-	enum SwapMode : char
+	enum class SwapMode : char
 	//Для DetectMaxMemoryCanBeUsed
 	{
-		SWAPMODE_SILENT_NOSWAP = 0,		//Не использовать swap, не спрашивать
-		SWAPMODE_SILENT_USESWAP = 1,	//При необходимости использовать swap, не спрашивать.
-		SWAPMODE_ASK = 2				//В случае непоняток - спросить у юзера.
+		SilentNoswap = 0,		//Не использовать swap, не спрашивать
+		SilentUseswap = 1,	//При необходимости использовать swap, не спрашивать.
+		Ask = 2				//В случае непоняток - спросить у юзера.
 	};
 
 	//Приватные поля
@@ -119,7 +119,7 @@ private:
 	//swapMode - задаёт либо интерактивный режим либо тихий режим работы, в тихом режиме swap может
 	//либо использоваться либо не использоваться в зависимости от выбранного режима.
 	//Перед запуском метода _должен_ был быть выполнен метод DetectSysResInfo()!
-	bool DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const SwapMode swapMode = SWAPMODE_ASK,
+	bool DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const SwapMode swapMode = SwapMode::Ask,
 		ErrorInfo *errObj = NULL);
 
 	//Задетектить инфу для sysResInfo_

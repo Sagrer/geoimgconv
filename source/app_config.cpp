@@ -60,7 +60,7 @@ AppConfig::~AppConfig()
 bool AppConfig::ReadConfigFile_(const std::string &filePath, ErrorInfo *errObj)
 {
 	//Заглушка
-	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
+	if (errObj) errObj->SetError(CommonErrors::FeatureNotReady);
 	return false;
 };
 
@@ -147,21 +147,21 @@ void AppConfig::FillDependentPO_()
 того, чтобы пикселы, находящиеся по краям значимой части изображения также можно \
 было обработать фильтром, т.е. чтобы в окне вокруг этого пикселя были незначимые \
 пиксели, похожие на обычные значимые (в частности, не сильно отличающиеся по \
-высоте). Возможные варианты заполнения:\n    " + MarginTypesTexts[MARGIN_SIMPLE_FILLING]
+высоте). Возможные варианты заполнения:\n    " + MarginTypesTexts[(unsigned char)MarginType::SimpleFilling]
 + " - требующая заполнения область заполняется копией краевого пикселя. Работает быстро, но \
 создаёт холмы если копируемый пиксель сильно отличается по своей высоте от окружающих. \n\
-    "+MarginTypesTexts[MARGIN_MIRROR_FILLING]+" - краевые области заполняются зеркальным \
+    "+MarginTypesTexts[(unsigned char)MarginType::MirrorFilling]+" - краевые области заполняются зеркальным \
 отражением изображения, расположенного в противоположную сторону от краевого пикселя. \
 Работает медленно, но при достаточном размере окна позволяет например избежать появления \
 холмов на месте леса при фильтрации.").c_str())
 		("medfilter.algo", po::value<std::string>(), STB.Utf8ToSelectedCharset(
-"Алгоритм медианного фильтра. Возможные варианты:\n    " + MedfilterAlgoTexts[MEDFILTER_ALGO_STUB]
+"Алгоритм медианного фильтра. Возможные варианты:\n    " + MedfilterAlgoTexts[(unsigned char)MedfilterAlgo::Stub]
 + " - пустой алгоритм. Ничего не делает, исходный файл просто копируется.\n    "
-+ MedfilterAlgoTexts[MEDFILTER_ALGO_STUPID] + " - алгоритм, обрабатывающий изображение \
++ MedfilterAlgoTexts[(unsigned char)MedfilterAlgo::Stupid] + " - алгоритм, обрабатывающий изображение \
 \"в лоб\", т.е. на каждой итерации берутся все пиксели апертуры, сортируются, берётся медиана. \
 Этот алгоритм работает медленно, но медиана вычисляется без вызванной к примеру квантованием по \
 уровням потери точности. Это вариант по умолчанию (т.е применяется если опция не была указана).\n\
-    " + MedfilterAlgoTexts[MEDFILTER_ALGO_HUANG] + " - алгоритм быстрой медианной фильтрации, \
+    " + MedfilterAlgoTexts[(unsigned char)MedfilterAlgo::Huang] + " - алгоритм быстрой медианной фильтрации, \
 предложенный Хуангом и соавторами. Реализован с незначительными модификациями, призванными \
 немного ускорить обработку \"неровных\" изображений. Работает значительно быстрее чем обработка \
 изображения \"в лоб\", т.к на каждом следующем пикселе используется часть информации, полученной при \
@@ -181,22 +181,22 @@ void AppConfig::FillDependentPO_()
 памяти. Позволяет ограничить количество памяти, которое программа может использовать для загрузки \
 обрабатываемого изображения. Если изображение не поместится в эту ограниченную область целиком то \
 оно будет обрабатываться по частям. Возможно указать один из следующих режимов:\n    " +
-MemoryModeTexts[MEMORY_MODE_AUTO] + " - оставить решение о режиме работы с памятью на усмотрение \
-программы;\n    " + MemoryModeTexts[MEMORY_MODE_LIMIT] + " - явно задать максимальное количество \
+MemoryModeTexts[(unsigned char)MemoryMode::Auto] + " - оставить решение о режиме работы с памятью на усмотрение \
+программы;\n    " + MemoryModeTexts[(unsigned char)MemoryMode::Limit] + " - явно задать максимальное количество \
 используемой памяти в байтах. Сразу после имени режима без пробела нужно указать это количество. \
 Буквы k, m, g, t после числа (без пробела) означают соответственно килобайты, мегабайты, гигабайты \
 и терабайты. Размер в байтах указывается без буквы или буквой b;\n    " +
-MemoryModeTexts[MEMORY_MODE_STAYFREE] + " - явно задать количество памяти в ОЗУ (т.е. сколько есть \
+MemoryModeTexts[(unsigned char)MemoryMode::StayFree] + " - явно задать количество памяти в ОЗУ (т.е. сколько есть \
 физически в компьютере, без учёта \"подкачки\"!), которое должно остаться свободным в момент начала \
 работы над изображением. Размер указывается без пробела сразу за именем режима, точно так же как и для \
-режима " + MemoryModeTexts[MEMORY_MODE_LIMIT] + ";\n    " + MemoryModeTexts[MEMORY_MODE_LIMIT_FREEPRC] +
+режима " + MemoryModeTexts[(unsigned char)MemoryMode::Limit] + ";\n    " + MemoryModeTexts[(unsigned char)MemoryMode::LimitFreePrc] +
 " - задать количество памяти в процентах от свободного ОЗУ в момент начала работы. Сразу после имени \
 режима без пробела должно быть указано целое число от 0 до 100;\n    " +
-MemoryModeTexts[MEMORY_MODE_LIMIT_FULLPRC] + " - задать количество памяти в процентах от общего \
+MemoryModeTexts[(unsigned char)MemoryMode::LimitFullPrc] + " - задать количество памяти в процентах от общего \
 количества ОЗУ. Сразу после имени режима без пробела должно быть указано целое число от 0 до 100;\n    " +
-MemoryModeTexts[MEMORY_MODE_ONECHUNK] + " - заставить программу попытаться обработать изображение одним \
+MemoryModeTexts[(unsigned char)MemoryMode::OneChunk] + " - заставить программу попытаться обработать изображение одним \
 куском, загрузив её в память сразу целиком.\n    По умолчанию (если не указано) используется режим " +
-MemoryModeTexts[MEMORY_MODE_AUTO] + ".").c_str())
+MemoryModeTexts[(unsigned char)MemoryMode::Auto] + ".").c_str())
 	;
 }
 
@@ -214,8 +214,8 @@ void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memM
 	if (pos != std::string::npos)
 		inpStr = inpStr.substr(0, pos);
 	//Теперь можно искать совпадение с одной из констант.
-	memMode = MEMORY_MODE_UNKNOWN;
-	for (unsigned char i = 0; i <= MEMORY_MODE_UNKNOWN; i++)
+	memMode = MemoryMode::Unknown;
+	for (unsigned char i = 0; i <= (unsigned char)MemoryMode::Unknown; i++)
 	{
 		if (inpStr == MemoryModeTexts[i])
 		{
@@ -224,16 +224,16 @@ void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memM
 		}
 	};
 	//Для тех констант, у которых должен был быть указан размер - прочитаем размер.
-	if ((memMode == MEMORY_MODE_LIMIT) || (memMode == MEMORY_MODE_STAYFREE))
+	if ((memMode == MemoryMode::Limit) || (memMode == MemoryMode::StayFree))
 	{
 		//Размер должен быть указан в байтах (кб, мб итд).
 		if (pos != std::string::npos)
 			size = STB.InfoSizeToBytesNum(inputStr.substr(pos, inputStr.length() - pos),'m');
 		//Нулевого размера не бывает
 		if (!size)
-			memMode = MEMORY_MODE_UNKNOWN;
+			memMode = MemoryMode::Unknown;
 	}
-	else if ((memMode == MEMORY_MODE_LIMIT_FREEPRC) || (memMode == MEMORY_MODE_LIMIT_FULLPRC))
+	else if ((memMode == MemoryMode::LimitFreePrc) || (memMode == MemoryMode::LimitFullPrc))
 	{
 		//Размер должен быть указан в процентах, т.е. просто целое число.
 		if (pos != std::string::npos)
@@ -249,7 +249,7 @@ void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memM
 		}
 		//Если размер остался нулевым - всё плохо.
 		if (!size)
-			memMode = MEMORY_MODE_UNKNOWN;
+			memMode = MemoryMode::Unknown;
 	}
 }
 
@@ -301,7 +301,7 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 	catch (po::required_option &err)
 	{
 		//Отсутствует обязательная опция.
-		if (errObj) errObj->SetError(CMNERR_CMDLINE_PARSE_ERROR, ": отсутствует обязательная опция " +
+		if (errObj) errObj->SetError(CommonErrors::CmdLineParseError, ": отсутствует обязательная опция " +
 			err.get_option_name());
 		return false;
 	}
@@ -312,7 +312,7 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 		//Как ни странно, program_options в what() нередко даёт информации больше чем можно
 		//вытянуть по классу исключения, например для po::unknown_option там будет имя неизвестной
 		//опции, но узнать её кроме как по what() нельзя :(.
-		if (errObj) errObj->SetError(CMNERR_CMDLINE_PARSE_ERROR, err.what(), true);
+		if (errObj) errObj->SetError(CommonErrors::CmdLineParseError, err.what(), true);
 		return false;
 		//Все остальные исключения считаем неожиданными, не обрабатываем и либо падаем с ними,
 		//либо их обработают где-то наверху стека вызовов.
@@ -329,10 +329,10 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 		{
 			appModeCmd_ = AppModeStrToEnum(poVarMap_["appmode"].
 				as<std::string>());
-			if (appModeCmd_ != APPMODE_MEDIAN)
+			if (appModeCmd_ != AppMode::Median)
 			{
 				//Неизвестный или пока не реализованный вариант.
-				if (errObj) errObj->SetError(CMNERR_UNKNOWN_IDENTIF, ": " +
+				if (errObj) errObj->SetError(CommonErrors::UnknownIdentif, ": " +
 					poVarMap_["appmode"].as<std::string>());
 				return false;
 			};
@@ -342,7 +342,7 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 		{
 			//Скрытая опция для разработки. Программа запускается в отдельном
 			//тестовом режиме.
-			appModeCmd_ = APPMODE_DEVTEST;
+			appModeCmd_ = AppMode::DevTest;
 			appModeCmdIsSet_ = true;
 		}
 		if (poVarMap_.count("help"))
@@ -379,10 +379,10 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 		{
 			medfilterMarginTypeCmd_ = MarginTypeStrToEnum(poVarMap_[
 				"medfilter.margintype"].as<std::string>());
-			if (medfilterMarginTypeCmd_ == MARGIN_UNKNOWN_FILLING)
+			if (medfilterMarginTypeCmd_ == MarginType::UnknownFilling)
 			{
 				//Неизвестный или пока не реализованный вариант.
-				if (errObj) errObj->SetError(CMNERR_UNKNOWN_IDENTIF, ": " +
+				if (errObj) errObj->SetError(CommonErrors::UnknownIdentif, ": " +
 					poVarMap_["medfilter.margintype"].as<std::string>());
 				return false;
 			};
@@ -392,10 +392,10 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 		{
 			medfilterAlgoCmd_ = MedfilterAlgoStrToEnum(poVarMap_[
 				"medfilter.algo"].as<std::string>());
-			if (medfilterAlgoCmd_ == MEDFILTER_ALGO_UNKNOWN)
+			if (medfilterAlgoCmd_ == MedfilterAlgo::Unknown)
 			{
 				//Неизвестный или пока не реализованный вариант.
-				if (errObj) errObj->SetError(CMNERR_UNKNOWN_IDENTIF, ": " +
+				if (errObj) errObj->SetError(CommonErrors::UnknownIdentif, ": " +
 					poVarMap_["medfilter.algo"].as<std::string>());
 				return false;
 			};
@@ -407,7 +407,7 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 			if (medfilterHuangLevelsNumCmd_ < 3)
 			{
 				//Нельзя использовать совсем уж мало уровней.
-				if (errObj) errObj->SetError(CMNERR_CMDLINE_PARSE_ERROR, ": параметр \
+				if (errObj) errObj->SetError(CommonErrors::CmdLineParseError, ": параметр \
 medfilter.huanglevels не может иметь значение меньше чем 3.");
 				return false;
 			}
@@ -422,10 +422,10 @@ medfilter.huanglevels не может иметь значение меньше �
 		{
 			ParseMemoryModeStr(poVarMap_["memmode"].as<std::string>(), memModeCmd_,
 				memSizeCmd_);
-			if (memModeCmd_ == MEMORY_MODE_UNKNOWN)
+			if (memModeCmd_ == MemoryMode::Unknown)
 			{
 				//Неизвестный или пока не реализованный вариант.
-				if (errObj) errObj->SetError(CMNERR_UNKNOWN_IDENTIF, "Параметр --memmode имеет неверное значение: " +
+				if (errObj) errObj->SetError(CommonErrors::UnknownIdentif, "Параметр --memmode имеет неверное значение: " +
 					poVarMap_["memmode"].as<std::string>(),true);
 				return false;
 			};
@@ -436,7 +436,7 @@ medfilter.huanglevels не может иметь значение меньше �
 	{
 		//Ловим все исключения program_options - это однозначно будут проблемы с синтаксисом
 		//в командной строке.
-		if (errObj) errObj->SetError(CMNERR_CMDLINE_PARSE_ERROR, err.what(), true);
+		if (errObj) errObj->SetError(CommonErrors::CmdLineParseError, err.what(), true);
 		return false;
 		//Все остальные исключения считаем неожиданными и скорее всего падаем.
 	};
@@ -449,7 +449,7 @@ medfilter.huanglevels не может иметь значение меньше �
 bool AppConfig::ReadConfigFile(ErrorInfo *errObj)
 {
 	//Заглушка
-	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
+	if (errObj) errObj->SetError(CommonErrors::FeatureNotReady);
 	return false;
 }
 

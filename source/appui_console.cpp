@@ -250,22 +250,22 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 	if (filterObj.getMinMemSize() > sysResInfo_.maxProcessMemorySize)
 	{
 		if (errObj)
-			errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", минимальный размер блока, которыми \
+			errObj->SetError(CommonErrors::CantAllocMemory, ", минимальный размер блока, которыми \
 может быть обработано изображение превышает размер адресного пространства процесса. Попробуйте \
 воспользоваться 64-битной версией программы.");
 		return false;
 	}
-	if ((swapMode == SWAPMODE_SILENT_NOSWAP) && (filterObj.getMinMemSize() > sysMemFreeSize))
+	if ((swapMode == SwapMode::SilentNoswap) && (filterObj.getMinMemSize() > sysMemFreeSize))
 	{
 		if (errObj)
-			errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
+			errObj->SetError(CommonErrors::CantAllocMemory, ", попробуйте поменять настройку --memmode");
 		return false;
 	};
 
 	//Теперь всё зависит от режима работы с памятью.
-	if (confObj_->getMemMode() == MEMORY_MODE_ONECHUNK)
+	if (confObj_->getMemMode() == MemoryMode::OneChunk)
 	{
-		if ((swapMode == SWAPMODE_ASK) && (filterObj.getMaxMemSize() > sysMemFreeSize))
+		if ((swapMode == SwapMode::Ask) && (filterObj.getMaxMemSize() > sysMemFreeSize))
 		{
 			//Нужно обрабатывать изображение одним куском, в свободную память оно не лезет, но
 			//помещается в максимально доступное адресное пространство. Надо спрашивать юзера.
@@ -274,7 +274,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 Продолжить работу?"))
 			{
 				if (errObj)
-					errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
+					errObj->SetError(CommonErrors::CantAllocMemory, ", попробуйте поменять настройку --memmode");
 				return false;
 			}
 		}
@@ -283,15 +283,15 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 	}
 	//Далее - сначала получаем просто предельный лимит в байтах, и только потом единообразно
 	//уменьшим его так, чтобы размер был кратен размеру блока.
-	else if ((confObj_->getMemMode() == MEMORY_MODE_LIMIT) ||
-		(confObj_->getMemMode() == MEMORY_MODE_LIMIT_FULLPRC))
+	else if ((confObj_->getMemMode() == MemoryMode::Limit) ||
+		(confObj_->getMemMode() == MemoryMode::LimitFullPrc))
 	{
 		//Максимальное количество памяти, которое можно использовать - задано либо явно, в байтах,
 		//либо в процентах.
 		unsigned long long tempLimit = 0;
-		if (confObj_->getMemMode() == MEMORY_MODE_LIMIT)
+		if (confObj_->getMemMode() == MemoryMode::Limit)
 			tempLimit = confObj_->getMemSize();
-		else if (confObj_->getMemMode() == MEMORY_MODE_LIMIT_FULLPRC)
+		else if (confObj_->getMemMode() == MemoryMode::LimitFullPrc)
 			tempLimit = confObj_->getMemSize() * (sysResInfo_.systemMemoryFullSize / 100);
 		//То что получилось - не должно превышать размер адресного пространства.
 		if (tempLimit > addrSizeLimit)
@@ -310,7 +310,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		{
 			switch (swapMode)
 			{
-			case SWAPMODE_ASK:
+			case SwapMode::Ask:
 				cout << endl;
 				if (ConsoleAnsweredYes("Изображение не поместится в свободное ОЗУ блоками, размер которых\n\
 задан в настройках, но может поместиться блоками этого размера в \"подкачку\"\n\
@@ -324,10 +324,10 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 					maxMemCanBeUsed_ = sysMemFreeSize;
 				};
 				break;
-			case SWAPMODE_SILENT_NOSWAP:
+			case SwapMode::SilentNoswap:
 				maxMemCanBeUsed_ = sysMemFreeSize;
 				break;
-			case SWAPMODE_SILENT_USESWAP:
+			case SwapMode::SilentUseswap:
 				maxMemCanBeUsed_ = tempLimit;
 			}
 		}
@@ -340,7 +340,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		//в режиме как при обработке одним куском.
 		if (maxMemCanBeUsed_ == filterObj.getMaxMemSize())
 		{
-			confObj_->setMemModeCmd(MEMORY_MODE_ONECHUNK, 0);
+			confObj_->setMemModeCmd(MemoryMode::OneChunk, 0);
 			maxBlocksCanBeUsed_ = 1;
 			return true;
 		};
@@ -350,20 +350,20 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		if (maxMemCanBeUsed_ < filterObj.getMinMemSize())
 		{
 			if (errObj)
-				errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
+				errObj->SetError(CommonErrors::CantAllocMemory, ", попробуйте поменять настройку --memmode");
 			maxMemCanBeUsed_ = 0;
 			maxBlocksCanBeUsed_ = 0;
 			return false;
 		}
 	}
-	else if (confObj_->getMemMode() == MEMORY_MODE_STAYFREE)
+	else if (confObj_->getMemMode() == MemoryMode::StayFree)
 	{
 		//Оставить фиксированное количество места в ОЗУ.
 		if ((confObj_->getMemSize() > sysResInfo_.systemMemoryFreeSize))
 		{
 			//Не помещаемся никак :(
 			if (errObj)
-				errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
+				errObj->SetError(CommonErrors::CantAllocMemory, ", попробуйте поменять настройку --memmode");
 			return false;
 		};
 
@@ -377,7 +377,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		if (maxMemCanBeUsed_ < filterObj.getMinMemSize())
 		{
 			if (errObj)
-				errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
+				errObj->SetError(CommonErrors::CantAllocMemory, ", попробуйте поменять настройку --memmode");
 			maxMemCanBeUsed_ = 0;
 			maxBlocksCanBeUsed_ = 0;
 			return false;
@@ -390,21 +390,21 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 			maxMemCanBeUsed_ = filterObj.getMaxMemSize();
 			//И поскольку в память мы влазим - работаем дальше так как будто в командной
 			//строке поставили режим onechunk.
-			confObj_->setMemModeCmd(MEMORY_MODE_ONECHUNK, 0);
+			confObj_->setMemModeCmd(MemoryMode::OneChunk, 0);
 			maxBlocksCanBeUsed_ = 1;
 			return true;
 		};
 	}
-	else if ((confObj_->getMemMode() == MEMORY_MODE_LIMIT_FREEPRC) ||
-		(confObj_->getMemMode() == MEMORY_MODE_AUTO))
+	else if ((confObj_->getMemMode() == MemoryMode::LimitFreePrc) ||
+		(confObj_->getMemMode() == MemoryMode::Auto))
 	{
 		//Процент от свободного ОЗУ. Если стоял автомат - используем 80%
 		switch (confObj_->getMemMode())
 		{
-		case MEMORY_MODE_LIMIT_FREEPRC:
+		case MemoryMode::LimitFreePrc:
 			maxMemCanBeUsed_ = confObj_->getMemSize() * (sysResInfo_.systemMemoryFreeSize / 100);
 			break;
-		case MEMORY_MODE_AUTO:
+		case MemoryMode::Auto:
 			maxMemCanBeUsed_ = 80 * (sysResInfo_.systemMemoryFreeSize / 100);
 		};
 		//Но нельзя превышать размер адресного пространства.
@@ -417,7 +417,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 			maxMemCanBeUsed_ = filterObj.getMaxMemSize();
 			//И поскольку в память мы влазим - работаем дальше так как будто в командной
 			//строке поставили режим onechunk.
-			confObj_->setMemModeCmd(MEMORY_MODE_ONECHUNK, 0);
+			confObj_->setMemModeCmd(MemoryMode::OneChunk, 0);
 			maxBlocksCanBeUsed_ = 1;
 			return true;
 		};
@@ -426,7 +426,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		if (maxMemCanBeUsed_ < filterObj.getMinMemSize())
 		{
 			maxMemCanBeUsed_ = 90 * (sysMemFreeSize / 100);
-			if (!((maxMemCanBeUsed_ >= filterObj.getMinMemSize()) && (swapMode == SWAPMODE_ASK)
+			if (!((maxMemCanBeUsed_ >= filterObj.getMinMemSize()) && (swapMode == SwapMode::Ask)
 				&& ConsoleAnsweredYes(to_string(confObj_->getMemSize()) + "% \
 свободной памяти недостаточно для работы фильтра. Попробовать взять\n90%?")))
 			{
@@ -437,7 +437,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		//Всё ещё есть вероятность что памяти недостаточно.
 		if (maxMemCanBeUsed_ < filterObj.getMinMemSize())
 		{
-			if ((swapMode == SWAPMODE_SILENT_USESWAP) || ((swapMode == SWAPMODE_ASK) &&
+			if ((swapMode == SwapMode::SilentUseswap) || ((swapMode == SwapMode::Ask) &&
 				(ConsoleAnsweredYes("Изображение поместится в память только при активном \
 использовании \"подкачки\". Продолжить?"))))
 			{
@@ -450,7 +450,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 			else
 			{
 				if (errObj)
-					errObj->SetError(CMNERR_CANT_ALLOC_MEMORY, ", попробуйте поменять настройку --memmode");
+					errObj->SetError(CommonErrors::CantAllocMemory, ", попробуйте поменять настройку --memmode");
 				maxMemCanBeUsed_ = 0;
 				maxBlocksCanBeUsed_ = 0;
 				return false;
@@ -466,13 +466,13 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 	{
 		//На вход функции пришло фиг знает что.
 		if (errObj)
-			errObj->SetError(CMNERR_UNKNOWN_ERROR, ", AppUIConsole::DetectMaxMemoryCanBeUsed() - unknown MemMode.");
+			errObj->SetError(CommonErrors::UnknownError, ", AppUIConsole::DetectMaxMemoryCanBeUsed() - unknown MemMode.");
 		return false;
 	}
 
 	//Возможно надо скорректировать полученный размер чтобы он был кратен размеру блока.
 	//Одновременно вычислим количество блоков.
-	if (!(confObj_->getMemMode() == MEMORY_MODE_ONECHUNK))
+	if (!(confObj_->getMemMode() == MemoryMode::OneChunk))
 	{
 		//Фиксированная часть памяти, не обязана быть кратной размеру блока. Может быть 0.
 		unsigned long long invariableMemSize = filterObj.getMinMemSize() - filterObj.getMinBlockSize();
@@ -482,7 +482,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		if (filterObj.getMinBlockSize() > variableMemSize)
 		{
 			if (errObj)
-				errObj->SetError(CMNERR_UNKNOWN_ERROR, ", AppUIConsole::DetectMaxMemoryCanBeUsed() - wrong minBlockSize.");
+				errObj->SetError(CommonErrors::UnknownError, ", AppUIConsole::DetectMaxMemoryCanBeUsed() - wrong minBlockSize.");
 			maxMemCanBeUsed_ = 0;
 			maxBlocksCanBeUsed_ = 0;
 			return false;
@@ -577,23 +577,23 @@ int AppUIConsole::RunApp()
 	PrintToConsole("Всего ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo_.systemMemoryFullSize) + ".\n");
 	PrintToConsole("Доступно ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo_.systemMemoryFreeSize) + ".\n");
 	PrintToConsole("Процесс может адресовать памяти: " + STB.BytesNumToInfoSizeStr(sysResInfo_.maxProcessMemorySize) + ".\n");
-	PrintToConsole("Выбран режим работы с памятью: " + MemoryModeTexts[confObj_->getMemMode()] + "\n");
+	PrintToConsole("Выбран режим работы с памятью: " + MemoryModeTexts[(unsigned char)confObj_->getMemMode()] + "\n");
 	/*PrintToConsole("Размер, указанный для режима работы с памятью: " +
 	to_string(confObj_->getMemSize()) + "\n\n");*/
 
 	//Всё-таки нужно обработать картинку. В зависимости от выбранного режима создадим нужный фильтр.
 	ErrorInfo errObj;
-	if (confObj_->getMedfilterAlgo() == MEDFILTER_ALGO_STUB)
+	if (confObj_->getMedfilterAlgo() == MedfilterAlgo::Stub)
 	{
 		medFilter_ = new MedianFilterStub();
 		PrintToConsole("\nБудет применяться медианный фильтр: stub (имитация).\n");
 	}
-	else if (confObj_->getMedfilterAlgo() == MEDFILTER_ALGO_STUPID)
+	else if (confObj_->getMedfilterAlgo() == MedfilterAlgo::Stupid)
 	{
 		medFilter_ = new MedianFilterStupid();
 		PrintToConsole("\nБудет применяться медианный фильтр: stupid (реализация \"в лоб\").\n");
 	}
-	else if (confObj_->getMedfilterAlgo() == MEDFILTER_ALGO_HUANG)
+	else if (confObj_->getMedfilterAlgo() == MedfilterAlgo::Huang)
 	{
 		medFilter_ = new MedianFilterHuang(confObj_->getMedfilterHuangLevelsNum());
 		PrintToConsole("\nБудет применяться медианный фильтр: huang (быстрый алгоритм Хуанга).\n");
@@ -601,7 +601,7 @@ int AppUIConsole::RunApp()
 	else
 	{
 		//Выбран непонятно какой режим. Это очень печально. Ругаемся и умираем.
-		errObj.SetError(CMNERR_INTERNAL_ERROR,": выбран неизвестный алгоритм медианной фильтрации.");
+		errObj.SetError(CommonErrors::InternalError,": выбран неизвестный алгоритм медианной фильтрации.");
 		ConsolePrintError(errObj);
 		return 1;
 	};
@@ -632,7 +632,7 @@ int AppUIConsole::RunApp()
 		return 1;
 	}
 	//Детектим сколько памяти нам нужно
-	if (!DetectMaxMemoryCanBeUsed(*medFilter_, SWAPMODE_ASK, &errObj))
+	if (!DetectMaxMemoryCanBeUsed(*medFilter_, SwapMode::Ask, &errObj))
 	{
 		ConsolePrintError(errObj);
 		return 1;
@@ -647,12 +647,12 @@ int AppUIConsole::RunApp()
 
 	///////////TEST///////////
 	//Тут удобно руками менять параметры чтобы проверять работу на всяких граничных значениях.
-	//confObj_->setMemModeCmd(MEMORY_MODE_AUTO, 0);
+	//confObj_->setMemModeCmd(Auto, 0);
 	//maxBlocksCanBeUsed_ = 13;
 	///////////TEST///////////
 
 	//Настраиваем фильтр в соответствии с полученной инфой о памяти.
-	if (confObj_->getMemMode() == MEMORY_MODE_ONECHUNK)
+	if (confObj_->getMemMode() == MemoryMode::OneChunk)
 		medFilter_->setUseMemChunks(false);
 	else
 		medFilter_->setUseMemChunks(true);
@@ -666,7 +666,7 @@ int AppUIConsole::RunApp()
 	PrintToConsole("Программа будет обрабатывать файл, используя до " +
 		STB.BytesNumToInfoSizeStr(maxMemCanBeUsed_) + " памяти, частями по\n" +
 		to_string(maxBlocksCanBeUsed_) + " блока(ов).\n");
-	if (confObj_->getMemMode() != MEMORY_MODE_ONECHUNK)
+	if (confObj_->getMemMode() != MemoryMode::OneChunk)
 		PrintToConsole("Размер блока: до " + STB.BytesNumToInfoSizeStr(medFilter_->getMinBlockSize()) + ".\n");
 	cout << endl;
 
@@ -768,22 +768,22 @@ int AppUIConsole::RunTestMode()
 	////Читаем первые 150 строк в пустую матрицу, сохраняем что получилось как csv
 	//testMatrix.CreateEmpty(rasterXSize + marginSize * 2, 250);
 	//cout << "Reading first 200 lines..." << endl;
-	//testMatrix.LoadFromGDALRaster(inputRaster, 0, 200, marginSize, TOP_MM_FILE1);
+	//testMatrix.LoadFromGDALRaster(inputRaster, 0, 200, marginSize, File1);
 	//cout << "Saving output01.csv..." << endl;
 	//testMatrix.SaveToCSVFile("output01.csv");
 	////Читаем следующие 150 строк.
 	//cout << "Reading next 150 lines..." << endl;
-	//testMatrix.LoadFromGDALRaster(inputRaster, 200, 150, marginSize, TOP_MM_MATR, &testMatrix);
+	//testMatrix.LoadFromGDALRaster(inputRaster, 200, 150, marginSize, Matr, &testMatrix);
 	//cout << "Saving output02.csv..." << endl;
 	//testMatrix.SaveToCSVFile("output02.csv");
 	////Читаем следующие 150 строк.
 	//cout << "Reading next 150 lines..." << endl;
-	//testMatrix.LoadFromGDALRaster(inputRaster, 350, 150, marginSize, TOP_MM_MATR, &testMatrix);
+	//testMatrix.LoadFromGDALRaster(inputRaster, 350, 150, marginSize, Matr, &testMatrix);
 	//cout << "Saving output03.csv..." << endl;
 	//testMatrix.SaveToCSVFile("output03.csv");
 	////Читаем остатки.
 	//cout << "Reading next 92 lines..." << endl;
-	//testMatrix.LoadFromGDALRaster(inputRaster, 500, 92, marginSize, TOP_MM_MATR, &testMatrix);
+	//testMatrix.LoadFromGDALRaster(inputRaster, 500, 92, marginSize, Matr, &testMatrix);
 	//cout << "Saving output04.csv..." << endl;
 	//testMatrix.SaveToCSVFile("output04.csv");
 	//cout << "Done." << endl;

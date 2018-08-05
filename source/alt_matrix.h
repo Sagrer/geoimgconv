@@ -99,7 +99,7 @@ public:
 	//marginSize - высота блока, совпадающая с размером области граничных пикселей. Также это
 	//количество пикселей остаётся пустым в начале и конце всех строк матрицы.
 	//marginMode - константа из enum TopMarginMode, определяет откуда будут взяты 2 верхних блока.
-	//sourceMatrix - ссылка на матрицу из которой берутся блоки в режиме TOP_MM_MATR.
+	//sourceMatrix - ссылка на матрицу из которой берутся блоки в режиме TopMarginMode::Matr.
 	//errObj - информация об ошибке если она была.
 	bool LoadFromGDALRaster(GDALRasterBand *gdalRaster, const int &yPosition, const int &yToRead,
 		const int &marginSize, TopMarginMode marginMode, AltMatrixBase *sourceMatrix = NULL,

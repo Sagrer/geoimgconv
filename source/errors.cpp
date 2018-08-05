@@ -50,10 +50,10 @@ void ErrorInfo::SetError(const CommonErrors &errCode, const std::string &text, c
 		if (replaceText)
 			errorText_ = text;
 		else
-			errorText_ = CommonErrorsTexts[errCode] + text;
+			errorText_ = CommonErrorsTexts[(int)errCode] + text;
 	}
 	else
-		errorText_ = CommonErrorsTexts[errCode];
+		errorText_ = CommonErrorsTexts[(int)errCode];
 }
 
 }	//namespace geoimgconv

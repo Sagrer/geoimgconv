@@ -45,14 +45,14 @@ int main(int argc, char** argv)
 	}
 
 	//Пока реализовано лишь 2 режима работы.
-	if (confObj.getAppMode() == APPMODE_MEDIAN)
+	if (confObj.getAppMode() == AppMode::Median)
 	{
 		//Медианная фильтрация в консоли.
 		AppUIConsole theApp;
 		theApp.InitApp(confObj);
 		return theApp.RunApp();
 	}
-	else if (confObj.getAppMode() == APPMODE_DEVTEST)
+	else if (confObj.getAppMode() == AppMode::DevTest)
 	{
 		//Тестовый режим. Для разработки. Опция командной строки для такого запуска
 		//скрытая, в справке не описана, юзер про неё знать не должен.

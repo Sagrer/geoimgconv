@@ -48,38 +48,38 @@ namespace geoimgconv
 template <typename CellType>
 bool RealMedianFilter<CellType>::PixelStep(int &x, int &y, const PixelDirection direction)
 {
-	if (direction == PIXEL_DIR_UP)
+	if (direction == PixelDirection::Up)
 	{
 		y--;
 	}
-	else if (direction == PIXEL_DIR_DOWN)
+	else if (direction == PixelDirection::Down)
 	{
 		y++;
 	}
-	else if (direction == PIXEL_DIR_RIGHT)
+	else if (direction == PixelDirection::Right)
 	{
 		x++;
 	}
-	else if (direction == PIXEL_DIR_LEFT)
+	else if (direction == PixelDirection::Left)
 	{
 		x--;
 	}
-	else if (direction == PIXEL_DIR_UP_RIGHT)
+	else if (direction == PixelDirection::UpRight)
 	{
 		x++;
 		y--;
 	}
-	else if (direction == PIXEL_DIR_UP_LEFT)
+	else if (direction == PixelDirection::UpLeft)
 	{
 		x--;
 		y--;
 	}
-	else if (direction == PIXEL_DIR_DOWN_RIGHT)
+	else if (direction == PixelDirection::DownRight)
 	{
 		x++;
 		y++;
 	}
-	else if (direction == PIXEL_DIR_DOWN_LEFT)
+	else if (direction == PixelDirection::DownLeft)
 	{
 		x--;
 		y++;
@@ -247,14 +247,14 @@ void RealMedianFilter<CellType>::FillMargins_PixelBasedAlgo(const PixFillerMetho
 				//приоритет над диагональным, т.е. диагональные пикселы будут перезаписаны если
 				//встретятся на пути. Поехали.
 
-				(this->*FillerMethod)(x, y, PIXEL_DIR_UP, fillerWindowSize, 2);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN, fillerWindowSize, 2);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_RIGHT, fillerWindowSize, 2);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_LEFT, fillerWindowSize, 2);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_UP_RIGHT, fillerWindowSize, 3);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_UP_LEFT, fillerWindowSize, 3);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN_RIGHT, fillerWindowSize, 3);
-				(this->*FillerMethod)(x, y, PIXEL_DIR_DOWN_LEFT, fillerWindowSize, 3);
+				(this->*FillerMethod)(x, y, PixelDirection::Up, fillerWindowSize, 2);
+				(this->*FillerMethod)(x, y, PixelDirection::Down, fillerWindowSize, 2);
+				(this->*FillerMethod)(x, y, PixelDirection::Right, fillerWindowSize, 2);
+				(this->*FillerMethod)(x, y, PixelDirection::Left, fillerWindowSize, 2);
+				(this->*FillerMethod)(x, y, PixelDirection::UpRight, fillerWindowSize, 3);
+				(this->*FillerMethod)(x, y, PixelDirection::UpLeft, fillerWindowSize, 3);
+				(this->*FillerMethod)(x, y, PixelDirection::DownRight, fillerWindowSize, 3);
+				(this->*FillerMethod)(x, y, PixelDirection::DownLeft, fillerWindowSize, 3);
 				//Сообщение о прогрессе.
 				if (callBackObj) callBackObj->CallBack(progressPosition);
 			}
@@ -322,7 +322,7 @@ void RealMedianFilter<CellType>::FillMargins_EmptyPixelBasedAlgo(const PixFiller
 		if (!(y < yEnd)) break;
 		//Обрабатываем первый пиксел новой строки
 		FillMargins_EmptyPixelBasedAlgo_ProcessNextPixel(y, x, windowY, windowX, windowYEnd, windowXEnd,
-			actualPixelY, actualPixelX, actualPixelDistance, actualPixelDirection, PIXEL_DIR_DOWN,
+			actualPixelY, actualPixelX, actualPixelDistance, actualPixelDirection, PixelDirection::Down,
 			windowWasEmpty, tempPixelValue, FillerMethod);
 		//Обрабатываем строку влево.
 		FillMargins_EmptyPixelBasedAlgo_ProcessToLeft(y, x, windowY, windowX, windowYEnd, windowXEnd,
@@ -342,7 +342,7 @@ void RealMedianFilter<CellType>::FillMargins_EmptyPixelBasedAlgo(const PixFiller
 		if (y < yEnd)
 		{
 			FillMargins_EmptyPixelBasedAlgo_ProcessNextPixel(y, x, windowY, windowX, windowYEnd, windowXEnd,
-				actualPixelY, actualPixelX, actualPixelDistance, actualPixelDirection, PIXEL_DIR_DOWN,
+				actualPixelY, actualPixelX, actualPixelDistance, actualPixelDirection, PixelDirection::Down,
 				windowWasEmpty, tempPixelValue, FillerMethod);
 		}
 	}
@@ -365,7 +365,7 @@ inline void RealMedianFilter<CellType>::FillMargins_EmptyPixelBasedAlgo_ProcessT
 	{
 		//Обработаем очередной пиксел.
 		FillMargins_EmptyPixelBasedAlgo_ProcessNextPixel(y, x, windowY, windowX, windowYEnd, windowXEnd,
-			actualPixelY, actualPixelX, actualPixelDistance, actualPixelDirection, PIXEL_DIR_RIGHT,
+			actualPixelY, actualPixelX, actualPixelDistance, actualPixelDirection, PixelDirection::Right,
 			windowWasEmpty, tempPixelValue, FillerMethod);
 
 		//Конец итерации по очередному пикселу в строке. Теперь надо подкорректировать счётчики окна.
@@ -397,7 +397,7 @@ inline void RealMedianFilter<CellType>::FillMargins_EmptyPixelBasedAlgo_ProcessT
 	{
 		//Обработаем очередной пиксел.
 		FillMargins_EmptyPixelBasedAlgo_ProcessNextPixel(y, x, windowY, windowX, windowYEnd, windowXEnd,
-			actualPixelY, actualPixelX, actualPixelDistance, actualPixelDirection, PIXEL_DIR_LEFT,
+			actualPixelY, actualPixelX, actualPixelDistance, actualPixelDirection, PixelDirection::Left,
 			windowWasEmpty, tempPixelValue, FillerMethod);
 
 		//Конец итерации по очередному пикселу в строке. Теперь надо подкорректировать счётчики окна.
@@ -434,10 +434,10 @@ inline void RealMedianFilter<CellType>::FillMargins_EmptyPixelBasedAlgo_ProcessN
 			{
 				//Пиксель найден. Заполним дорожку от него до текущего.
 				char signValue;
-				if ((actualPixelDirection == PIXEL_DIR_UP) ||
-					(actualPixelDirection == PIXEL_DIR_DOWN) ||
-					(actualPixelDirection == PIXEL_DIR_RIGHT) ||
-					(actualPixelDirection == PIXEL_DIR_LEFT))
+				if ((actualPixelDirection == PixelDirection::Up) ||
+					(actualPixelDirection == PixelDirection::Down) ||
+					(actualPixelDirection == PixelDirection::Right) ||
+					(actualPixelDirection == PixelDirection::Left))
 				{
 					//Приоритет вертикальных и горизонтальных дорожек выше чем приоритет
 					//диагональных дорожек.
@@ -480,7 +480,7 @@ inline bool RealMedianFilter<CellType>::FillMargins_WindowIsEmpty(const int &win
 	if (windowWasEmpty)
 	{
 		//Можно. Проверим только 1 новый столбик или строку.
-		if (direction == PIXEL_DIR_RIGHT)
+		if (direction == PixelDirection::Right)
 		{
 			//Проверяем только правый столбик окна.
 			x = windowXEnd-1;
@@ -499,7 +499,7 @@ inline bool RealMedianFilter<CellType>::FillMargins_WindowIsEmpty(const int &win
 			//Не нашлось.
 			return true;
 		}
-		else if (direction == PIXEL_DIR_LEFT)
+		else if (direction == PixelDirection::Left)
 		{
 			//Проверяем только левый столбик окна.
 			for (y = windowY; y < windowYEnd; ++y)
@@ -517,7 +517,7 @@ inline bool RealMedianFilter<CellType>::FillMargins_WindowIsEmpty(const int &win
 			//Не нашлось.
 			return true;
 		}
-		else if (direction == PIXEL_DIR_DOWN)
+		else if (direction == PixelDirection::Down)
 		{
 			//Проверяем только нижнюю строку окна.
 			y = windowYEnd-1;
@@ -592,35 +592,35 @@ inline bool RealMedianFilter<CellType>::FillMargins_FindNearestActualPixel(const
 		if (justStarted)
 		{
 			justStarted = false;
-			currDirection = PIXEL_DIR_UP;
+			currDirection = PixelDirection::Up;
 		}
-		else if (currDirection == PIXEL_DIR_UP)
+		else if (currDirection == PixelDirection::Up)
 		{
-			currDirection = PIXEL_DIR_DOWN;
+			currDirection = PixelDirection::Down;
 		}
-		else if (currDirection == PIXEL_DIR_DOWN)
+		else if (currDirection == PixelDirection::Down)
 		{
-			currDirection = PIXEL_DIR_RIGHT;
+			currDirection = PixelDirection::Right;
 		}
-		else if (currDirection == PIXEL_DIR_RIGHT)
+		else if (currDirection == PixelDirection::Right)
 		{
-			currDirection = PIXEL_DIR_LEFT;
+			currDirection = PixelDirection::Left;
 		}
-		else if (currDirection == PIXEL_DIR_LEFT)
+		else if (currDirection == PixelDirection::Left)
 		{
-			currDirection = PIXEL_DIR_UP_RIGHT;
+			currDirection = PixelDirection::UpRight;
 		}
-		else if (currDirection == PIXEL_DIR_UP_RIGHT)
+		else if (currDirection == PixelDirection::UpRight)
 		{
-			currDirection = PIXEL_DIR_UP_LEFT;
+			currDirection = PixelDirection::UpLeft;
 		}
-		else if (currDirection == PIXEL_DIR_UP_LEFT)
+		else if (currDirection == PixelDirection::UpLeft)
 		{
-			currDirection = PIXEL_DIR_DOWN_RIGHT;
+			currDirection = PixelDirection::DownRight;
 		}
-		else if (currDirection == PIXEL_DIR_DOWN_RIGHT)
+		else if (currDirection == PixelDirection::DownRight)
 		{
-			currDirection = PIXEL_DIR_DOWN_LEFT;
+			currDirection = PixelDirection::DownLeft;
 		}
 
 		//Ищем.
@@ -652,8 +652,8 @@ inline bool RealMedianFilter<CellType>::FillMargins_FindNearestActualPixel(const
 			pixelFinded = true;
 			currPixelFinded = false;
 		}
-		if (((currDirection == PIXEL_DIR_LEFT) && pixelFinded) ||
-			(currDirection == PIXEL_DIR_DOWN_LEFT))
+		if (((currDirection == PixelDirection::Left) && pixelFinded) ||
+			(currDirection == PixelDirection::DownLeft))
 		{
 			//Пиксель был найден по не-диагоналям. Проверять диагонали смысла нет.
 			//Также продолжать поиск нет смысла если проверены уже вообще все направления.
@@ -783,12 +783,12 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		AltMatrix<CellType> *currMatrix;
 		if (getOwnerObj().getCurrPositionY() == 0)
 		{
-			currMM = TOP_MM_FILE1;
+			currMM = TopMarginMode::File1;
 			currMatrix = NULL;
 		}
 		else
 		{
-			currMM = TOP_MM_MATR;
+			currMM = TopMarginMode::Matr;
 			currMatrix = &sourceMatrix_;
 		}
 		if (!sourceMatrix_.LoadFromGDALRaster(getOwnerObj().getGdalSourceRaster(),
@@ -802,7 +802,7 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		//Надо обработать граничные пиксели. Начальная позиция для обработки может быть разной в зависимости
 		//от того как обрабатывается текущий кусок.
 		int fillerYStart, fillerYToProcess;
-		if (currMM == TOP_MM_FILE2)
+		if (currMM == TopMarginMode::File2)
 		{
 			fillerYStart = 0;
 			fillerYToProcess = filterYToProcess + 2*marginSize;
@@ -856,7 +856,7 @@ bool RealMedianFilter<CellType>::ApplyFilter(FilterMethod CurrFilter,
 		filterYToProcess = currYToProcess - ((currBlocksToProcess - 1)*marginSize);
 		//"читаем" данные в матрицу, на самом деле просто копируем 2 нижних блока наверх.
 		sourceMatrix_.LoadFromGDALRaster(getOwnerObj().getGdalSourceRaster(), 0,
-			0, marginSize, TOP_MM_MATR, &sourceMatrix_, NULL);
+			0, marginSize, TopMarginMode::Matr, &sourceMatrix_, NULL);
 		destMatrix_.CreateDestMatrix(sourceMatrix_, marginSize);
 		//Всё ещё надо обработать граничные пиксели
 		FillMargins(marginSize, filterYToProcess, NULL);
@@ -1003,7 +1003,7 @@ void RealMedianFilter<CellType>::StupidFilter(const int &currYToProcess,
 			if (UseMedian(*medianPos, sourceMatrix_.getMatrixElem(sourceY, sourceX)))
 			{
 				//Медиана.
-				destMatrix_.setMatrixElem(destY, destX, *medianPos);				
+				destMatrix_.setMatrixElem(destY, destX, *medianPos);
 			}
 			else
 			{
@@ -1487,13 +1487,13 @@ void RealMedianFilter<CellType>::FillMargins(const int yStart, const int yToProc
 	//Просто пробросим вызов в реально работающий метод, правильно указав метод-заполнитель.
 	switch (getOwnerObj().getMarginType())
 	{
-	case MARGIN_SIMPLE_FILLING:
+	case MarginType::SimpleFilling:
 		FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller, yStart, yToProcess,
 		callBackObj);
 		/*FillMargins_EmptyPixelBasedAlgo(&RealMedianFilter<CellType>::SimpleFiller, yStart, yToProcess,
 			callBackObj);*/
 		break;
-	case MARGIN_MIRROR_FILLING:
+	case MarginType::MirrorFilling:
 		FillMargins_PixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller, yStart, yToProcess,
 			callBackObj);
 		/*FillMargins_EmptyPixelBasedAlgo(&RealMedianFilter<CellType>::MirrorFiller, yStart, yToProcess,
@@ -1714,7 +1714,7 @@ bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *err
 	if (sourceIsAttached_)
 	{
 		//Нельзя открывать файл если старый не был закрыт.
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilterBase::OpenInputFile() попытка открыть файл при не закрытом старом." );
+		if (errObj) errObj->SetError(CommonErrors::InternalError, ": MedianFilterBase::OpenInputFile() попытка открыть файл при не закрытом старом." );
 		return false;
 	}
 
@@ -1722,7 +1722,7 @@ bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *err
 	b_fs::path filePath = STB.Utf8ToWstring(fileName);
 	if (!b_fs::is_regular_file(filePath))
 	{
-		if (errObj)	errObj->SetError(CMNERR_FILE_NOT_EXISTS, ": " + fileName);
+		if (errObj)	errObj->SetError(CommonErrors::FileNotExists, ": " + fileName);
 		return false;
 	}
 
@@ -1730,7 +1730,7 @@ bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *err
 	gdalSourceDataset_ = (GDALDataset*)GDALOpen(fileName.c_str(), GA_ReadOnly);
 	if (!gdalSourceDataset_)
 	{
-		if (errObj) errObj->SetError(CMNERR_READ_ERROR, ": " + fileName);
+		if (errObj) errObj->SetError(CommonErrors::ReadError, ": " + fileName);
 		return false;
 	}
 	if (gdalSourceDataset_->GetRasterCount() != 1)
@@ -1740,31 +1740,31 @@ bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *err
 		//Так что облом и ругаемся.
 		GDALClose(gdalSourceDataset_);
 		gdalSourceDataset_ = NULL;
-		if (errObj) errObj->SetError(CMNERR_UNSUPPORTED_FILE_FORMAT, ": " + fileName);
+		if (errObj) errObj->SetError(CommonErrors::UnsupportedFileFormat, ": " + fileName);
 		return false;
 	}
 	gdalSourceRaster_ = gdalSourceDataset_->GetRasterBand(1);
 	dataType_ = GDALToGIC_PixelType(gdalSourceRaster_->GetRasterDataType());
 	imageSizeX_ = gdalSourceRaster_->GetXSize();
 	imageSizeY_ = gdalSourceRaster_->GetYSize();
-	if (dataType_ == PIXEL_UNKNOWN)
+	if (dataType_ == PixelType::Unknown)
 	{
 		GDALClose(gdalSourceDataset_);
 		gdalSourceDataset_ = NULL;
 		gdalSourceRaster_ = NULL;
-		if (errObj) errObj->SetError(CMNERR_UNSUPPORTED_FILE_FORMAT, ": " + fileName);
+		if (errObj) errObj->SetError(CommonErrors::UnsupportedFileFormat, ": " + fileName);
 		return false;
 	}
 
 	//Если GDAL говорит что тип пикселя - байт - надо посмотреть метаданные какой именно там
 	//тип байтов.
-	if (dataType_ == PIXEL_INT8)
+	if (dataType_ == PixelType::Int8)
 	{
 		const char *tempStr = gdalSourceRaster_->GetMetadataItem("PIXELTYPE", "IMAGE_STRUCTURE");
 		if ((tempStr == NULL) || strcmp(tempStr, "SIGNEDBYTE"))
 		{
 			//Это явно не signed-байт
-			dataType_ = PIXEL_UINT8;
+			dataType_ = PixelType::UInt8;
 		}
 	}
 
@@ -1773,35 +1773,35 @@ bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *err
 	delete pFilterObj_;
 	switch (dataType_)
 	{
-		case PIXEL_INT8:
+		case PixelType::Int8:
 			pFilterObj_ = new RealMedianFilterInt8(this);
 			dataTypeSize_ = sizeof(int8_t);
 			break;
-		case PIXEL_UINT8:
+		case PixelType::UInt8:
 			pFilterObj_ = new RealMedianFilterUInt8(this);
 			dataTypeSize_ = sizeof(uint8_t);
 			break;
-		case PIXEL_INT16:
+		case PixelType::Int16:
 			pFilterObj_ = new RealMedianFilterInt16(this);
 			dataTypeSize_ = sizeof(int16_t);
 			break;
-		case PIXEL_UINT16:
+		case PixelType::UInt16:
 			pFilterObj_ = new RealMedianFilterUInt16(this);
 			dataTypeSize_ = sizeof(uint16_t);
 			break;
-		case PIXEL_INT32:
+		case PixelType::Int32:
 			pFilterObj_ = new RealMedianFilterInt32(this);
 			dataTypeSize_ = sizeof(int32_t);
 			break;
-		case PIXEL_UINT32:
+		case PixelType::UInt32:
 			pFilterObj_ = new RealMedianFilterUInt32(this);
 			dataTypeSize_ = sizeof(uint32_t);
 			break;
-		case PIXEL_FLOAT32:
+		case PixelType::Float32:
 			pFilterObj_ = new RealMedianFilterFloat32(this);
 			dataTypeSize_ = sizeof(float);
 			break;
-		case PIXEL_FLOAT64:
+		case PixelType::Float64:
 			pFilterObj_ = new RealMedianFilterFloat64(this);
 			dataTypeSize_ = sizeof(double);
 			break;
@@ -1820,7 +1820,7 @@ bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *err
 	}
 	else
 	{
-		if (errObj) errObj->SetError(CMNERR_UNKNOWN_ERROR, "MedianFilterBase::OpenInputFile() error creating pFilterObj_!",true);
+		if (errObj) errObj->SetError(CommonErrors::UnknownError, "MedianFilterBase::OpenInputFile() error creating pFilterObj_!",true);
 		GDALClose(gdalSourceDataset_);
 		gdalSourceDataset_ = NULL;
 		gdalSourceRaster_ = NULL;
@@ -1835,13 +1835,13 @@ bool MedianFilterBase::OpenOutputFile(const std::string &fileName, const bool &f
 	//Этот метод можно вызывать только если исходный файл уже был открыт.
 	if (!sourceIsAttached_)
 	{
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  MedianFilterBase::OpenOutputFile исходный файл не был открыт.");
+		if (errObj) errObj->SetError(CommonErrors::InternalError, ":  MedianFilterBase::OpenOutputFile исходный файл не был открыт.");
 		return false;
 	}
 	//И только если файл назначение открыт наоборот ещё не был.
 	if (destIsAttached_)
 	{
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  MedianFilterBase::OpenOutputFile попытка открыть файл назначения при уже открытом файле назначения.");
+		if (errObj) errObj->SetError(CommonErrors::InternalError, ":  MedianFilterBase::OpenOutputFile попытка открыть файл назначения при уже открытом файле назначения.");
 		return false;
 	}
 
@@ -1857,13 +1857,13 @@ bool MedianFilterBase::OpenOutputFile(const std::string &fileName, const bool &f
 		if (!forceRewrite)
 		{
 			//Запрещено перезаписывать файл, а он существует. Это печально :(.
-			if(errObj) errObj->SetError(CMNERR_FILE_EXISTS_ALREADY, ": "+ fileName);
+			if(errObj) errObj->SetError(CommonErrors::FileExistsAlready, ": "+ fileName);
 			return false;
 		}
 		//Удаляем старый файл.
 		if (!b_fs::remove(destFilePath, errCode))
 		{
-			if (errObj) errObj->SetError(CMNERR_WRITE_ERROR, ": " +
+			if (errObj) errObj->SetError(CommonErrors::WriteError, ": " +
 				STB.SystemCharsetToUtf8(errCode.message()));
 			return false;
 		}
@@ -1873,7 +1873,7 @@ bool MedianFilterBase::OpenOutputFile(const std::string &fileName, const bool &f
 	b_fs::copy_file(sourceFilePath, destFilePath, errCode);
 	if (errCode.value())
 	{
-		if (errObj) errObj->SetError(CMNERR_WRITE_ERROR, ": " +
+		if (errObj) errObj->SetError(CommonErrors::WriteError, ": " +
 			STB.SystemCharsetToUtf8(errCode.message()));
 		return false;
 	}
@@ -1882,7 +1882,7 @@ bool MedianFilterBase::OpenOutputFile(const std::string &fileName, const bool &f
 	gdalDestDataset_ = (GDALDataset*)GDALOpen(fileName.c_str(), GA_Update);
 	if (!gdalDestDataset_)
 	{
-		if (errObj)	errObj->SetError(CMNERR_WRITE_ERROR, ": " + fileName);
+		if (errObj)	errObj->SetError(CommonErrors::WriteError, ": " + fileName);
 		return false;
 	}
 	gdalDestRaster_ = gdalDestDataset_->GetRasterBand(1);
@@ -1977,7 +1977,7 @@ bool MedianFilterStub::ApplyFilter(CallBackBase *callBackObj, ErrorInfo *errObj)
 	}
 	else
 	{
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilterBase::ApplyStubFilter no source and\\or dest \
+		if (errObj) errObj->SetError(CommonErrors::InternalError, ": MedianFilterBase::ApplyStubFilter no source and\\or dest \
 file(s) were attached.");
 		return false;
 	}
@@ -1997,7 +1997,7 @@ bool MedianFilterStupid::ApplyFilter(CallBackBase *callBackObj, ErrorInfo *errOb
 	}
 	else
 	{
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilterBase::ApplyStubFilter no source and\\or dest \
+		if (errObj) errObj->SetError(CommonErrors::InternalError, ": MedianFilterBase::ApplyStubFilter no source and\\or dest \
 file(s) were attached.");
 		return false;
 	}
@@ -2017,7 +2017,7 @@ bool MedianFilterHuang::ApplyFilter(CallBackBase *callBackObj, ErrorInfo *errObj
 	}
 	else
 	{
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": MedianFilterBase::ApplyHuangFilter no source and\\or dest \
+		if (errObj) errObj->SetError(CommonErrors::InternalError, ": MedianFilterBase::ApplyHuangFilter no source and\\or dest \
 file(s) were attached.");
 		return false;
 	}

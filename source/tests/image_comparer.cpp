@@ -72,7 +72,7 @@ unique_ptr<AltMatrixBase> ImageComparer::LoadMatrFromGeoTIFF(const string &fileN
 	b_fs::path filePath = STB.Utf8ToWstring(fileName);
 	if (!b_fs::is_regular_file(filePath))
 	{
-		if (errObj)	errObj->SetError(CMNERR_FILE_NOT_EXISTS, ": " + fileName);
+		if (errObj)	errObj->SetError(CommonErrors::FileNotExists, ": " + fileName);
 		return unique_ptr<AltMatrixBase>(nullptr);
 	}
 
@@ -81,7 +81,7 @@ unique_ptr<AltMatrixBase> ImageComparer::LoadMatrFromGeoTIFF(const string &fileN
 	GDALDataset *sourceDataset = (GDALDataset*)GDALOpen(fileName.c_str(), GA_ReadOnly);
 	if (!sourceDataset)
 	{
-		if (errObj) errObj->SetError(CMNERR_READ_ERROR, ": " + fileName);
+		if (errObj) errObj->SetError(CommonErrors::ReadError, ": " + fileName);
 		return unique_ptr<AltMatrixBase>(nullptr);
 	}
 	if (sourceDataset->GetRasterCount() != 1)
@@ -91,31 +91,31 @@ unique_ptr<AltMatrixBase> ImageComparer::LoadMatrFromGeoTIFF(const string &fileN
 		//Так что облом и ругаемся.
 		GDALClose(sourceDataset);
 		sourceDataset = nullptr;
-		if (errObj) errObj->SetError(CMNERR_UNSUPPORTED_FILE_FORMAT, ": " + fileName);
+		if (errObj) errObj->SetError(CommonErrors::UnsupportedFileFormat, ": " + fileName);
 		return unique_ptr<AltMatrixBase>(nullptr);
 	}
 	GDALRasterBand *sourceRaster = sourceDataset->GetRasterBand(1);
 	PixelType dataType = GDALToGIC_PixelType(sourceRaster->GetRasterDataType());
 	int imageSizeX = sourceRaster->GetXSize();
 	int imageSizeY = sourceRaster->GetYSize();
-	if (dataType == PIXEL_UNKNOWN)
+	if (dataType == PixelType::Unknown)
 	{
 		GDALClose(sourceDataset);
 		sourceDataset = nullptr;
 		sourceRaster = nullptr;
-		if (errObj) errObj->SetError(CMNERR_UNSUPPORTED_FILE_FORMAT, ": " + fileName);
+		if (errObj) errObj->SetError(CommonErrors::UnsupportedFileFormat, ": " + fileName);
 		return unique_ptr<AltMatrixBase>(nullptr);
 	}
 
 	//Если GDAL говорит что тип пикселя - байт - надо посмотреть метаданные какой именно там
 	//тип байтов.
-	if (dataType == PIXEL_INT8)
+	if (dataType == PixelType::Int8)
 	{
 		const char *tempStr = sourceRaster->GetMetadataItem("PIXELTYPE", "IMAGE_STRUCTURE");
 		if ((tempStr == NULL) || strcmp(tempStr, "SIGNEDBYTE"))
 		{
 			//Это явно не signed-байт
-			dataType = PIXEL_UINT8;
+			dataType = PixelType::UInt8;
 		}
 	}
 
@@ -124,28 +124,28 @@ unique_ptr<AltMatrixBase> ImageComparer::LoadMatrFromGeoTIFF(const string &fileN
 	unique_ptr<AltMatrixBase> result;
 	switch (dataType)
 	{
-	case PIXEL_INT8:
+	case PixelType::Int8:
 		result.reset(new AltMatrix<boost::int8_t>(false, false));
 		break;
-	case PIXEL_UINT8:
+	case PixelType::UInt8:
 		result.reset(new AltMatrix<boost::uint8_t>(false, false));
 		break;
-	case PIXEL_INT16:
+	case PixelType::Int16:
 		result.reset(new AltMatrix<boost::int16_t>(false, false));
 		break;
-	case PIXEL_UINT16:
+	case PixelType::UInt16:
 		result.reset(new AltMatrix<boost::uint16_t>(false, false));
 		break;
-	case PIXEL_INT32:
+	case PixelType::Int32:
 		result.reset(new AltMatrix<boost::int32_t>(false, false));
 		break;
-	case PIXEL_UINT32:
+	case PixelType::UInt32:
 		result.reset(new AltMatrix<boost::uint32_t>(false, false));
 		break;
-	case PIXEL_FLOAT32:
+	case PixelType::Float32:
 		result.reset(new AltMatrix<float>(false, false));
 		break;
-	case PIXEL_FLOAT64:
+	case PixelType::Float64:
 		result.reset(new AltMatrix<double>(false, false));
 		break;
 	default:
@@ -155,7 +155,7 @@ unique_ptr<AltMatrixBase> ImageComparer::LoadMatrFromGeoTIFF(const string &fileN
 	if (!result)
 	{
 		//Не получилось создать матрицу :(
-		if (errObj) errObj->SetError(CMNERR_UNKNOWN_ERROR, "ImageComparer::LoadMatrFromGeoTIFF error creating AltMatrix<T>!", true);
+		if (errObj) errObj->SetError(CommonErrors::UnknownError, "ImageComparer::LoadMatrFromGeoTIFF error creating AltMatrix<T>!", true);
 		GDALClose(sourceDataset);
 		sourceDataset = nullptr;
 		sourceRaster = nullptr;
@@ -164,7 +164,7 @@ unique_ptr<AltMatrixBase> ImageComparer::LoadMatrFromGeoTIFF(const string &fileN
 
 	//Читаем файл в получившуюся матрицу.
 	result->CreateEmpty(imageSizeX, imageSizeY);
-	if (!result->LoadFromGDALRaster(sourceRaster, 0, imageSizeY, 0, TOP_MM_FILE1,
+	if (!result->LoadFromGDALRaster(sourceRaster, 0, imageSizeY, 0, TopMarginMode::File1,
 		nullptr, errObj))
 	{
 		//Не удалось загрузить. errObj уже заполнен сообщением об ошибке.

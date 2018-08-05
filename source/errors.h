@@ -23,22 +23,22 @@
 namespace geoimgconv
 {
 
-enum CommonErrors : int
+enum class CommonErrors : int
 {
-	//CMNERR_UNKNOWN_ERROR обязательно должна идти последней!
-	CMNERR_NO_ERROR = 0,
-	CMNERR_READ_ERROR = 1,
-	CMNERR_WRITE_ERROR = 2,
-	CMNERR_FEATURE_NOT_READY = 3,
-	CMNERR_FILE_NOT_EXISTS = 4,
-	CMNERR_FILE_EXISTS_ALREADY = 5,
-	CMNERR_UNSUPPORTED_FILE_FORMAT = 6,
-	CMNERR_FILE_NOT_LOADED = 7,
-	CMNERR_CMDLINE_PARSE_ERROR = 8,
-	CMNERR_UNKNOWN_IDENTIF = 9,
-	CMNERR_CANT_ALLOC_MEMORY = 10,
-	CMNERR_INTERNAL_ERROR = 11,
-	CMNERR_UNKNOWN_ERROR = 12
+	//UnknownError обязательно должна идти последней!
+	NoError = 0,
+	ReadError = 1,
+	WriteError = 2,
+	FeatureNotReady = 3,
+	FileNotExists = 4,
+	FileExistsAlready = 5,
+	UnsupportedFileFormat = 6,
+	FileNotLoaded = 7,
+	CmdLineParseError = 8,
+	UnknownIdentif = 9,
+	CantAllocMemory = 10,
+	InternalError = 11,
+	UnknownError = 12
 };
 
 //Текстовое представление для enum CommonErrors
@@ -49,7 +49,7 @@ class ErrorInfo
 {
 private:
 	//Код и текст ошибки
-	CommonErrors errorCode_ = CMNERR_NO_ERROR;
+	CommonErrors errorCode_ = CommonErrors::NoError;
 	std::string errorText_;
 public:	
 	ErrorInfo() {};

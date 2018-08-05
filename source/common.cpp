@@ -39,13 +39,13 @@ const int DEFAULT_MEDFILTER_APERTURE = 101;
 //Порог медианного фильтра
 const double DEFAULT_MEDFILTER_THRESHOLD = 0.5;
 //Какой тип заполнения граничных пикселей применяется по умолчанию
-const MarginType DEFAULT_MEDFILTER_MARGIN_TYPE = MARGIN_MIRROR_FILLING;
+const MarginType DEFAULT_MEDFILTER_MARGIN_TYPE = MarginType::MirrorFilling;
 //Режим работы программы
-const AppMode DEFAULT_APP_MODE = APPMODE_MEDIAN;
+const AppMode DEFAULT_APP_MODE = AppMode::Median;
 //Режим использования памяти
-const MemoryMode DEFAULT_MEM_MODE = MEMORY_MODE_AUTO;
+const MemoryMode DEFAULT_MEM_MODE = MemoryMode::Auto;
 //Режим медианного фильтра по умолчанию.
-const MedfilterAlgo DEFAULT_MEDFILTER_ALGO = MEDFILTER_ALGO_STUPID;
+const MedfilterAlgo DEFAULT_MEDFILTER_ALGO = MedfilterAlgo::Stupid;
 //Количество уровней квантования для алгоритма Хуанга по умолчанию
 const uint16_t DEFAULT_HUANG_LEVELS_NUM = 10000;
 //Включён ли по умолчанию режим заполнения ям в медианном фильтре.
@@ -86,21 +86,21 @@ const std::string MemoryModeTexts[] = { "auto",	//0
 };
 
 //Преобразование типа пикселя из enum-а GDALDataType в PixelType.
-//Важный момент - если тип был PIXEL_INT8 - невозможно просто так понять
+//Важный момент - если тип был PixelType::Int8 - невозможно просто так понять
 //signed там или unsigned. Для того чтобы отличить одно от другого - надо
 //в MAGE_STRUCTURE Domain посмотреть значение PIXELTYPE
 PixelType GDALToGIC_PixelType(const GDALDataType &GDALType)
 {
 	switch (GDALType)
 	{
-	case GDT_Byte: return PIXEL_INT8;
-	case GDT_UInt16: return PIXEL_UINT16;
-	case GDT_Int16: return PIXEL_INT16;
-	case GDT_UInt32: return PIXEL_UINT32;
-	case GDT_Int32: return PIXEL_INT32;
-	case GDT_Float32: return PIXEL_FLOAT32;
-	case GDT_Float64: return PIXEL_FLOAT64;
-	default: return PIXEL_UNKNOWN;
+	case GDT_Byte: return PixelType::Int8;
+	case GDT_UInt16: return PixelType::UInt16;
+	case GDT_Int16: return PixelType::Int16;
+	case GDT_UInt32: return PixelType::UInt32;
+	case GDT_Int32: return PixelType::Int32;
+	case GDT_Float32: return PixelType::Float32;
+	case GDT_Float64: return PixelType::Float64;
+	default: return PixelType::Unknown;
 	}
 }
 
@@ -109,14 +109,14 @@ GDALDataType GICToGDAL_PixelType(const PixelType GICType)
 {
 	switch (GICType)
 	{
-	case PIXEL_INT8: return GDT_Byte;
-	case PIXEL_UINT8: return GDT_Byte;
-	case PIXEL_UINT16: return GDT_UInt16;
-	case PIXEL_INT16: return GDT_Int16;
-	case PIXEL_UINT32: return GDT_UInt32;
-	case PIXEL_INT32: return GDT_Int32;
-	case PIXEL_FLOAT32: return GDT_Float32;
-	case PIXEL_FLOAT64: return GDT_Float64;
+	case PixelType::Int8: return GDT_Byte;
+	case PixelType::UInt8: return GDT_Byte;
+	case PixelType::UInt16: return GDT_UInt16;
+	case PixelType::Int16: return GDT_Int16;
+	case PixelType::UInt32: return GDT_UInt32;
+	case PixelType::Int32: return GDT_Int32;
+	case PixelType::Float32: return GDT_Float32;
+	case PixelType::Float64: return GDT_Float64;
 	default: return GDT_Unknown;
 	}
 }
@@ -144,12 +144,12 @@ AppMode AppModeStrToEnum(const std::string &inputStr)
 {
 	std::string inpStr;
 	STB.Utf8ToLower(inputStr, inpStr);
-	for (unsigned char i = 0; i <= APPMODE_UNKNOWN; i++)
+	for (unsigned char i = 0; i <= (unsigned char)AppMode::Unknown; i++)
 	{
 		if (inpStr == AppModeTexts[i])
 			return AppMode(i);
 	}
-	return APPMODE_UNKNOWN;
+	return AppMode::Unknown;
 }
 
 //Получить MarginType из строки, совпадающей без учёта регистра с одним из
@@ -158,12 +158,12 @@ MarginType MarginTypeStrToEnum(const std::string &inputStr)
 {
 	std::string inpStr;
 	STB.Utf8ToLower(inputStr, inpStr);
-	for (unsigned char i = 0; i <= MARGIN_UNKNOWN_FILLING; i++)
+	for (unsigned char i = 0; i <= (unsigned char)MarginType::UnknownFilling; i++)
 	{
 		if (inpStr == MarginTypesTexts[i])
 			return MarginType(i);
 	}
-	return MARGIN_UNKNOWN_FILLING;
+	return MarginType::UnknownFilling;
 }
 
 //Получить MedfilterAlgo из строки, совпадающей без учёта регистра с одним из
@@ -172,50 +172,50 @@ MedfilterAlgo MedfilterAlgoStrToEnum(const std::string &inputStr)
 {
 	std::string inpStr;
 	STB.Utf8ToLower(inputStr, inpStr);
-	for (unsigned char i = 0; i <= MEDFILTER_ALGO_UNKNOWN; i++)
+	for (unsigned char i = 0; i <= (unsigned char)MedfilterAlgo::Unknown; i++)
 	{
 		if (inpStr == MedfilterAlgoTexts[i])
 			return MedfilterAlgo(i);
 	}
-	return MEDFILTER_ALGO_UNKNOWN;
+	return MedfilterAlgo::Unknown;
 }
 
 //Получить противоположное направление движения по пикселям.
 PixelDirection RevertPixelDirection(const PixelDirection & value)
 {
-	if (value == PIXEL_DIR_UP)
+	if (value == PixelDirection::Up)
 	{
-		return PIXEL_DIR_DOWN;
+		return PixelDirection::Down;
 	}
-	else if (value == PIXEL_DIR_DOWN)
+	else if (value == PixelDirection::Down)
 	{
-		return PIXEL_DIR_UP;
+		return PixelDirection::Up;
 	}
-	else if (value == PIXEL_DIR_RIGHT)
+	else if (value == PixelDirection::Right)
 	{
-		return PIXEL_DIR_LEFT;
+		return PixelDirection::Left;
 	}
-	else if (value == PIXEL_DIR_LEFT)
+	else if (value == PixelDirection::Left)
 	{
-		return PIXEL_DIR_RIGHT;
+		return PixelDirection::Right;
 	}
-	else if (value == PIXEL_DIR_UP_RIGHT)
+	else if (value == PixelDirection::UpRight)
 	{
-		return PIXEL_DIR_DOWN_LEFT;
+		return PixelDirection::DownLeft;
 	}
-	else if (value == PIXEL_DIR_DOWN_LEFT)
+	else if (value == PixelDirection::DownLeft)
 	{
-		return PIXEL_DIR_UP_RIGHT;
+		return PixelDirection::UpRight;
 	}
-	else if (value == PIXEL_DIR_UP_LEFT)
+	else if (value == PixelDirection::UpLeft)
 	{
-		return PIXEL_DIR_DOWN_RIGHT;
+		return PixelDirection::DownRight;
 	}
-	else if (value == PIXEL_DIR_DOWN_RIGHT)
+	else if (value == PixelDirection::DownRight)
 	{
-		return PIXEL_DIR_UP_LEFT;
+		return PixelDirection::UpLeft;
 	}
-	else return PIXEL_DIR_UNKNOWN;
+	else return PixelDirection::Unknown;
 }
 
 }		//namespace geoimgconv

@@ -49,22 +49,22 @@ template <typename CellType> AltMatrix<CellType>::AltMatrix(const bool useSignDa
 {
 	//Объект должен точно знать какого типа у него пиксели.
 	if (typeid(CellType) == typeid(double))
-		setPixelType(PIXEL_FLOAT64);
+		setPixelType(PixelType::Float64);
 	else if (typeid(CellType) == typeid(float))
-		setPixelType(PIXEL_FLOAT32);
+		setPixelType(PixelType::Float32);
 	else if (typeid(CellType) == typeid(int8_t))
-		setPixelType(PIXEL_INT8);
+		setPixelType(PixelType::Int8);
 	else if (typeid(CellType) == typeid(uint8_t))
-		setPixelType(PIXEL_UINT8);
+		setPixelType(PixelType::UInt8);
 	else if (typeid(CellType) == typeid(int16_t))
-		setPixelType(PIXEL_INT16);
+		setPixelType(PixelType::Int16);
 	else if (typeid(CellType) == typeid(uint16_t))
-		setPixelType(PIXEL_UINT16);
+		setPixelType(PixelType::UInt16);
 	else if (typeid(CellType) == typeid(int32_t))
-		setPixelType(PIXEL_INT32);
+		setPixelType(PixelType::Int32);
 	else if (typeid(CellType) == typeid(uint32_t))
-		setPixelType(PIXEL_UINT32);
-	else setPixelType(PIXEL_UNKNOWN);
+		setPixelType(PixelType::UInt32);
+	else setPixelType(PixelType::Unknown);
 }
 
 template <typename CellType> AltMatrix<CellType>::~AltMatrix()
@@ -88,7 +88,7 @@ template <typename CellType>
 bool AltMatrix<CellType>::SaveToFile(const string &fileName, ErrorInfo *errObj) const
 {
 	//Заглушка.
-	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
+	if (errObj) errObj->SetError(CommonErrors::FeatureNotReady);
 	return false;
 }
 
@@ -105,12 +105,12 @@ bool AltMatrix<CellType>::SaveToGDALRaster(GDALRasterBand *gdalRaster, const int
 	//Среагируем на явные ошибки...
 	if (!gdalRaster)
 	{
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  AltMatrix<>::SaveToGDALRaster gdalRaster == NULL");
+		if (errObj) errObj->SetError(CommonErrors::InternalError, ":  AltMatrix<>::SaveToGDALRaster gdalRaster == NULL");
 		return false;
 	}
 	if ((gdalRaster->GetXSize() != getXSize()) || (gdalRaster->GetYSize() < (yPosition+ yToWrite)))
 	{
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  AltMatrix<>::SaveToGDALRaster wrong sizes!");
+		if (errObj) errObj->SetError(CommonErrors::InternalError, ":  AltMatrix<>::SaveToGDALRaster wrong sizes!");
 		return false;
 	}
 
@@ -121,7 +121,7 @@ bool AltMatrix<CellType>::SaveToGDALRaster(GDALRasterBand *gdalRaster, const int
 		0, 0, NULL);
 	if (gdalResult != CE_None)
 	{
-		if (errObj) errObj->SetError(CMNERR_READ_ERROR, ": " + GetLastGDALError());
+		if (errObj) errObj->SetError(CommonErrors::ReadError, ": " + GetLastGDALError());
 		return false;
 	}
 	
@@ -134,7 +134,7 @@ template <typename CellType>
 bool AltMatrix<CellType>::LoadFromFile(const string &fileName, ErrorInfo *errObj)
 {
 	//Заглушка.
-	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
+	if (errObj) errObj->SetError(CommonErrors::FeatureNotReady);
 	return false;
 }
 
@@ -150,7 +150,7 @@ bool AltMatrix<CellType>::LoadFromFile(const string &fileName, ErrorInfo *errObj
 //marginSize - высота блока, совпадающая с размером области граничных пикселей. Также это
 //количество пикселей остаётся пустым в начале и конце всех строк матрицы.
 //marginMode - константа из enum TopMarginMode, определяет откуда будут взяты 2 верхних блока.
-//sourceMatrix - ссылка на матрицу из которой берутся блоки в режиме TOP_MM_MATR.
+//sourceMatrix - ссылка на матрицу из которой берутся блоки в режиме TopMarginMode::Matr.
 //errObj - информация об ошибке если она была.
 template <typename CellType>
 bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const int &yPosition, const int &yToRead,
@@ -159,7 +159,7 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 	//gdalRaster не может быть NULL.
 	if (!gdalRaster)
 	{
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  AltMatrix<>::LoadFromGDALRaster gdalRaster == NULL");
+		if (errObj) errObj->SetError(CommonErrors::InternalError, ":  AltMatrix<>::LoadFromGDALRaster gdalRaster == NULL");
 		return false;
 	}
 
@@ -170,7 +170,7 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 	{
 		//По идее сюда мы зайдём если реальный тип не был AltMatrix<CellType>.
 		//dynamic_cast вернёт NULL если по ссылке было что-то не приводимое.
-		if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ":  AltMatrix<>::LoadFromGDALRaster sourceMatrix has wrong real type.");
+		if (errObj) errObj->SetError(CommonErrors::InternalError, ":  AltMatrix<>::LoadFromGDALRaster sourceMatrix has wrong real type.");
 		return false;
 	}
 	
@@ -178,7 +178,7 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 	int yStart = 0;		//Строка матрицы на которую надо будет начинать читать из файла. Может измениться ниже.
 	switch (marginMode)
 	{
-	case TOP_MM_FILE1:
+	case TopMarginMode::File1:
 	{
 		//Надо обнулить.
 		size_t blockSize = getXSize() * marginSize;
@@ -191,13 +191,13 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 		yStart = marginSize;
 	}
 		break;
-	case TOP_MM_MATR:
+	case TopMarginMode::Matr:
 		//Надо скопировать.
 		if ((realSourceMatrix == nullptr) ||
 			(realSourceMatrix->getXSize() != getXSize()) ||
 			(realSourceMatrix->getYSize() != getYSize()))
 		{
-			if (errObj) errObj->SetError(CMNERR_INTERNAL_ERROR, ": AltMatrix<>::LoadFromGDALRaster wrong sourceMatrix");
+			if (errObj) errObj->SetError(CommonErrors::InternalError, ": AltMatrix<>::LoadFromGDALRaster wrong sourceMatrix");
 			return false;
 		}
 		//Собственно, копируем 2 блока из конца sourceMatrix в начало this.
@@ -245,7 +245,7 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 		(rasterXSize + (marginSize * 2)) * sizeof(CellType), NULL);
 	if (gdalResult != CE_None)
 	{
-		if (errObj) errObj->SetError(CMNERR_READ_ERROR, ": " + GetLastGDALError());
+		if (errObj) errObj->SetError(CommonErrors::ReadError, ": " + GetLastGDALError());
 		return false;
 	}
 
@@ -315,7 +315,7 @@ bool AltMatrix<CellType>::SaveChunkToFile(const string &fileName,
 	ErrorInfo *errObj) const
 {
 	//Заглушка.
-	if (errObj) errObj->SetError(CMNERR_FEATURE_NOT_READY);
+	if (errObj) errObj->SetError(CommonErrors::FeatureNotReady);
 	return false;
 }
 
@@ -481,7 +481,7 @@ bool AltMatrix<CellType>::SaveToCSVFile(const std::string &fileName, ErrorInfo *
 	fileStream.open(fileName.c_str(),ios_base::binary|ios_base::trunc|ios_base::out);
 	if (!fileStream.is_open())
 	{
-		if (errObj) errObj->SetError(CMNERR_WRITE_ERROR,": "+fileName);
+		if (errObj) errObj->SetError(CommonErrors::WriteError,": "+fileName);
 		return false;
 	}
 	int x, y;
