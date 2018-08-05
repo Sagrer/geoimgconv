@@ -29,7 +29,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/predef.h>
 #include <cctype>
 #include <type_traits>
 

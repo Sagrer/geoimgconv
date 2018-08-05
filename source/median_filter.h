@@ -21,8 +21,7 @@
 #include "common.h"
 #include <string>
 #include "base_filter.h"
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <cmath>
 
 namespace geoimgconv
@@ -109,9 +108,9 @@ public:
 	//"События", к которым можно привязать обработчики.
 
 	//Объект начал вычислять минимальную и максимальную высоту на карте высот.
-	boost::function<void()> onMinMaxDetectionStart;
+	std::function<void()> onMinMaxDetectionStart;
 	//Объект закончил вычислять минимальную и максимальную высоту на карте высот.
-	boost::function<void()> onMinMaxDetectionEnd;
+	std::function<void()> onMinMaxDetectionEnd;
 
 	//Доступ к полям.
 
@@ -451,7 +450,7 @@ private:
 		const uint16_t &median, unsigned long &elemsLeftMed);
 
 	//Вспомогательный метод для алгоритма Хуанга. Корректирует медиану.
-	inline void HuangFilter_DoMedianCorrection(boost::uint16_t &median, unsigned long &elemsLeftMed,
+	inline void HuangFilter_DoMedianCorrection(uint16_t &median, unsigned long &elemsLeftMed,
 		const uint16_t &halfMedPos, unsigned long *gist);
 
 	//Вспомогательный метод для алгоритма Хуанга. Запись нового значения пикселя в матрицу
