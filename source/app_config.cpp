@@ -137,12 +137,11 @@ void AppConfig::FillDependentPO_()
 		//	задаёт имя выходного файла. По умолчанию равна output.tif").c_str())
 		("medfilter.aperture", po::value<int>(),STB.Utf8ToSelectedCharset("Длина стороны \
 окна медианного фильтра в пикселях. Округляется вверх до ближайшего нечетного \
-значения. По умолчанию равна "+boost::lexical_cast<std::string>(DEFAULT_MEDFILTER_APERTURE)
-+" пикс.").c_str())
+значения. По умолчанию равна "+to_string(DEFAULT_MEDFILTER_APERTURE) +" пикс.").c_str())
 		("medfilter.threshold", po::value<double>(),STB.Utf8ToSelectedCharset("Порог \
 медианного фильтра в метрах. Если отличие значения пикселя от медианы не \
 превышает этого значение - пиксель при фильтрации не изменяется. По умолчанию \
-опция равна "+boost::lexical_cast<std::string>(DEFAULT_MEDFILTER_THRESHOLD)+" (метров).").c_str())
+опция равна "+to_string(DEFAULT_MEDFILTER_THRESHOLD)+" (метров).").c_str())
 		("medfilter.margintype", po::value<std::string>(),STB.Utf8ToSelectedCharset(
 "Тип заполнения краевых областей для медианного фильтра. Заполнение нужно для \
 того, чтобы пикселы, находящиеся по краям значимой части изображения также можно \
@@ -169,9 +168,8 @@ void AppConfig::FillDependentPO_()
 обработке предыдущего.").c_str())
 		("medfilter.huanglevels", po::value<uint16_t>(), STB.Utf8ToSelectedCharset(
 "Количество уровней квантования для медианной фильтрации алгоритмом Хуанга. По умолчанию этот \
-параметр равен " + boost::lexical_cast<std::string>(DEFAULT_HUANG_LEVELS_NUM) + ". Максимально \
-возможное значение этого параметра: " + boost::lexical_cast<std::string>
-(HUANG_MAX_LEVELS_NUM) + ".").c_str())
+параметр равен " + to_string(DEFAULT_HUANG_LEVELS_NUM) + ". Максимально \
+возможное значение этого параметра: " + to_string(HUANG_MAX_LEVELS_NUM) + ".").c_str())
 		("medfilter.fillpits", STB.Utf8ToSelectedCharset("Включить заполнение ям в медианном фильтре. \
 Смысл в том, что если точка рельефа находится значительно ниже медианы, то при данной включённой опции \
 данная точка станет равна медиане, но обычно это не имеет смысла т.к. алгоритм обычно применяется для \
@@ -243,7 +241,7 @@ void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memM
 			inpStr = inputStr.substr(pos, inputStr.length() - pos);
 			if (STB.CheckUnsIntStr(inpStr))
 			{
-				size = boost::lexical_cast<unsigned long long>(inpStr);
+				size = stoull(inpStr);
 				if (size > 100)
 					//Нельзя указывать больше 100%
 					size = 0;

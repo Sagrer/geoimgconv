@@ -28,7 +28,6 @@
 #include <iomanip>
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
-#include <boost/lexical_cast.hpp>
 #include <cctype>
 #include <type_traits>
 
@@ -208,7 +207,7 @@ const std::string SmallToolsBox::BytesNumToInfoSizeStr(const unsigned long long 
 
 	if (bytesNum < 1024)
 	{
-		return lexical_cast<string>(bytesNum) + " байт";
+		return to_string(bytesNum) + " байт";
 	}
 	else if (bytesNum < 1048576)
 	{
@@ -251,7 +250,7 @@ const unsigned long long SmallToolsBox::InfoSizeToBytesNum(const std::string &in
 		else
 			numberStr = inputStr.substr(0, inputStr.length() - 1);
 		lastChar = tolower(lastChar);
-		result = boost::lexical_cast<unsigned long long>(numberStr);
+		result = stoull(numberStr);
 		if (lastChar == 'k')
 			result *= 1024;
 		else if (lastChar == 'm')
@@ -378,7 +377,7 @@ const unsigned long long GetProcMeminfoField(const std::string &fieldName)
 				if (j!=currLineTok.end())
 				{
 					//Есть второе поле - это будет число, его и вернём умножив на размер килобайта.
-					return lexical_cast<unsigned long long>(*j) * 1024;
+					return stoull(*j) * 1024;
 				}
 				else
 				{
@@ -446,7 +445,7 @@ void FillSysInfoFromProcMeminfo(SysResInfo &infoStruct)
 				if (j != currLineTok.end())
 				{
 					//Есть второе поле - это будет число, его и запомним, умножив на размер килобайта.
-					*fieldPointer = lexical_cast<unsigned long long>(*j) * 1024;
+					*fieldPointer = stoull(*j) * 1024;
 					//Если это было последнее поле - нет дальше смысла парсить файл.
 					fieldsNum--;
 					if (!fieldsNum)

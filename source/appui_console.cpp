@@ -28,7 +28,6 @@
 #include "appui_console.h"
 #include "small_tools_box.h"
 #include "median_filter.h"
-#include <boost/lexical_cast.hpp>
 #include <cmath>
 #include "common.h"
 
@@ -66,8 +65,8 @@ void AppUIConsoleCallBack::Clear()
 void AppUIConsoleCallBack::UpdateBar(const unsigned long &progressPosition)
 {
 	cout << "\r";	//Переводим вывод на начало текущей строки.
-	text_ = boost::lexical_cast<string>(progressPosition) + "/" + boost::lexical_cast<string>(getMaxProgress()) +
-		" ( " + boost::lexical_cast<string>(progressPosition / (getMaxProgress() / 100)) + "% ) "
+	text_ = to_string(progressPosition) + "/" + to_string(getMaxProgress()) +
+		" ( " + to_string(progressPosition / (getMaxProgress() / 100)) + "% ) "
 		+ STB.DoubleToString(pixelsPerSecond_, 2) + " пикс/с, до завершения: "
 		+ STB.TimeDurationToString(timeLeft_);
 	tempSize_ = text_.size();
@@ -428,7 +427,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 		{
 			maxMemCanBeUsed_ = 90 * (sysMemFreeSize / 100);
 			if (!((maxMemCanBeUsed_ >= filterObj.getMinMemSize()) && (swapMode == SWAPMODE_ASK)
-				&& ConsoleAnsweredYes(boost::lexical_cast<string>(confObj_->getMemSize()) + "% \
+				&& ConsoleAnsweredYes(to_string(confObj_->getMemSize()) + "% \
 свободной памяти недостаточно для работы фильтра. Попробовать взять\n90%?")))
 			{
 				//Нельзя пробовать брать больше памяти. Вся надежда на то что разрешат подкачку.
@@ -574,13 +573,13 @@ int AppUIConsole::RunApp()
 	//PrintToConsole("Программа запущена по пути: "+ getAppPath() + "\n");
 	//PrintToConsole("Текущий рабочий путь: "+getCurrPath() + "\n");
 	/*PrintToConsole("\nОбнаружено ядер процессора: " +
-	lexical_cast<string>(sysResInfo_.cpuCoresNumber) + "\n");*/
+	to_string(sysResInfo_.cpuCoresNumber) + "\n");*/
 	PrintToConsole("Всего ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo_.systemMemoryFullSize) + ".\n");
 	PrintToConsole("Доступно ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo_.systemMemoryFreeSize) + ".\n");
 	PrintToConsole("Процесс может адресовать памяти: " + STB.BytesNumToInfoSizeStr(sysResInfo_.maxProcessMemorySize) + ".\n");
 	PrintToConsole("Выбран режим работы с памятью: " + MemoryModeTexts[confObj_->getMemMode()] + "\n");
 	/*PrintToConsole("Размер, указанный для режима работы с памятью: " +
-	lexical_cast<string>(confObj_->getMemSize()) + "\n\n");*/
+	to_string(confObj_->getMemSize()) + "\n\n");*/
 
 	//Всё-таки нужно обработать картинку. В зависимости от выбранного режима создадим нужный фильтр.
 	ErrorInfo errObj;
@@ -666,7 +665,7 @@ int AppUIConsole::RunApp()
 
 	PrintToConsole("Программа будет обрабатывать файл, используя до " +
 		STB.BytesNumToInfoSizeStr(maxMemCanBeUsed_) + " памяти, частями по\n" +
-		boost::lexical_cast<std::string>(maxBlocksCanBeUsed_) + " блока(ов).\n");
+		to_string(maxBlocksCanBeUsed_) + " блока(ов).\n");
 	if (confObj_->getMemMode() != MEMORY_MODE_ONECHUNK)
 		PrintToConsole("Размер блока: до " + STB.BytesNumToInfoSizeStr(medFilter_->getMinBlockSize()) + ".\n");
 	cout << endl;
