@@ -19,8 +19,10 @@ USE_TESTS := "yes"
 all : $(BUILDDIR)/prepare.tmp
 	cd $(BUILDDIR); cmake -G "Unix Makefiles" -D CMAKE_BUILD_TYPE=Release ../source
 	cd $(BUILDDIR); make
-	if [ $(USE_TESTS) == "yes" ]; then cd $(BUILDDIR); ./geoimgconv_tests --show_progress; fi
-	
+ifeq ($(USE_TESTS),"yes")
+	cd $(BUILDDIR); ./geoimgconv_tests --show_progress
+endif
+
 #Отладочная и разрабоччицкая цель для CodeBlocks.
 cb_debug : $(CB_DEBUG_BUILDDIR)/prepare.tmp
 	cd $(CB_DEBUG_BUILDDIR); cmake -G "CodeBlocks - Unix Makefiles" -D CMAKE_BUILD_TYPE=Debug ../source
