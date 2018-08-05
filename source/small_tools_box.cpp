@@ -30,6 +30,8 @@
 #include <boost/thread/thread.hpp>
 #include <cctype>
 #include <type_traits>
+//predef - чтобы иметь доступ к макросам для определения архитектуры процессора.
+#include <boost/predef.h>
 
 //Для определения количества памяти нужен платформозависимый код :(
 #ifdef _WIN32

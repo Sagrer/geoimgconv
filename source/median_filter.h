@@ -627,12 +627,8 @@ typedef RealMedianFilter<int32_t> RealMedianFilterInt32;
 typedef RealMedianFilter<uint32_t> RealMedianFilterUInt32;
 
 //Обязательно надо проверить и запретить дальнейшую компиляцию если double и float
-//означают не то что мы думаем. Типы из boost не используются т.к. простых дефайнов
-//на встроенные типы с++ там нет и всё через библиотеки-прослойки для нецелочисленных
-//вычислений, и с этим всем надо экспериментировать будет ещё.
-//TODO: - как нибудь надо всё-таки перевести это дело на типы фиксированного размера
-//если это не ударит по производительности.
-BOOST_STATIC_ASSERT_MSG(sizeof(double) == 8, "double size is not 64 bit! You need to fix the code for you compillator!");
-BOOST_STATIC_ASSERT_MSG(sizeof(float) == 4, "float size is not 32 bit! You need to fix the code for you compillator!");
+//означают не то что мы думаем.
+static_assert(sizeof(double) == 8, "double size is not 64 bit! You need to fix the code for you compillator!");
+static_assert(sizeof(float) == 4, "float size is not 32 bit! You need to fix the code for you compillator!");
 
 }	//namespace geoimgconv
