@@ -4,6 +4,8 @@
 
 @rem Количество ядер процессора - можно поставить больше единицы для ускорения сборки.
 set CPU_NUM=2
+@rem Запускать ли тесты (yes\no).
+set RUN_TESTS="yes"
 
 @rem Проверим наличие необходимых переменных окружения
 IF "%DevLibsMingw32%"=="" (
@@ -71,4 +73,16 @@ if NOT %ERRORLEVEL% == 0 (
 @echo.
 @echo Build finished succesfully.
 @echo.
+if %RUN_TESTS% == "yes" (
+	echo Running tests...
+	echo.
+	.\bin\geoimgconv_tests.exe --show_progress
+)
+if %RUN_TESTS% == "yes" (
+	if NOT %ERRORLEVEL% == 0 (
+		echo FAILED!!!
+		pause
+		exit /B 1
+	)
+)
 pause

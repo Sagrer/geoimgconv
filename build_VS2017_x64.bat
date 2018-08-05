@@ -1,7 +1,15 @@
 @rem Скрипт для сборки 64-битной версии через VisualStudio 2017.
 @echo off
+
+@rem Запускать ли тесты (yes\no).
+set RUN_TESTS="yes"
+
 @rem Проверим наличие необходимой переменной окружения
-IF "%DevLibsVs2017_x64%"=="" GOTO VarIsNotSet
+IF "%DevLibsVs2017_x64%"=="" (
+	echo Variable DevLibsVs2017_x64 is not set!
+	pause
+	exit /b 1
+)
 @rem По умолчанию собирается релизная сборка.
 @echo.
 @echo Preparing environment...
@@ -59,9 +67,16 @@ if NOT %ERRORLEVEL% == 0 (
 @echo.
 @echo Build finished succesfully.
 @echo.
+if %RUN_TESTS% == "yes" (
+	echo Running tests...
+	echo.
+	.\release\geoimgconv_tests.exe --show_progress
+)
+if %RUN_TESTS% == "yes" (
+	if NOT %ERRORLEVEL% == 0 (
+		echo FAILED!!!
+		pause
+		exit /B 1
+	)
+)
 pause
-GOTO end
-:VarIsNotSet
-@echo Variable DevLibsVs2017_x64 is not set!
-pause
-:end

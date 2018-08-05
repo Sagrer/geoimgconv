@@ -191,3 +191,9 @@ BOOST_AUTO_TEST_CASE(check_image_comparer)
 		BOOST_TEST_INFO("Error was: "+ STB.Utf8ToConsoleCharset(errObj.getErrorText()));
 	BOOST_TEST(result == 0.0, b_tt::tolerance(0.00001));
 }
+
+////Это можно раскомментировать если надо будет протестировать зафейлившийся тест.
+//BOOST_AUTO_TEST_CASE(dummy)
+//{
+//	BOOST_TEST(false);
+//}
