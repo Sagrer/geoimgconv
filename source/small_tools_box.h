@@ -39,6 +39,7 @@
 
 #include <iostream>
 #include <string>
+#include <chrono>
 
 namespace geoimgconv
 {
@@ -169,6 +170,19 @@ class SmallToolsBox
 
 		//Возвращает используемый в данной системе разделитель путей к файлам, в виде обычной строки.
 		const std::string& GetFilesystemSeparator();
+
+		//Преобразует период времени std::chrono::microseconds в строку формата hh:mm:ss.ms (миллисекунды
+		//опционально.
+		const std::string TimeDurationToString(const std::chrono::microseconds &duration,
+			bool printMilliseconds = false);
+
+		//Преобразует период времени std::chrono::milliseconds в строку формата hh:mm:ss.ms (миллисекунды
+		//опционально.
+		const std::string TimeDurationToString(const std::chrono::milliseconds &duration,
+			bool printMilliseconds = false);
+
+		//Преобразует период времени std::chrono::seconds в строку формата hh:mm:ss.
+		const std::string TimeDurationToString(const std::chrono::seconds &duration);
 };
 
 extern SmallToolsBox STB;

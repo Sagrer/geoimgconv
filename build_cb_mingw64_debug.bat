@@ -34,7 +34,6 @@ del /Q .\bin\*.dll
 mkdir bin
 copy /Y %DevLibsMingw64%\lib\libboost_locale*.dll bin\
 copy /Y %DevLibsMingw64%\lib\libboost_system*.dll bin\
-copy /Y %DevLibsMingw64%\lib\libboost_chrono*.dll bin\
 copy /Y %DevLibsMingw64%\lib\libboost_thread*.dll bin\
 copy /Y %DevLibsMingw64%\lib\libboost_filesystem*.dll bin\
 copy /Y %DevLibsMingw64%\lib\libboost_program_options*.dll bin\

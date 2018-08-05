@@ -60,7 +60,7 @@ if(WIN32)
 	#лютые глюки в boost::locale и фасетах.
 	set(Boost_USE_STATIC_LIBS OFF)
 endif()
-find_package(Boost COMPONENTS locale system chrono thread filesystem date_time program_options unit_test_framework REQUIRED)
+find_package(Boost COMPONENTS locale system thread filesystem program_options unit_test_framework REQUIRED)
 if(MSVC)
 	link_directories(${Boost_LIBRARY_DIRS})
 endif()
@@ -127,8 +127,8 @@ add_test(geoimgconv_tests geoimgconv_tests)
 #Boost.
 #dynamic_linking - для принудительной динамической линковки под Visual Studio.
 include_directories(${Boost_INCLUDE_DIRS})
-target_link_libraries(geoimgconv_lib Boost::locale Boost::system Boost::chrono Boost::thread Boost::filesystem
-	Boost::date_time Boost::program_options Boost::dynamic_linking)
+target_link_libraries(geoimgconv_lib Boost::locale Boost::system Boost::thread Boost::filesystem
+	Boost::program_options Boost::dynamic_linking)
 #К тестовому проекту нужно прилинковать дополнительно Boost.Test.
 target_link_libraries(geoimgconv_tests Boost::unit_test_framework)
 #При необходимости добавим define, отключающий ругань буста на компиллятор.

@@ -26,7 +26,7 @@
 
 #include <string>
 #include "common.h"
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <chrono>
 #include "app_config.h"
 #include "small_tools_box.h"
 #include "base_filter.h"
@@ -39,6 +39,8 @@ namespace geoimgconv
 class AppUIConsoleCallBack : public CallBackBase
 {
 private:
+	//Используемые в этом классе типы.
+	using MSecTimePoint = std::chrono::time_point<std::chrono::steady_clock, std::chrono::milliseconds>;
 	//Многие приватные поля здесь для того чтобы инициализировать их всего раз
 	//а не при каждом вызове CallBack(...). Возможно это немного всё ускорит.
 	size_t skipCounter_ = 0;   //Счётчик сколько пикселов уже было пропущено.
@@ -49,14 +51,13 @@ private:
 	std::string text_;	//Строка для вывода в консоль
 	std::string::size_type lastTextSize_ = 0;	//Длина текста, выведенная в прошлый раз.
 	std::string::size_type tempSize_;
-	boost::posix_time::ptime lastPrintTime_;	//Для калибровки skipNumber_ чтобы вывод был раз в 2 секунды примерно.
-	boost::posix_time::ptime nowTime_;	//---""---
-	boost::posix_time::time_duration timeDelta_;		//---""---
-	boost::posix_time::time_duration timeLeft_;		//Приблизительное время, оставшееся до конца обработки.
-	boost::posix_time::ptime startTime_;		//Время начала...
-	boost::posix_time::ptime endTime_;		//... и завершения выполнения.
+	MSecTimePoint  lastPrintTime_;	//Для калибровки skipNumber_ чтобы вывод был раз в 2 секунды примерно.
+	MSecTimePoint nowTime_;	//---""---
+	std::chrono::milliseconds timeDelta_;		//---""---
+	std::chrono::seconds timeLeft_;		//Приблизительное время, оставшееся до конца обработки.
+	MSecTimePoint startTime_;		//Время начала...
+	MSecTimePoint endTime_;		//... и завершения выполнения.
 	double pixelsPerSecond_ = 0.0;	//Может быть дробным, что логично ).
-	boost::posix_time::time_duration::tick_type currMilliseconds_;
 	double updatePeriod_ = DEFAULT_PROGRESS_UPDATE_PERIOD;		//Настройка. Раз в сколько секунд обновлять информацию.
 
 	//"Перерисовать" "прогрессбар".

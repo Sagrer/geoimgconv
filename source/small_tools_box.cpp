@@ -726,4 +726,44 @@ const std::string& SmallToolsBox::GetFilesystemSeparator()
 	}
 }
 
+//Преобразует период времени std::chrono::microseconds в строку формата hh:mm:ss.ms (миллисекунды
+//опционально.
+const string SmallToolsBox::TimeDurationToString(const chrono::microseconds &duration, bool printMilliseconds)
+{
+	//Поток, в котором будем формировать строку.
+	stringstream s_stream;
+	//Считаем часы, минуты, секунды, возможно миллисекунды.
+	chrono::hours durationHours = chrono::duration_cast<chrono::hours>(duration);
+	chrono::microseconds msLeft = duration - chrono::duration_cast<chrono::microseconds>(durationHours);
+	chrono::minutes durationMinutes = chrono::duration_cast<chrono::minutes>(msLeft);
+	msLeft = msLeft - chrono::duration_cast<chrono::microseconds>(durationMinutes);
+	chrono::seconds durationSeconds = chrono::duration_cast<chrono::seconds>(msLeft);
+	//Выводим обязательную часть.
+	s_stream << setw(2) << setfill('0') << durationHours.count() << ":";
+	s_stream << setw(2) << durationMinutes.count() << ":";
+	s_stream << setw(2) << durationSeconds.count();
+	//Теперь миллисекунды если надо.
+	if (printMilliseconds)
+	{
+		msLeft = msLeft - chrono::duration_cast<chrono::microseconds>(durationSeconds);
+		chrono::milliseconds durationMilliseconds = chrono::duration_cast<chrono::milliseconds>(msLeft);
+		s_stream << "." << durationMilliseconds.count();
+	}
+
+	return s_stream.str();
+}
+
+//Преобразует период времени std::chrono::milliseconds в строку формата hh:mm:ss.ms (миллисекунды
+//опционально.
+const string SmallToolsBox::TimeDurationToString(const chrono::milliseconds &duration, bool printMilliseconds)
+{
+	return TimeDurationToString(chrono::duration_cast<chrono::microseconds>(duration), printMilliseconds);
+}
+
+//Преобразует период времени std::chrono::seconds в строку формата hh:mm:ss.
+const string SmallToolsBox::TimeDurationToString(const chrono::seconds & duration)
+{
+	return TimeDurationToString(chrono::duration_cast<chrono::microseconds>(duration), false);
+}
+
 }	//namespace geoimgconv

@@ -25,7 +25,6 @@
 #pragma warning(disable:4251)	//Потому что GDAL API использует в интерфейсе шаблонные классы STL и компилятор на это ругается.
 #include <gdal_priv.h>
 #pragma warning(pop)
-
 #include "appui_console.h"
 #include "small_tools_box.h"
 #include "median_filter.h"
@@ -70,7 +69,7 @@ void AppUIConsoleCallBack::UpdateBar(const unsigned long &progressPosition)
 	text_ = boost::lexical_cast<string>(progressPosition) + "/" + boost::lexical_cast<string>(getMaxProgress()) +
 		" ( " + boost::lexical_cast<string>(progressPosition / (getMaxProgress() / 100)) + "% ) "
 		+ STB.DoubleToString(pixelsPerSecond_, 2) + " пикс/с, до завершения: "
-		+ to_simple_string(timeLeft_);
+		+ STB.TimeDurationToString(timeLeft_);
 	tempSize_ = text_.size();
 	if (tempSize_ < lastTextSize_)
 	{
@@ -85,8 +84,6 @@ void AppUIConsoleCallBack::UpdateBar(const unsigned long &progressPosition)
 //обработанных пикселей.
 void AppUIConsoleCallBack::CallBack(const unsigned long &progressPosition)
 {
-	using namespace boost::posix_time;
-
 	if (progressPosition < getMaxProgress())
 	{
 		if (skipCounter_ < skipNumber_)
@@ -101,14 +98,14 @@ void AppUIConsoleCallBack::CallBack(const unsigned long &progressPosition)
 		{
 			//Cейчас надо проверить сколько времени занял предыдущий период вычислений
 			//и если надо - подкрутить skipNumber_. Заодно вычислим количество пикселей в секунду.
-			nowTime_ = microsec_clock::local_time();
+			nowTime_ = chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now());
 			timeDelta_ = nowTime_ - lastPrintTime_;
-			currMilliseconds_ = timeDelta_.total_milliseconds();
+			//currMilliseconds_ = timeDelta_.total_milliseconds();
 			//Всегда считаем что операция заняла хоть сколько-то времени. Иначе гроб гроб кладбище...
-			if (!currMilliseconds_) currMilliseconds_ = 10;
+			if (!timeDelta_.count()) timeDelta_ = chrono::milliseconds(10);
 			//И только теперь можно считать скорость и всё прочее.
-			pixelsPerSecond_ = 1000.0 / (double(currMilliseconds_) / double(skipCounter_));
-			timeLeft_ = seconds(long(double((getMaxProgress() - progressPosition)) / pixelsPerSecond_));
+			pixelsPerSecond_ = 1000.0 / (double(timeDelta_.count()) / double(skipCounter_));
+			timeLeft_ = chrono::seconds(long(double((getMaxProgress() - progressPosition)) / pixelsPerSecond_));
 			if (pixelsPerSecond_ < 1)
 				skipNumber_ = size_t(std::ceil(updatePeriod_ / pixelsPerSecond_));
 			else
@@ -116,7 +113,8 @@ void AppUIConsoleCallBack::CallBack(const unsigned long &progressPosition)
 		}
 		else
 			isStarted_ = true;
-		lastPrintTime_ = microsec_clock::local_time(); //Запомним на будущее :).
+		lastPrintTime_ = chrono::time_point_cast<chrono::milliseconds>(
+			chrono::steady_clock::now()); //Запомним на будущее :).
 		//Выводим.
 		UpdateBar(progressPosition);
 		//Не забыть обнулить skipCounter_!
@@ -139,7 +137,7 @@ void AppUIConsoleCallBack::OperationStart()
 	//Очистим объект и запомним время начала операции.
 	Clear();
 	isNotClean_ = true;
-	startTime_ = boost::posix_time::microsec_clock::local_time();
+	startTime_ = chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now());
 }
 
 //Сообщить объекту о том что операция завершена.
@@ -147,14 +145,13 @@ void AppUIConsoleCallBack::OperationEnd()
 {
 	//Запомним время завершения операции и запостим в cout последний
 	//вариант прогрессбара и информацию о времени, затраченном на выполнение операции.
-	using namespace boost::posix_time;
-	endTime_ = microsec_clock::local_time();
+	endTime_ = chrono::time_point_cast<chrono::milliseconds>(chrono::steady_clock::now());
 	skipCounter_ = 1;
 	isStarted_ = false;	//Не даст пересчитать скорость
 	cout << "\r";
 	CallBack(getMaxProgress());
 	cout << STB.Utf8ToConsoleCharset("\nЗавершено за: ")
-		<< to_simple_string(endTime_ - startTime_) << endl;
+		<< STB.TimeDurationToString(endTime_ - startTime_, true) << endl;
 }
 
 //////////////////////////////
