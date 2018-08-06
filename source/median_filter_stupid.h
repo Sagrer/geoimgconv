@@ -4,7 +4,7 @@
 //                                                       //
 //                  GeoImageConverter                    //
 //       Преобразователь изображений с геоданными        //
-//      Copyright © 2018 Александр (Sagrer) Гриднев      //
+//    Copyright © 2017-2018 Александр (Sagrer) Гриднев   //
 //              Распространяется на условиях             //
 //                 GNU GPL v3 или выше                   //
 //                  см. файл gpl.txt                     //
@@ -16,31 +16,21 @@
 
 ////////////////////////////////////////////////////////////////////////
 
-#include "call_back_base.h"
-#include "errors.h"
+//Наследник MedianFilterBase, реализующий "тупой" фильтр. Алгоритм медианной
+//фильтрации работает "в лоб". Результат записывается в выбранный destFile
+
+#include "median_filter_base.h"
 
 namespace geoimgconv
 {
-	
-//Базовый класс для графических фильтров.
-class BaseFilter
+
+class MedianFilterStupid : public MedianFilterBase
 {
 public:
-	//Пока тут только несколько полей, которые должны быть в объекте любого фильтра.
-		
-	//imageSizeX
-	virtual int const& getImageSizeX() const = 0;
-	//imageSizeY
-	virtual int const& getImageSizeY() const = 0;
-	//minBlockSize
-	virtual unsigned long long const& getMinBlockSize() const = 0;
-	//minMemSize
-	virtual unsigned long long const& getMinMemSize() const = 0;
-	//maxMemSize
-	virtual unsigned long long const& getMaxMemSize() const = 0;
-
-	//Метод для применения фильтра - тоже нужен.
-	virtual bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) = 0;
+	//Конструктор по умолчанию. Другие использовать нельзя.
+	MedianFilterStupid() : MedianFilterBase() {}
+	//Применить "тупой" медианный фильтр.
+	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) override;
 };
-	
+
 }	//namespace geoimgconv

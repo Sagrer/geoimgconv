@@ -21,6 +21,7 @@
 #include "../errors.h"
 #include "../alt_matrix.h"
 #include <string>
+#include <memory>
 
 namespace geoimgconv
 {

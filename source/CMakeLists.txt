@@ -82,8 +82,18 @@ add_library(geoimgconv_lib STATIC
 	errors.cpp
 	errors.h
 	base_filter.h
-	median_filter.cpp
 	median_filter.h
+	median_filter_stub.cpp
+	median_filter_stub.h
+	median_filter_stupid.cpp
+	median_filter_stupid.h
+	median_filter_huang.cpp
+	median_filter_huang.h
+	median_filter_base.cpp
+	median_filter_base.h
+	real_median_filter_base.h
+	real_median_filter.cpp
+	real_median_filter.h
 	common.cpp
 	common.h
 	call_back_base.h

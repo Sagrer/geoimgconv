@@ -19,7 +19,6 @@
 #include "small_tools_box.h"
 #include "appui_console_callback.h"
 
-namespace b_fs = boost::filesystem;
 using namespace std;
 
 namespace geoimgconv

@@ -20,10 +20,6 @@
 
 #include "errors.h"
 #include "common.h"
-#pragma warning(push)
-#pragma warning(disable:4251)
-#include <gdal_priv.h>
-#pragma warning(pop)
 #include "alt_matrix_base.h"
 
 namespace geoimgconv
