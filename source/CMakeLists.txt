@@ -70,8 +70,10 @@ endif()
 #С этой же библиотекой будут линковаться и все прочие библиотеки. В основном executable
 #должен остаться только main.
 add_library(geoimgconv_lib STATIC
-	small_tools_box.cpp
-	small_tools_box.h
+	strings_tools_box.cpp
+	strings_tools_box.h
+	system_tools_box.cpp
+	system_tools_box.h
 	appui_console.cpp
 	appui_console.h
 	appui_console_callback.cpp
@@ -182,11 +184,17 @@ set_target_properties(geoimgconv_lib PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
 set_target_properties(geoimgconv_tests PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
 #Добавляем в прекомпилированный заголовок редко изменяющиеся заголовки из состава файлов проекта.
 set_target_properties(geoimgconv PROPERTIES
-	COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/small_tools_box.h")
+	COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/strings_tools_box.h")
+set_target_properties(geoimgconv PROPERTIES
+	COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/system_tools_box.h")
 set_target_properties(geoimgconv_lib PROPERTIES
-	COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/small_tools_box.h")
+	COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/strings_tools_box.h")
+set_target_properties(geoimgconv_lib PROPERTIES
+	COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/system_tools_box.h")
 set_target_properties(geoimgconv_tests PROPERTIES
-	COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/small_tools_box.h")
+	COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/strings_tools_box.h")
+	set_target_properties(geoimgconv_tests PROPERTIES
+	COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/system_tools_box.h")
 #Запрещаем включать заголовки Boost для тестов, иначе всё ломается. Cotire не умеет тут в регулярки,
 #приходится приклеивать путь ко всем возможным путям-инклудам в цикле.
 get_property(ALL_INCLUDE_DIRECTORIES DIRECTORY PROPERTY INCLUDE_DIRECTORIES)

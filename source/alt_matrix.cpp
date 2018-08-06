@@ -21,7 +21,7 @@
 #include <iostream>
 #include <cmath>
 #include <fstream>
-#include "small_tools_box.h"
+#include "strings_tools_box.h"
 
 using std::string;
 using std::cout;

@@ -17,7 +17,7 @@
 //Класс для работы с командной строкой и с конфигурационными файлами.
 
 #include "app_config.h"
-#include "small_tools_box.h"
+#include "strings_tools_box.h"
 #include <boost/filesystem.hpp>
 #include <sstream>
 #include "common.h"
@@ -110,7 +110,7 @@ void AppConfig::FillDependentPO_()
 	{
 		//Возможно нужно применить костыль для нормального отображения кириллицы в utf8.
 		unsigned short currLength;
-		if ((STB.GetConsoleEncoding() == "utf8") || (STB.GetConsoleEncoding() == "utf-8"))
+		if ((StrTB::GetConsoleEncoding() == "utf8") || (StrTB::GetConsoleEncoding() == "utf-8"))
 		{
 			currLength = (unsigned short)(helpLineLength_ * 1.3);
 		}
@@ -118,31 +118,31 @@ void AppConfig::FillDependentPO_()
 		{
 			currLength = helpLineLength_;
 		}
-		helpParamsDesc_ = new po::options_description(STB.Utf8ToSelectedCharset("Опции командной строки"),
+		helpParamsDesc_ = new po::options_description(StrTB::Utf8ToSelectedCharset("Опции командной строки"),
 			currLength);
 	}
 	else
 	{
-		helpParamsDesc_ = new po::options_description(STB.Utf8ToSelectedCharset("Опции командной строки"));
+		helpParamsDesc_ = new po::options_description(StrTB::Utf8ToSelectedCharset("Опции командной строки"));
 	}
 	helpParamsDesc_->add_options()
-		("help,h",STB.Utf8ToSelectedCharset("Вывести справку по опциям (ту, которую \
+		("help,h", StrTB::Utf8ToSelectedCharset("Вывести справку по опциям (ту, которую \
 Вы сейчас читаете).").c_str())
-		(",?", STB.Utf8ToSelectedCharset("То же, что и -h").c_str())
-		("version,v",STB.Utf8ToSelectedCharset("Вывести информацию о версии программы \
+		(",?", StrTB::Utf8ToSelectedCharset("То же, что и -h").c_str())
+		("version,v", StrTB::Utf8ToSelectedCharset("Вывести информацию о версии программы \
 и не выполнять никаких других действий.").c_str())
-		//("input", po::value<std::string>,STB.Utf8ToSelectedCharset("Скрытая опция, \
+		//("input", po::value<std::string>,StrTB::Utf8ToSelectedCharset("Скрытая опция, \
 		//	задаёт имя входного файла. По умолчанию равна input.tif").c_str())
-		//("output", po::value<std::string>,STB.Utf8ToSelectedCharset("Скрытая опция, \
+		//("output", po::value<std::string>,StrTB::Utf8ToSelectedCharset("Скрытая опция, \
 		//	задаёт имя выходного файла. По умолчанию равна output.tif").c_str())
-		("medfilter.aperture", po::value<int>(),STB.Utf8ToSelectedCharset("Длина стороны \
+		("medfilter.aperture", po::value<int>(),StrTB::Utf8ToSelectedCharset("Длина стороны \
 окна медианного фильтра в пикселях. Округляется вверх до ближайшего нечетного \
 значения. По умолчанию равна "+to_string(DEFAULT_MEDFILTER_APERTURE) +" пикс.").c_str())
-		("medfilter.threshold", po::value<double>(),STB.Utf8ToSelectedCharset("Порог \
+		("medfilter.threshold", po::value<double>(),StrTB::Utf8ToSelectedCharset("Порог \
 медианного фильтра в метрах. Если отличие значения пикселя от медианы не \
 превышает этого значение - пиксель при фильтрации не изменяется. По умолчанию \
 опция равна "+to_string(DEFAULT_MEDFILTER_THRESHOLD)+" (метров).").c_str())
-		("medfilter.margintype", po::value<std::string>(),STB.Utf8ToSelectedCharset(
+		("medfilter.margintype", po::value<std::string>(),StrTB::Utf8ToSelectedCharset(
 "Тип заполнения краевых областей для медианного фильтра. Заполнение нужно для \
 того, чтобы пикселы, находящиеся по краям значимой части изображения также можно \
 было обработать фильтром, т.е. чтобы в окне вокруг этого пикселя были незначимые \
@@ -154,7 +154,7 @@ void AppConfig::FillDependentPO_()
 отражением изображения, расположенного в противоположную сторону от краевого пикселя. \
 Работает медленно, но при достаточном размере окна позволяет например избежать появления \
 холмов на месте леса при фильтрации.").c_str())
-		("medfilter.algo", po::value<std::string>(), STB.Utf8ToSelectedCharset(
+		("medfilter.algo", po::value<std::string>(), StrTB::Utf8ToSelectedCharset(
 "Алгоритм медианного фильтра. Возможные варианты:\n    " + MedfilterAlgoTexts[(unsigned char)MedfilterAlgo::Stub]
 + " - пустой алгоритм. Ничего не делает, исходный файл просто копируется.\n    "
 + MedfilterAlgoTexts[(unsigned char)MedfilterAlgo::Stupid] + " - алгоритм, обрабатывающий изображение \
@@ -166,18 +166,18 @@ void AppConfig::FillDependentPO_()
 немного ускорить обработку \"неровных\" изображений. Работает значительно быстрее чем обработка \
 изображения \"в лоб\", т.к на каждом следующем пикселе используется часть информации, полученной при \
 обработке предыдущего.").c_str())
-		("medfilter.huanglevels", po::value<uint16_t>(), STB.Utf8ToSelectedCharset(
+		("medfilter.huanglevels", po::value<uint16_t>(), StrTB::Utf8ToSelectedCharset(
 "Количество уровней квантования для медианной фильтрации алгоритмом Хуанга. По умолчанию этот \
 параметр равен " + to_string(DEFAULT_HUANG_LEVELS_NUM) + ". Максимально \
 возможное значение этого параметра: " + to_string(HUANG_MAX_LEVELS_NUM) + ".").c_str())
-		("medfilter.fillpits", STB.Utf8ToSelectedCharset("Включить заполнение ям в медианном фильтре. \
+		("medfilter.fillpits", StrTB::Utf8ToSelectedCharset("Включить заполнение ям в медианном фильтре. \
 Смысл в том, что если точка рельефа находится значительно ниже медианы, то при данной включённой опции \
 данная точка станет равна медиане, но обычно это не имеет смысла т.к. алгоритм обычно применяется для \
 срезания с карты высот растительности и различного техногена, а вовсе не для заполнения ям и оврагов. \
 По умолчанию эта опция отключена в отличие от предыдущих версий (в которых этой опции не было).").c_str())
-//		("appmode", po::value<std::string>(),STB.Utf8ToSelectedCharset("Режим работы \
+//		("appmode", po::value<std::string>(),StrTB::Utf8ToSelectedCharset("Режим работы \
 //программы. На данный момент единственный работающий вариант - median.").c_str())
-		("memmode", po::value<std::string>(), STB.Utf8ToSelectedCharset("Режим использования \
+		("memmode", po::value<std::string>(), StrTB::Utf8ToSelectedCharset("Режим использования \
 памяти. Позволяет ограничить количество памяти, которое программа может использовать для загрузки \
 обрабатываемого изображения. Если изображение не поместится в эту ограниченную область целиком то \
 оно будет обрабатываться по частям. Возможно указать один из следующих режимов:\n    " +
@@ -206,7 +206,7 @@ MemoryModeTexts[(unsigned char)MemoryMode::Auto] + ".").c_str())
 void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memMode, unsigned long long &size)
 {
 	std::string inpStr;
-	STB.Utf8ToLower(inputStr, inpStr);
+	StrTB::Utf8ToLower(inputStr, inpStr);
 	size = 0;
 	//Помимо перевода в нижний регистр от строки нужно отрезать часть с возможными
 	//цифрами.
@@ -228,7 +228,7 @@ void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memM
 	{
 		//Размер должен быть указан в байтах (кб, мб итд).
 		if (pos != std::string::npos)
-			size = STB.InfoSizeToBytesNum(inputStr.substr(pos, inputStr.length() - pos),'m');
+			size = StrTB::InfoSizeToBytesNum(inputStr.substr(pos, inputStr.length() - pos),'m');
 		//Нулевого размера не бывает
 		if (!size)
 			memMode = MemoryMode::Unknown;
@@ -239,7 +239,7 @@ void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memM
 		if (pos != std::string::npos)
 		{
 			inpStr = inputStr.substr(pos, inputStr.length() - pos);
-			if (STB.CheckUnsIntStr(inpStr))
+			if (StrTB::CheckUnsIntStr(inpStr))
 			{
 				size = stoull(inpStr);
 				if (size > 100)
@@ -261,7 +261,7 @@ void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memM
 const std::string AppConfig::getHelpMsg()
 {
 	std::ostringstream tempStream;
-	tempStream << STB.Utf8ToSelectedCharset(
+	tempStream << StrTB::Utf8ToSelectedCharset(
 		"Способ вызова:\ngeoimgconv [опции] [имя входящего файла] [имя исходящего файла]\n\n\
 По умолчанию (если вызвать без опций) - входящим файлом будет input.tif, а \n\
 исходящим output.tif.\n\n\
@@ -284,9 +284,9 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 	//Задетектить пути
 	boost::filesystem::path p(argv[0]);
 	//make_preferred - чтобы поправить кривые пути типа C:/somedir\blabla\loolz.txt
-	appPath_ = STB.WstringToUtf8(
+	appPath_ = StrTB::WstringToUtf8(
 		boost::filesystem::canonical(p.parent_path()).make_preferred().wstring());
-	currPath_ = STB.WstringToUtf8(boost::filesystem::current_path().wstring());
+	currPath_ = StrTB::WstringToUtf8(boost::filesystem::current_path().wstring());
 
 	poVarMap_.clear();
 	try
@@ -357,12 +357,12 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 			return true;
 		if (poVarMap_.count("input"))
 		{
-			inputFileNameCmd_ = STB.SystemCharsetToUtf8(poVarMap_["input"].as<std::string>());
+			inputFileNameCmd_ = StrTB::SystemCharsetToUtf8(poVarMap_["input"].as<std::string>());
 			inputFileNameCmdIsSet_ = true;
 		};
 		if (poVarMap_.count("output"))
 		{
-			outputFileNameCmd_ = STB.SystemCharsetToUtf8(poVarMap_["output"].as<std::string>());
+			outputFileNameCmd_ = StrTB::SystemCharsetToUtf8(poVarMap_["output"].as<std::string>());
 			outputFileNameCmdIsSet_ = true;
 		};
 		if (poVarMap_.count("medfilter.aperture"))

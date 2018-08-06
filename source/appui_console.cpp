@@ -27,6 +27,7 @@
 #pragma warning(pop)
 #include "appui_console.h"
 #include "median_filter.h"
+#include "strings_tools_box.h"
 
 namespace b_fs = boost::filesystem;
 using namespace std;
@@ -379,7 +380,7 @@ bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const S
 //Задетектить инфу для sysResInfo_
 void AppUIConsole::DetectSysResInfo()
 {
-	STB.GetSysResInfo(sysResInfo_);
+	SysTB::GetSysResInfo(sysResInfo_);
 }
 
 //Задать юзверю попрос на да\нет и вернуть true если было да и false если было нет.
@@ -388,7 +389,7 @@ bool AppUIConsole::ConsoleAnsweredYes(const std::string &messageText)
 	PrintToConsole(messageText + " да\\нет? (y\\д\\n\\н) > ");
 	std::string answer;
 	cin >> answer;
-	STB.Utf8ToLower(STB.ConsoleCharsetToUtf8(answer), answer);
+	StrTB::Utf8ToLower(StrTB::ConsoleCharsetToUtf8(answer), answer);
 	if ((answer == "y") || (answer == "д") || (answer == "yes") || (answer == "да"))
 		return true;
 	else return false;
@@ -414,7 +415,7 @@ void AppUIConsole::InitApp(AppConfig &conf)
 	//Замена обработчика ошибок GDAL на свой, корректно работающий в данном потоке.
 	CPLPushErrorHandlerEx(GDALThreadErrorHandler,(void*)(&GDALErrorMsgBuffer));
 	//Явное включение именно консольной кодировки и завершение инициализации объекта program options
-	STB.SelectConsoleEncoding();
+	StrTB::SelectConsoleEncoding();
 	confObj_->FinishInitialization();
 	//Детектим параметры системы - память, ядра процессора
 	DetectSysResInfo();
@@ -455,9 +456,9 @@ int AppUIConsole::RunApp()
 	//PrintToConsole("Текущий рабочий путь: "+getCurrPath() + "\n");
 	/*PrintToConsole("\nОбнаружено ядер процессора: " +
 	to_string(sysResInfo_.cpuCoresNumber) + "\n");*/
-	PrintToConsole("Всего ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo_.systemMemoryFullSize) + ".\n");
-	PrintToConsole("Доступно ОЗУ: " + STB.BytesNumToInfoSizeStr(sysResInfo_.systemMemoryFreeSize) + ".\n");
-	PrintToConsole("Процесс может адресовать памяти: " + STB.BytesNumToInfoSizeStr(sysResInfo_.maxProcessMemorySize) + ".\n");
+	PrintToConsole("Всего ОЗУ: " + StrTB::BytesNumToInfoSizeStr(sysResInfo_.systemMemoryFullSize) + ".\n");
+	PrintToConsole("Доступно ОЗУ: " + StrTB::BytesNumToInfoSizeStr(sysResInfo_.systemMemoryFreeSize) + ".\n");
+	PrintToConsole("Процесс может адресовать памяти: " + StrTB::BytesNumToInfoSizeStr(sysResInfo_.maxProcessMemorySize) + ".\n");
 	PrintToConsole("Выбран режим работы с памятью: " + MemoryModeTexts[(unsigned char)confObj_->getMemMode()] + "\n");
 	/*PrintToConsole("Размер, указанный для режима работы с памятью: " +
 	to_string(confObj_->getMemSize()) + "\n\n");*/
@@ -499,10 +500,10 @@ int AppUIConsole::RunApp()
 		PrintToConsole("отключен.\n\n");
 	}
 	//Настраиваем медианный фильтр и пути к файлам.
-	b_fs::path inputFilePath = b_fs::absolute(STB.Utf8ToWstring(confObj_->getInputFileName()), STB.Utf8ToWstring(getCurrPath()));
-	b_fs::path outputFilePath = b_fs::absolute(STB.Utf8ToWstring(confObj_->getOutputFileName()), STB.Utf8ToWstring(getCurrPath()));
-	string inputFileName = STB.WstringToUtf8(inputFilePath.wstring());
-	string outputFileName = STB.WstringToUtf8(outputFilePath.wstring());
+	b_fs::path inputFilePath = b_fs::absolute(StrTB::Utf8ToWstring(confObj_->getInputFileName()), StrTB::Utf8ToWstring(getCurrPath()));
+	b_fs::path outputFilePath = b_fs::absolute(StrTB::Utf8ToWstring(confObj_->getOutputFileName()), StrTB::Utf8ToWstring(getCurrPath()));
+	string inputFileName = StrTB::WstringToUtf8(inputFilePath.wstring());
+	string outputFileName = StrTB::WstringToUtf8(outputFilePath.wstring());
 	medFilter_->setAperture(confObj_->getMedfilterAperture());
 	medFilter_->setThreshold(confObj_->getMedfilterThreshold());
 	medFilter_->setMarginType(confObj_->getMedfilterMarginType());
@@ -545,10 +546,10 @@ int AppUIConsole::RunApp()
 	PrintToConsole("Готово. Начинаю обработку...\n\n");
 
 	PrintToConsole("Программа будет обрабатывать файл, используя до " +
-		STB.BytesNumToInfoSizeStr(maxMemCanBeUsed_) + " памяти, частями по\n" +
+		StrTB::BytesNumToInfoSizeStr(maxMemCanBeUsed_) + " памяти, частями по\n" +
 		to_string(maxBlocksCanBeUsed_) + " блока(ов).\n");
 	if (confObj_->getMemMode() != MemoryMode::OneChunk)
-		PrintToConsole("Размер блока: до " + STB.BytesNumToInfoSizeStr(medFilter_->getMinBlockSize()) + ".\n");
+		PrintToConsole("Размер блока: до " + StrTB::BytesNumToInfoSizeStr(medFilter_->getMinBlockSize()) + ".\n");
 	cout << endl;
 
 	//Собственно, запуск фильтра.
@@ -573,6 +574,7 @@ int AppUIConsole::RunApp()
 }
 
 //Метод для запуска в тестовом режиме.
+//Вся эта жуть использовалась до того, как к проекту были прикручены юнит-тесты.
 int AppUIConsole::RunTestMode()
 {
 	;
@@ -717,7 +719,7 @@ int AppUIConsole::RunTestMode()
 //Вывести сообщение в обычную (не curses) консоль в правильной кодировке.
 void AppUIConsole::PrintToConsole(const std::string &str)
 {
-	std::cout << STB.Utf8ToConsoleCharset(str) << std::flush;
+	std::cout << StrTB::Utf8ToConsoleCharset(str) << std::flush;
 }
 
 //Вывод справки.

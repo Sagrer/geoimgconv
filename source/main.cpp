@@ -18,8 +18,10 @@
 #include "appui_console.h"
 #include "app_config.h"
 #include "errors.h"
-#include "small_tools_box.h"
+#include "strings_tools_box.h"
+#include "system_tools_box.h"
 #include <string>
+#include <iostream>
 
 using namespace std;
 using namespace geoimgconv;
@@ -34,13 +36,13 @@ int main(int argc, char** argv)
 	//Мы не знаем заранее в каком режиме будем работать, поэтому сначала разбираем
 	//настройки и командную строку и только потом создаём и передаём управление объекту
 	//приложения нужного типа.
-	AppConfig confObj(STB.GetConsoleWidth());
+	AppConfig confObj(SysTB::GetConsoleWidth());
 	ErrorInfo errObj;
-	STB.InitEncodings();
+	StrTB::InitEncodings();
 	if (!confObj.ParseCommandLine(argc,argv,&errObj))
 	{
 		//Что-то пошло не так
-		cout << STB.Utf8ToConsoleCharset("Ошибка: "+errObj.getErrorText()) << endl;
+		cout << StrTB::Utf8ToConsoleCharset("Ошибка: "+errObj.getErrorText()) << endl;
 		return 1;
 	}
 
@@ -62,7 +64,7 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		cout << STB.Utf8ToConsoleCharset("Ошибка: программа запущена в неизвестном или не реализованном режиме.") << endl;
+		cout << StrTB::Utf8ToConsoleCharset("Ошибка: программа запущена в неизвестном или не реализованном режиме.") << endl;
 		return 1;
 	}
 }

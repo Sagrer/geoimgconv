@@ -19,7 +19,6 @@
 
 #include "real_median_filter.h"
 #include <algorithm>
-#include "small_tools_box.h"
 
 using namespace std;
 

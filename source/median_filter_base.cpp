@@ -24,7 +24,7 @@
 #include <gdal_priv.h>
 #pragma warning(pop)
 #include <boost/filesystem.hpp>
-#include "small_tools_box.h"
+#include "strings_tools_box.h"
 #include "real_median_filter.h"
 
 namespace b_fs = boost::filesystem;
@@ -154,7 +154,7 @@ bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *err
 	}
 
 	//А был ли файл?
-	b_fs::path filePath = STB.Utf8ToWstring(fileName);
+	b_fs::path filePath = StrTB::Utf8ToWstring(fileName);
 	if (!b_fs::is_regular_file(filePath))
 	{
 		if (errObj)	errObj->SetError(CommonErrors::FileNotExists, ": " + fileName);
@@ -282,8 +282,8 @@ bool MedianFilterBase::OpenOutputFile(const std::string &fileName, const bool &f
 
 	//Готовим пути.
 	b_fs::path destFilePath, sourceFilePath;
-	destFilePath = STB.Utf8ToWstring(fileName);
-	sourceFilePath = STB.Utf8ToWstring(sourceFileName_);
+	destFilePath = StrTB::Utf8ToWstring(fileName);
+	sourceFilePath = StrTB::Utf8ToWstring(sourceFileName_);
 
 	//Проверяем есть ли уже такой файл.
 	boost::system::error_code errCode;
@@ -299,7 +299,7 @@ bool MedianFilterBase::OpenOutputFile(const std::string &fileName, const bool &f
 		if (!b_fs::remove(destFilePath, errCode))
 		{
 			if (errObj) errObj->SetError(CommonErrors::WriteError, ": " +
-				STB.SystemCharsetToUtf8(errCode.message()));
+				StrTB::SystemCharsetToUtf8(errCode.message()));
 			return false;
 		}
 	}
@@ -309,7 +309,7 @@ bool MedianFilterBase::OpenOutputFile(const std::string &fileName, const bool &f
 	if (errCode.value())
 	{
 		if (errObj) errObj->SetError(CommonErrors::WriteError, ": " +
-			STB.SystemCharsetToUtf8(errCode.message()));
+			StrTB::SystemCharsetToUtf8(errCode.message()));
 		return false;
 	}
 

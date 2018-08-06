@@ -29,7 +29,8 @@
 #include "image_comparer.h"
 #include "../alt_matrix.h"
 #include "common_vars.h"
-#include "../small_tools_box.h"
+#include "../strings_tools_box.h"
+#include "../system_tools_box.h"
 
 namespace b_ut = boost::unit_test;
 namespace b_tt = boost::test_tools;
@@ -52,8 +53,8 @@ struct GlobalFixture {
 		//make_preferred - чтобы поправить кривые пути типа C:/somedir\blabla\loolz.txt
 		b_fs::path appPath = boost::dll::program_location().
 			parent_path().make_preferred();
-		commonVars.setAppPath(STB.WstringToUtf8(appPath.wstring()));
-		commonVars.setCurrPath(STB.WstringToUtf8(b_fs::current_path().wstring()));
+		commonVars.setAppPath(StrTB::WstringToUtf8(appPath.wstring()));
+		commonVars.setCurrPath(StrTB::WstringToUtf8(b_fs::current_path().wstring()));
 		//Путь к тестовым данным может различаться. Он может начинаться как на 1 уровень выше
 		//текущего каталога, так и на 2 уровня. Проверяем по наличию директории source.
 		auto dataPath = b_fs::path(appPath.parent_path().wstring() + L"/source/tests/test_data")
@@ -67,7 +68,7 @@ struct GlobalFixture {
 		if (b_fs::exists(dataPath))
 		{
 			//Путь найден. Всё ок.
-			commonVars.setDataPath(STB.WstringToUtf8(dataPath.wstring()));
+			commonVars.setDataPath(StrTB::WstringToUtf8(dataPath.wstring()));
 		}
 		else
 		{
@@ -80,7 +81,7 @@ struct GlobalFixture {
 		GDALRegister_GTiff();
 		//Явное включение именно консольной кодировки. К сожалению, Test Explorer вижлы не понимает
 		//cp886 от Boost.Test. А если поставить там другую кодировку - нифига не будет видно из консоли.
-		STB.SelectConsoleEncoding();
+		StrTB::SelectConsoleEncoding();
 	}
 	~GlobalFixture() {  }
 };
@@ -176,19 +177,19 @@ BOOST_AUTO_TEST_CASE(check_image_comparer)
 	//Сравнение одной и той же картинки должно быть успешным.
 	CommonVars &commonVars = CommonVars::Instance();
 	ErrorInfo errObj;
-	double result = ImageComparer::CompareGeoTIFF(commonVars.getDataPath() + STB.GetFilesystemSeparator() + "in_uint8.tif",
-		commonVars.getDataPath() + STB.GetFilesystemSeparator() + "in_uint8.tif", &errObj);
+	double result = ImageComparer::CompareGeoTIFF(commonVars.getDataPath() + SysTB::GetFilesystemSeparator() + "in_uint8.tif",
+		commonVars.getDataPath() + SysTB::GetFilesystemSeparator() + "in_uint8.tif", &errObj);
 	BOOST_TEST_INFO("Checking: same pictures");
 	if ((result >= -0.00001) && (result <= 0.00001))
-		BOOST_TEST_INFO("Error was: "+ STB.Utf8ToConsoleCharset(errObj.getErrorText()));
+		BOOST_TEST_INFO("Error was: "+ StrTB::Utf8ToConsoleCharset(errObj.getErrorText()));
 	BOOST_TEST(result == 1.0, b_tt::tolerance(0.00001));
 
 	//Сравнение разных картинок должно быть безуспешным.
-	result = ImageComparer::CompareGeoTIFF(commonVars.getDataPath() + STB.GetFilesystemSeparator() + "in_uint8.tif",
-		commonVars.getDataPath() + STB.GetFilesystemSeparator() + "in_float32.tif", &errObj);
+	result = ImageComparer::CompareGeoTIFF(commonVars.getDataPath() + SysTB::GetFilesystemSeparator() + "in_uint8.tif",
+		commonVars.getDataPath() + SysTB::GetFilesystemSeparator() + "in_float32.tif", &errObj);
 	BOOST_TEST_INFO("Checking: different pictures");
 	if ((result >= 0.99999) && (result <= 1.00001))
-		BOOST_TEST_INFO("Error was: "+ STB.Utf8ToConsoleCharset(errObj.getErrorText()));
+		BOOST_TEST_INFO("Error was: "+ StrTB::Utf8ToConsoleCharset(errObj.getErrorText()));
 	BOOST_TEST(result == 0.0, b_tt::tolerance(0.00001));
 }
 

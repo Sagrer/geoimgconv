@@ -18,7 +18,7 @@
 
 #include "image_comparer.h"
 #include <boost/filesystem.hpp>
-#include "../small_tools_box.h"
+#include "../strings_tools_box.h"
 #pragma warning(push)
 #pragma warning(disable:4251)
 #include <gdal_priv.h>
@@ -69,7 +69,7 @@ unique_ptr<AltMatrixBase> ImageComparer::LoadMatrFromGeoTIFF(const string &fileN
 	//заморачиваться, благо данный метод нужен только для тестов.
 
 	//А был ли файл?
-	b_fs::path filePath = STB.Utf8ToWstring(fileName);
+	b_fs::path filePath = StrTB::Utf8ToWstring(fileName);
 	if (!b_fs::is_regular_file(filePath))
 	{
 		if (errObj)	errObj->SetError(CommonErrors::FileNotExists, ": " + fileName);

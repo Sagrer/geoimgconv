@@ -29,7 +29,8 @@
 #include <boost/filesystem.hpp>
 #include <string>
 #include "../median_filter.h"
-#include "../small_tools_box.h"
+#include "../strings_tools_box.h"
+#include "../system_tools_box.h"
 #include "../common.h"
 #include "image_comparer.h"
 #include "common_vars.h"
@@ -49,9 +50,9 @@ struct MedfilterTestsFixture
 		//Сгенерировать имена.
 		if (outfileName == "")
 		{
-			outfileName = CommonVars::Instance().getCurrPath() + STB.GetFilesystemSeparator()
+			outfileName = CommonVars::Instance().getCurrPath() + SysTB::GetFilesystemSeparator()
 				+ "outtest.tif";
-			outfilePath = STB.Utf8ToWstring(outfileName);
+			outfilePath = StrTB::Utf8ToWstring(outfileName);
 		}		
 		
 		//Перед началом теста надо удалить выходной файл, если он существует.
@@ -105,7 +106,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(check_unsupported, T, FilterTypes, MedfilterTes
 
 	//Применяем.
 	bool result = medFilter.OpenInputFile(CommonVars::Instance().getDataPath() +
-		STB.GetFilesystemSeparator() + "in_cint16.tif", nullptr);
+		SysTB::GetFilesystemSeparator() + "in_cint16.tif", nullptr);
 	//Уже на этом этапе всё должно сломаться.
 	BOOST_TEST_INFO("Checking stub filter: in_cint16.tif");
 	BOOST_TEST(!result);
@@ -132,12 +133,12 @@ void CheckFile(const string &inputFileName, const string &sampleFileName, const 
 
 	//Открываем входной файл.
 	bool result = medFilter.OpenInputFile(commonVars.getDataPath() +
-		STB.GetFilesystemSeparator() + inputFileName, &errObj);
+		SysTB::GetFilesystemSeparator() + inputFileName, &errObj);
 	BOOST_TEST_INFO("Opening: " + inputFileName);
 	if (!result)
 	{
 		medFilter.CloseAllFiles();
-		BOOST_TEST_INFO("Error was: " + STB.Utf8ToConsoleCharset(errObj.getErrorText()));
+		BOOST_TEST_INFO("Error was: " + StrTB::Utf8ToConsoleCharset(errObj.getErrorText()));
 	}
 	BOOST_TEST_REQUIRE(result);
 
@@ -147,7 +148,7 @@ void CheckFile(const string &inputFileName, const string &sampleFileName, const 
 	if (!result)
 	{
 		medFilter.CloseAllFiles();
-		BOOST_TEST_INFO("Error was: " + STB.Utf8ToConsoleCharset(errObj.getErrorText()));
+		BOOST_TEST_INFO("Error was: " + StrTB::Utf8ToConsoleCharset(errObj.getErrorText()));
 	}
 	BOOST_TEST_REQUIRE(result);
 
@@ -157,7 +158,7 @@ void CheckFile(const string &inputFileName, const string &sampleFileName, const 
 	if (!result)
 	{
 		medFilter.CloseAllFiles();
-		BOOST_TEST_INFO("Error was: " + STB.Utf8ToConsoleCharset(errObj.getErrorText()));
+		BOOST_TEST_INFO("Error was: " + StrTB::Utf8ToConsoleCharset(errObj.getErrorText()));
 	}
 	BOOST_TEST_REQUIRE(result);
 
@@ -166,7 +167,7 @@ void CheckFile(const string &inputFileName, const string &sampleFileName, const 
 
 	//Сверяем полученное изображение с эталоном.
 	double doubleResult = ImageComparer::CompareGeoTIFF(commonVars.getDataPath() +
-		STB.GetFilesystemSeparator() + sampleFileName, outfileName);
+		SysTB::GetFilesystemSeparator() + sampleFileName, outfileName);
 	BOOST_TEST_INFO("Comparing result with: " + sampleFileName);
 	BOOST_TEST_REQUIRE(doubleResult > minValue);
 }

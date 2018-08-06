@@ -16,7 +16,8 @@
 
 //Вспомогательный класс для работы с каллбеками из методов класса AppUIConsole.
 
-#include "small_tools_box.h"
+#include <iostream>
+#include "strings_tools_box.h"
 #include "appui_console_callback.h"
 
 using namespace std;
@@ -54,8 +55,8 @@ void AppUIConsoleCallBack::UpdateBar(const unsigned long &progressPosition)
 	cout << "\r";	//Переводим вывод на начало текущей строки.
 	text_ = to_string(progressPosition) + "/" + to_string(getMaxProgress()) +
 		" ( " + to_string(progressPosition / (getMaxProgress() / 100)) + "% ) "
-		+ STB.DoubleToString(pixelsPerSecond_, 2) + " пикс/с, до завершения: "
-		+ STB.TimeDurationToString(timeLeft_);
+		+ StrTB::DoubleToString(pixelsPerSecond_, 2) + " пикс/с, до завершения: "
+		+ StrTB::TimeDurationToString(timeLeft_);
 	tempSize_ = text_.size();
 	if (tempSize_ < lastTextSize_)
 	{
@@ -63,7 +64,7 @@ void AppUIConsoleCallBack::UpdateBar(const unsigned long &progressPosition)
 		text_.append(" ", lastTextSize_ - tempSize_);
 	}
 	lastTextSize_ = tempSize_;
-	cout << STB.Utf8ToConsoleCharset(text_) << std::flush;
+	cout << StrTB::Utf8ToConsoleCharset(text_) << std::flush;
 }
 
 //CallBack-метод, который будет выводить в консоль количество и процент уже
@@ -136,8 +137,8 @@ void AppUIConsoleCallBack::OperationEnd()
 	isStarted_ = false;	//Не даст пересчитать скорость
 	cout << "\r";
 	CallBack(getMaxProgress());
-	cout << STB.Utf8ToConsoleCharset("\nЗавершено за: ")
-		<< STB.TimeDurationToString(endTime_ - startTime_, true) << endl;
+	cout << StrTB::Utf8ToConsoleCharset("\nЗавершено за: ")
+		<< StrTB::TimeDurationToString(endTime_ - startTime_, true) << endl;
 }
 
 } //namespace geoimgconv

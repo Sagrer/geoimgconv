@@ -18,7 +18,7 @@
 
 #include "common.h"
 #include <string>
-#include "small_tools_box.h"
+#include "strings_tools_box.h"
 
 namespace geoimgconv
 {
@@ -143,7 +143,7 @@ std::string &GetLastGDALError()
 AppMode AppModeStrToEnum(const std::string &inputStr)
 {
 	std::string inpStr;
-	STB.Utf8ToLower(inputStr, inpStr);
+	StrTB::Utf8ToLower(inputStr, inpStr);
 	for (unsigned char i = 0; i <= (unsigned char)AppMode::Unknown; i++)
 	{
 		if (inpStr == AppModeTexts[i])
@@ -157,7 +157,7 @@ AppMode AppModeStrToEnum(const std::string &inputStr)
 MarginType MarginTypeStrToEnum(const std::string &inputStr)
 {
 	std::string inpStr;
-	STB.Utf8ToLower(inputStr, inpStr);
+	StrTB::Utf8ToLower(inputStr, inpStr);
 	for (unsigned char i = 0; i <= (unsigned char)MarginType::UnknownFilling; i++)
 	{
 		if (inpStr == MarginTypesTexts[i])
@@ -171,7 +171,7 @@ MarginType MarginTypeStrToEnum(const std::string &inputStr)
 MedfilterAlgo MedfilterAlgoStrToEnum(const std::string &inputStr)
 {
 	std::string inpStr;
-	STB.Utf8ToLower(inputStr, inpStr);
+	StrTB::Utf8ToLower(inputStr, inpStr);
 	for (unsigned char i = 0; i <= (unsigned char)MedfilterAlgo::Unknown; i++)
 	{
 		if (inpStr == MedfilterAlgoTexts[i])
