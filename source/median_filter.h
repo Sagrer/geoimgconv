@@ -319,12 +319,12 @@ private:
 	//Приватные типы
 
 	//Указатель на метод-заполнитель пикселей
-	typedef void(RealMedianFilter<CellType>::*PixFillerMethod)(const int &x,
+	using PixFillerMethod = void (RealMedianFilter<CellType>::*)(const int &x,
 		const int &y, const PixelDirection direction, const int &marginSize,
 		const char &signMatrixValue);
 
 	//Указатель на метод-фильтр
-	typedef void(RealMedianFilter<CellType>::*FilterMethod)(const int &currYToProcess,
+	using FilterMethod = void (RealMedianFilter<CellType>::*)(const int &currYToProcess,
 		CallBackBase *callBackObj);
 
 	//Приватные методы
@@ -615,16 +615,16 @@ QuantedValueToPixelValue(const uint16_t &value)
 	return ((float)((double)value * levelsDelta_)) + minPixelValue_;
 }
 
-//Алиасы для классов, работающих с реально использующимися в GeoTIFF типами пикселов.
+//Алиасы для классов, работающих с реально использующимися в GeoTIFF типами пикселей.
 //Все они испольуются внутри median_filter.cpp а значит их код точно сгенерируется по шаблону.
-typedef RealMedianFilter<double> RealMedianFilterFloat64;
-typedef RealMedianFilter<float> RealMedianFilterFloat32;
-typedef RealMedianFilter<int8_t> RealMedianFilterInt8;
-typedef RealMedianFilter<uint8_t> RealMedianFilterUInt8;
-typedef RealMedianFilter<int16_t> RealMedianFilterInt16;
-typedef RealMedianFilter<uint16_t> RealMedianFilterUInt16;
-typedef RealMedianFilter<int32_t> RealMedianFilterInt32;
-typedef RealMedianFilter<uint32_t> RealMedianFilterUInt32;
+using RealMedianFilterFloat64 = RealMedianFilter<double>;
+using RealMedianFilterFloat32 = RealMedianFilter<float>;
+using RealMedianFilterInt8 = RealMedianFilter<int8_t>;
+using RealMedianFilterUInt8 = RealMedianFilter<uint8_t>;
+using RealMedianFilterInt16 = RealMedianFilter<int16_t>;
+using RealMedianFilterUInt16 = RealMedianFilter<uint16_t>;
+using RealMedianFilterInt32 = RealMedianFilter<int32_t>;
+using RealMedianFilterUInt32 = RealMedianFilter<uint32_t>;
 
 //Обязательно надо проверить и запретить дальнейшую компиляцию если double и float
 //означают не то что мы думаем.
