@@ -74,6 +74,8 @@ add_library(geoimgconv_lib STATIC
 	small_tools_box.h
 	appui_console.cpp
 	appui_console.h
+	appui_console_callback.cpp
+	appui_console_callback.h
 	alt_matrix_base.h
 	alt_matrix.cpp
 	alt_matrix.h
@@ -84,6 +86,7 @@ add_library(geoimgconv_lib STATIC
 	median_filter.h
 	common.cpp
 	common.h
+	call_back_base.h
 	app_config.cpp
 	app_config.h)
 add_executable(geoimgconv 

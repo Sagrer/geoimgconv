@@ -185,32 +185,4 @@ MedfilterAlgo MedfilterAlgoStrToEnum(const std::string &inputStr);
 //Получить противоположное направление движения по пикселям.
 PixelDirection RevertPixelDirection(const PixelDirection &value);
 
-//Абстрактный класс для организации вызова калбеков. Можно было бы передавать просто
-//ссылки на функцию, но тогда эти функции будут отвязаны от данных потока в котором
-//должны выполняться. Поэтому имхо проще передать вместо ссылки на функцию ссылку на
-//объект, в котором есть и вызываемый метод и привязанные к этому вызову данные.
-//Данный класс - абстрактный, от него нужно унаследовать конкретную реализацию с нужным
-//функционалом.
-class CallBackBase
-{
-	private:
-		unsigned long maxProgress_ = 100;	//Значение при котором прогресс считается 100%
-	public:
-		
-		CallBackBase() {};
-		virtual ~CallBackBase() {};
-
-		//Доступ к полям
-
-		unsigned long const& getMaxProgress() const { return maxProgress_; }
-		void setMaxProgress(const unsigned long &maxProgress) { maxProgress_ = maxProgress; }
-
-		//Собсно каллбек.
-		virtual void CallBack(const unsigned long &progressPosition)=0;
-		//Сообщить объекту о том что операция начинается
-		virtual void OperationStart()=0;
-		//Сообщить объекту о том что операция завершена.
-		virtual void OperationEnd()=0;
-};
-
 }	//namespace geoimgconv
