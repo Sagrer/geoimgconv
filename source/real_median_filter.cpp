@@ -108,13 +108,13 @@ void RealMedianFilter<CellType>::GetMirrorPixel(const int &x, const int &y, cons
 	{
 		if (x != currX)
 		{
-			delta = std::abs(x-currX)-shift;
+			delta = abs(x-currX)-shift;
 			if ((x-currX)<0) delta = -delta;
 			outX=x+delta;
 		};
 		if (y != currY)
 		{
-			delta = std::abs(y-currY)-shift;
+			delta = abs(y-currY)-shift;
 			if ((y-currY)<0) delta = -delta;
 			outY=y+delta;
 		};
@@ -979,7 +979,7 @@ void RealMedianFilter<CellType>::StupidFilter(const int &currYToProcess,
 			}
 			//Сортируем, берём медиану из середины. Точностью поиска середины не
 			//заморачиваемся т.к. окна будут большие, в десятки пикселов.
-			std::nth_element(medianArr, medianPos, medianArrEnd);
+			nth_element(medianArr, medianPos, medianArrEnd);
 			//Записываем в матрицу назначения либо медиану либо исходный пиксель, смотря
 			//что там с порогом, с разницей между пикселем и медианой и включён ли режим
 			//заполнения ям.
@@ -1008,7 +1008,7 @@ template<typename CellType>
 void RealMedianFilter<CellType>::HuangFilter(const int &currYToProcess, CallBackBase *callBackObj)
 {
 	//Создаём массив-гистограмму.
-	unsigned long *gist = new unsigned long[getOwnerObj().getHuangLevelsNum()];
+	auto gist = new unsigned long[getOwnerObj().getHuangLevelsNum()];
 	//Текущее значение медианы
 	uint16_t median;
 	//Количество элементов в гистограмме, которые меньше медианы (т.е. левее её).
@@ -1248,7 +1248,7 @@ inline void RealMedianFilter<CellType>::HuangFilter_FillGist(const int &leftUpY,
 	windowYEnd = leftUpY + getOwnerObj().getAperture();
 	windowXEnd = leftUpX + getOwnerObj().getAperture();
 	//Обнуляем гистограмму.
-	std::fill(gist, gist+getOwnerObj().getHuangLevelsNum(), 0);
+	fill(gist, gist+getOwnerObj().getHuangLevelsNum(), 0);
 	//Проходим по пикселям апертуры и заполняем гистограмму.
 	for (windowY = leftUpY; windowY < windowYEnd; ++windowY)
 	{
@@ -1549,7 +1549,7 @@ void RealMedianFilter<CellType>::SourcePrintStupidVisToCout()
 //программы. Это значит что каждый пиксел - это одна строка в файле.
 //Это "тупой" вариант вывода - метаданные нормально не сохраняются.
 template <typename CellType>
-bool RealMedianFilter<CellType>::SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
+bool RealMedianFilter<CellType>::SourceSaveToCSVFile(const string &fileName, ErrorInfo *errObj)
 {
 	//Просто проброс вызова в объект матрицы.
 	return sourceMatrix_.SaveToCSVFile(fileName, errObj);
@@ -1557,7 +1557,7 @@ bool RealMedianFilter<CellType>::SourceSaveToCSVFile(const std::string &fileName
 
 //Вывод исходной квантованной матрицы в csv-файл.
 template<typename CellType>
-bool RealMedianFilter<CellType>::QuantedSaveToCSVFile(const std::string & fileName, ErrorInfo * errObj)
+bool RealMedianFilter<CellType>::QuantedSaveToCSVFile(const string & fileName, ErrorInfo * errObj)
 {
 	//Создаём временную матрицу.
 	AltMatrix<CellType> tempMatr;
@@ -1577,7 +1577,7 @@ bool RealMedianFilter<CellType>::QuantedSaveToCSVFile(const std::string & fileNa
 
 //Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 template <typename CellType>
-bool RealMedianFilter<CellType>::DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
+bool RealMedianFilter<CellType>::DestSaveToCSVFile(const string &fileName, ErrorInfo *errObj)
 {
 	//Просто проброс вызова в объект матрицы.
 	return destMatrix_.SaveToCSVFile(fileName, errObj);

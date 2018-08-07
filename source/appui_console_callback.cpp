@@ -64,7 +64,7 @@ void AppUIConsoleCallBack::UpdateBar(const unsigned long &progressPosition)
 		text_.append(" ", lastTextSize_ - tempSize_);
 	}
 	lastTextSize_ = tempSize_;
-	cout << StrTB::Utf8ToConsoleCharset(text_) << std::flush;
+	cout << StrTB::Utf8ToConsoleCharset(text_) << flush;
 }
 
 //CallBack-метод, который будет выводить в консоль количество и процент уже
@@ -94,9 +94,9 @@ void AppUIConsoleCallBack::CallBack(const unsigned long &progressPosition)
 			pixelsPerSecond_ = 1000.0 / (double(timeDelta_.count()) / double(skipCounter_));
 			timeLeft_ = chrono::seconds(long(double((getMaxProgress() - progressPosition)) / pixelsPerSecond_));
 			if (pixelsPerSecond_ < 1)
-				skipNumber_ = size_t(std::ceil(updatePeriod_ / pixelsPerSecond_));
+				skipNumber_ = size_t(ceil(updatePeriod_ / pixelsPerSecond_));
 			else
-				skipNumber_ = size_t(std::ceil(pixelsPerSecond_*updatePeriod_));
+				skipNumber_ = size_t(ceil(pixelsPerSecond_*updatePeriod_));
 		}
 		else
 			isStarted_ = true;

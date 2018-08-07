@@ -68,14 +68,14 @@ const unsigned int SystemToolsBox::GetCpuCoresNumber()
 {
 	//Количество ядер умеет узнавать Boost. C++11 тоже умеет, но духи гугла говорят
 	//что буст надёжнее и реже возвращает 0.
-	unsigned int result = boost::thread::hardware_concurrency();
+	auto result = boost::thread::hardware_concurrency();
 	if (!result) result = 1;	//0 ядер не бывает.
 	return result;
 }
 
 #ifdef __linux__
 //Парсим /proc/meminfo и вынимаем нужное нам значение. При ошибке вернём 0.
-const unsigned long long GetProcMeminfoField(const std::string &fieldName)
+const unsigned long long GetProcMeminfoField(const string &fieldName)
 {
 	using namespace boost;
 	unsigned long long result = 0;
@@ -87,7 +87,7 @@ const unsigned long long GetProcMeminfoField(const std::string &fieldName)
 	}
 
 	//Вытягиваем всё в строку.
-	stringstream sstream;
+	ostringstream sstream;
 	sstream << ifile.rdbuf();
 	string fileContents(sstream.str());
 	ifile.close();
@@ -97,16 +97,12 @@ const unsigned long long GetProcMeminfoField(const std::string &fieldName)
 	char_separator<char> tokensSep(" \t:");  //Делить строки на поля
 	tokenizer<char_separator<char> > linesTok(fileContents, linesSep);
 
-	//Итераторы
-	tokenizer<char_separator<char> >::const_iterator i;
-	tokenizer<char_separator<char> >::const_iterator j;
-
 	//Ковыряем содержимое.
-	for (i = linesTok.begin();
+	for (auto i = linesTok.begin();
 		i !=linesTok.end(); i++)
 	{
 		tokenizer<char_separator<char> >currLineTok(*i, tokensSep);
-		j = currLineTok.begin();
+		auto j = currLineTok.begin();
 		if (j!=currLineTok.end())
 		{
 			if (*j == fieldName)
@@ -147,7 +143,7 @@ void FillSysInfoFromProcMeminfo(SysResInfo &infoStruct)
 	}
 
 	//Вытягиваем всё в строку.
-	stringstream sstream;
+	ostringstream sstream;
 	sstream << ifile.rdbuf();
 	string fileContents(sstream.str());
 	ifile.close();
@@ -157,15 +153,11 @@ void FillSysInfoFromProcMeminfo(SysResInfo &infoStruct)
 	char_separator<char> tokensSep(" \t:");  //Делить строки на поля
 	tokenizer<char_separator<char> > linesTok(fileContents, linesSep);
 
-	//Итераторы
-	tokenizer<char_separator<char> >::const_iterator i;
-	tokenizer<char_separator<char> >::const_iterator j;
-
 	//Ковыряем содержимое.
-	for (i = linesTok.begin(); i != linesTok.end(); i++)
+	for (auto i = linesTok.begin(); i != linesTok.end(); i++)
 	{
 		tokenizer<char_separator<char> >currLineTok(*i, tokensSep);
-		j = currLineTok.begin();
+		auto j = currLineTok.begin();
 		if (j != currLineTok.end())
 		{
 			//Вот это шаманство с указателем - чтобы строковое сравнение делать всего 1 раз и при этом
@@ -330,8 +322,8 @@ void SystemToolsBox::GetSysResInfo(SysResInfo &infoStruct)
 	infoStruct.cpuCoresNumber = boost::thread::hardware_concurrency();
 	if (!infoStruct.cpuCoresNumber) infoStruct.cpuCoresNumber = 1;	//0 ядер не бывает.
 
-																	//Инфу о памяти буст получать не умеет, или не умел в версии 1.66. Всё как надо сделаем для
-																	//вендов и линуха, для остальных юниксов код скорее на удачу - может и сработает.
+	//Инфу о памяти буст получать не умеет, или не умел в версии 1.66. Всё как надо сделаем для
+	//вендов и линуха, для остальных юниксов код скорее на удачу - может и сработает.
 	infoStruct.systemMemoryFullSize = 0;	//Нули - признак ошибки, т.е. получить инфу для поля не удалось.
 	infoStruct.systemMemoryFreeSize = 0;
 	infoStruct.maxProcessMemorySize = 0;
@@ -364,31 +356,31 @@ void SystemToolsBox::GetSysResInfo(SysResInfo &infoStruct)
 
 	//Остальные параметры памяти по-разному получаются для linux-а и для остальных юниксов.
 	#ifdef __linux__
-	//Тут нужно расковыривать содержимое /proc/meminfo
-	FillSysInfoFromProcMeminfo(infoStruct);
+		//Тут нужно расковыривать содержимое /proc/meminfo
+		FillSysInfoFromProcMeminfo(infoStruct);
 	#elif defined(_SC_PAGE_SIZE) && defined(_SC_AVPHYS_PAGES) && defined(_SC_PHYS_PAGES)
-	//Может быть и сработает.
-	long pagesize = sysconf(_SC_PAGE_SIZE);
-	if (pagesize != -1)
-	{
-		//Общее количество оперативки:
-		long pages = sysconf(_SC_PHYS_PAGES);
-		if ((pagesize != -1) && (pages != -1))
+		//Может быть и сработает.
+		long pagesize = sysconf(_SC_PAGE_SIZE);
+		if (pagesize != -1)
 		{
-			infoStruct.systemMemoryFullSize = pagesize * pages;
+			//Общее количество оперативки:
+			long pages = sysconf(_SC_PHYS_PAGES);
+			if ((pagesize != -1) && (pages != -1))
+			{
+				infoStruct.systemMemoryFullSize = pagesize * pages;
+			}
+			//Сколько оперативки свободно:
+			pages = sysconf(_SC_AVPHYS_PAGES);
+			if ((pagesize != -1) && (pages != -1))
+			{
+				infoStruct.systemMemoryFreeSize = pagesize * pages;
+			}
 		}
-		//Сколько оперативки свободно:
-		pages = sysconf(_SC_AVPHYS_PAGES);
-		if ((pagesize != -1) && (pages != -1))
-		{
-			infoStruct.systemMemoryFreeSize = pagesize * pages;
-		}
-	}
+		#else
+			#error Unknown target OS. Cant preprocess memory detecting code :(
+		#endif
 	#else
-	#error Unknown target OS. Cant preprocess memory detecting code :(
-	#endif
-	#else
-	#error Unknown target OS. Cant preprocess memory detecting code :(
+		#error Unknown target OS. Cant preprocess memory detecting code :(
 	#endif
 
 	//Если у нас i386 32-битная или 64-битная архитектура - можно попробовать жёстко
@@ -433,7 +425,7 @@ unsigned short SystemToolsBox::GetConsoleWidth()
 }
 
 //Возвращает используемый в данной системе разделитель путей к файлам, в виде обычной строки.
-const std::string& SystemToolsBox::GetFilesystemSeparator()
+const string& SystemToolsBox::GetFilesystemSeparator()
 {
 	if (filesystemSeparator_ != "") return filesystemSeparator_;
 
@@ -444,13 +436,13 @@ const std::string& SystemToolsBox::GetFilesystemSeparator()
 	//под Boost 1.62 напрямую компиллятор preferred_separator не видит при линковке, вероятно
 	//это как-то связано с constexpr в недрах буста. Хотя на Boost 1.66 всё было норм :).
 	auto prefSep = b_fs::path::preferred_separator;
-	if (std::is_same<decltype(prefSep), char>::value)
+	if (is_same<decltype(prefSep), char>::value)
 	{
 		//Обычный char. Делаем двухбайтовый буфер (последний символ - ноль) и копируем первый байт.
 		//Значение первого символа по умолчанию - просто наиболее вероятное.
 		char charBuf[] = "/";
 		memcpy(charBuf, &prefSep, sizeof(char));
-		filesystemSeparator_ = std::string(charBuf);
+		filesystemSeparator_ = string(charBuf);
 		return filesystemSeparator_;
 	}
 	else
@@ -458,7 +450,7 @@ const std::string& SystemToolsBox::GetFilesystemSeparator()
 		//wchar. В целом, аналогично.
 		wchar_t charBuf[] = L"\\";
 		memcpy(charBuf, &prefSep, sizeof(wchar_t));
-		filesystemSeparator_ = StrTB::WstringToUtf8(std::wstring(charBuf));
+		filesystemSeparator_ = StrTB::WstringToUtf8(wstring(charBuf));
 		return filesystemSeparator_;
 	}
 }

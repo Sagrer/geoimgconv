@@ -57,7 +57,7 @@ AppConfig::~AppConfig()
 //--------------------------------//
 
 //Прочитать ini-файл по указанному пути. Файл должен существовать.
-bool AppConfig::ReadConfigFile_(const std::string &filePath, ErrorInfo *errObj)
+bool AppConfig::ReadConfigFile_(const string &filePath, ErrorInfo *errObj)
 {
 	//Заглушка
 	if (errObj) errObj->SetError(CommonErrors::FeatureNotReady);
@@ -75,16 +75,16 @@ void AppConfig::FillBasePO_()
 		("help,h","")
 		("help?,?", "")	//Полускрытая опция. В справке говорится только о -?. А help? - костыль для boost.
 		("version,v","")
-		("input", po::value<std::string>(), "" )
-		("output", po::value<std::string>(), "" )
+		("input", po::value<string>(), "" )
+		("output", po::value<string>(), "" )
 		("medfilter.aperture", po::value<int>(), "" )
 		("medfilter.threshold", po::value<double>(), "")
-		("medfilter.margintype", po::value<std::string>(), "")
-		("medfilter.algo", po::value<std::string>(), "")
+		("medfilter.margintype", po::value<string>(), "")
+		("medfilter.algo", po::value<string>(), "")
 		("medfilter.huanglevels", po::value<uint16_t>(), "")
 		("medfilter.fillpits", "")
-		("appmode", po::value<std::string>(), "")
-		("memmode", po::value<std::string>(), "")
+		("appmode", po::value<string>(), "")
+		("memmode", po::value<string>(), "")
 		("test","")	//Не документировать эту опцию в справку юзера! Только для разработки.
 	;
 	//Позиционные параметры (без имени). Опять извратный синтаксис.
@@ -131,9 +131,9 @@ void AppConfig::FillDependentPO_()
 		(",?", StrTB::Utf8ToSelectedCharset("То же, что и -h").c_str())
 		("version,v", StrTB::Utf8ToSelectedCharset("Вывести информацию о версии программы \
 и не выполнять никаких других действий.").c_str())
-		//("input", po::value<std::string>,StrTB::Utf8ToSelectedCharset("Скрытая опция, \
+		//("input", po::value<string>,StrTB::Utf8ToSelectedCharset("Скрытая опция, \
 		//	задаёт имя входного файла. По умолчанию равна input.tif").c_str())
-		//("output", po::value<std::string>,StrTB::Utf8ToSelectedCharset("Скрытая опция, \
+		//("output", po::value<string>,StrTB::Utf8ToSelectedCharset("Скрытая опция, \
 		//	задаёт имя выходного файла. По умолчанию равна output.tif").c_str())
 		("medfilter.aperture", po::value<int>(),StrTB::Utf8ToSelectedCharset("Длина стороны \
 окна медианного фильтра в пикселях. Округляется вверх до ближайшего нечетного \
@@ -142,7 +142,7 @@ void AppConfig::FillDependentPO_()
 медианного фильтра в метрах. Если отличие значения пикселя от медианы не \
 превышает этого значение - пиксель при фильтрации не изменяется. По умолчанию \
 опция равна "+to_string(DEFAULT_MEDFILTER_THRESHOLD)+" (метров).").c_str())
-		("medfilter.margintype", po::value<std::string>(),StrTB::Utf8ToSelectedCharset(
+		("medfilter.margintype", po::value<string>(),StrTB::Utf8ToSelectedCharset(
 "Тип заполнения краевых областей для медианного фильтра. Заполнение нужно для \
 того, чтобы пикселы, находящиеся по краям значимой части изображения также можно \
 было обработать фильтром, т.е. чтобы в окне вокруг этого пикселя были незначимые \
@@ -154,7 +154,7 @@ void AppConfig::FillDependentPO_()
 отражением изображения, расположенного в противоположную сторону от краевого пикселя. \
 Работает медленно, но при достаточном размере окна позволяет например избежать появления \
 холмов на месте леса при фильтрации.").c_str())
-		("medfilter.algo", po::value<std::string>(), StrTB::Utf8ToSelectedCharset(
+		("medfilter.algo", po::value<string>(), StrTB::Utf8ToSelectedCharset(
 "Алгоритм медианного фильтра. Возможные варианты:\n    " + MedfilterAlgoTexts[(unsigned char)MedfilterAlgo::Stub]
 + " - пустой алгоритм. Ничего не делает, исходный файл просто копируется.\n    "
 + MedfilterAlgoTexts[(unsigned char)MedfilterAlgo::Stupid] + " - алгоритм, обрабатывающий изображение \
@@ -175,9 +175,9 @@ void AppConfig::FillDependentPO_()
 данная точка станет равна медиане, но обычно это не имеет смысла т.к. алгоритм обычно применяется для \
 срезания с карты высот растительности и различного техногена, а вовсе не для заполнения ям и оврагов. \
 По умолчанию эта опция отключена в отличие от предыдущих версий (в которых этой опции не было).").c_str())
-//		("appmode", po::value<std::string>(),StrTB::Utf8ToSelectedCharset("Режим работы \
+//		("appmode", po::value<string>(),StrTB::Utf8ToSelectedCharset("Режим работы \
 //программы. На данный момент единственный работающий вариант - median.").c_str())
-		("memmode", po::value<std::string>(), StrTB::Utf8ToSelectedCharset("Режим использования \
+		("memmode", po::value<string>(), StrTB::Utf8ToSelectedCharset("Режим использования \
 памяти. Позволяет ограничить количество памяти, которое программа может использовать для загрузки \
 обрабатываемого изображения. Если изображение не поместится в эту ограниченную область целиком то \
 оно будет обрабатываться по частям. Возможно указать один из следующих режимов:\n    " +
@@ -203,15 +203,15 @@ MemoryModeTexts[(unsigned char)MemoryMode::Auto] + ".").c_str())
 //Получить MemoryMode из строки, совпадающей без учёта регистра с одним из
 //элементов MemoryModeTexts + прочитать и правильно интерпретировать
 //указанный там размер.
-void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memMode, unsigned long long &size)
+void AppConfig::ParseMemoryModeStr(const string &inputStr, MemoryMode &memMode, unsigned long long &size)
 {
-	std::string inpStr;
+	string inpStr;
 	StrTB::Utf8ToLower(inputStr, inpStr);
 	size = 0;
 	//Помимо перевода в нижний регистр от строки нужно отрезать часть с возможными
 	//цифрами.
 	size_t pos = inpStr.find_first_of("0123456789", 0);
-	if (pos != std::string::npos)
+	if (pos != string::npos)
 		inpStr = inpStr.substr(0, pos);
 	//Теперь можно искать совпадение с одной из констант.
 	memMode = MemoryMode::Unknown;
@@ -227,7 +227,7 @@ void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memM
 	if ((memMode == MemoryMode::Limit) || (memMode == MemoryMode::StayFree))
 	{
 		//Размер должен быть указан в байтах (кб, мб итд).
-		if (pos != std::string::npos)
+		if (pos != string::npos)
 			size = StrTB::InfoSizeToBytesNum(inputStr.substr(pos, inputStr.length() - pos),'m');
 		//Нулевого размера не бывает
 		if (!size)
@@ -236,7 +236,7 @@ void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memM
 	else if ((memMode == MemoryMode::LimitFreePrc) || (memMode == MemoryMode::LimitFullPrc))
 	{
 		//Размер должен быть указан в процентах, т.е. просто целое число.
-		if (pos != std::string::npos)
+		if (pos != string::npos)
 		{
 			inpStr = inputStr.substr(pos, inputStr.length() - pos);
 			if (StrTB::CheckUnsIntStr(inpStr))
@@ -258,9 +258,9 @@ void AppConfig::ParseMemoryModeStr(const std::string &inputStr, MemoryMode &memM
 //--------------------------------//
 
 //helpMsg (генерируется)
-const std::string AppConfig::getHelpMsg()
+const string AppConfig::getHelpMsg()
 {
-	std::ostringstream tempStream;
+	ostringstream tempStream;
 	tempStream << StrTB::Utf8ToSelectedCharset(
 		"Способ вызова:\ngeoimgconv [опции] [имя входящего файла] [имя исходящего файла]\n\n\
 По умолчанию (если вызвать без опций) - входящим файлом будет input.tif, а \n\
@@ -328,12 +328,12 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 		if (poVarMap_.count("appmode"))
 		{
 			appModeCmd_ = AppModeStrToEnum(poVarMap_["appmode"].
-				as<std::string>());
+				as<string>());
 			if (appModeCmd_ != AppMode::Median)
 			{
 				//Неизвестный или пока не реализованный вариант.
 				if (errObj) errObj->SetError(CommonErrors::UnknownIdentif, ": " +
-					poVarMap_["appmode"].as<std::string>());
+					poVarMap_["appmode"].as<string>());
 				return false;
 			};
 			appModeCmdIsSet_ = true;
@@ -357,12 +357,12 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 			return true;
 		if (poVarMap_.count("input"))
 		{
-			inputFileNameCmd_ = StrTB::SystemCharsetToUtf8(poVarMap_["input"].as<std::string>());
+			inputFileNameCmd_ = StrTB::SystemCharsetToUtf8(poVarMap_["input"].as<string>());
 			inputFileNameCmdIsSet_ = true;
 		};
 		if (poVarMap_.count("output"))
 		{
-			outputFileNameCmd_ = StrTB::SystemCharsetToUtf8(poVarMap_["output"].as<std::string>());
+			outputFileNameCmd_ = StrTB::SystemCharsetToUtf8(poVarMap_["output"].as<string>());
 			outputFileNameCmdIsSet_ = true;
 		};
 		if (poVarMap_.count("medfilter.aperture"))
@@ -378,12 +378,12 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 		if (poVarMap_.count("medfilter.margintype"))
 		{
 			medfilterMarginTypeCmd_ = MarginTypeStrToEnum(poVarMap_[
-				"medfilter.margintype"].as<std::string>());
+				"medfilter.margintype"].as<string>());
 			if (medfilterMarginTypeCmd_ == MarginType::UnknownFilling)
 			{
 				//Неизвестный или пока не реализованный вариант.
 				if (errObj) errObj->SetError(CommonErrors::UnknownIdentif, ": " +
-					poVarMap_["medfilter.margintype"].as<std::string>());
+					poVarMap_["medfilter.margintype"].as<string>());
 				return false;
 			};
 			medfilterMarginTypeCmdIsSet_ = true;
@@ -391,12 +391,12 @@ bool AppConfig::ParseCommandLine(const int &argc, char **argv, ErrorInfo *errObj
 		if (poVarMap_.count("medfilter.algo"))
 		{
 			medfilterAlgoCmd_ = MedfilterAlgoStrToEnum(poVarMap_[
-				"medfilter.algo"].as<std::string>());
+				"medfilter.algo"].as<string>());
 			if (medfilterAlgoCmd_ == MedfilterAlgo::Unknown)
 			{
 				//Неизвестный или пока не реализованный вариант.
 				if (errObj) errObj->SetError(CommonErrors::UnknownIdentif, ": " +
-					poVarMap_["medfilter.algo"].as<std::string>());
+					poVarMap_["medfilter.algo"].as<string>());
 				return false;
 			};
 			medfilterAlgoCmdIsSet_ = true;
@@ -420,13 +420,13 @@ medfilter.huanglevels не может иметь значение меньше �
 		};
 		if (poVarMap_.count("memmode"))
 		{
-			ParseMemoryModeStr(poVarMap_["memmode"].as<std::string>(), memModeCmd_,
+			ParseMemoryModeStr(poVarMap_["memmode"].as<string>(), memModeCmd_,
 				memSizeCmd_);
 			if (memModeCmd_ == MemoryMode::Unknown)
 			{
 				//Неизвестный или пока не реализованный вариант.
 				if (errObj) errObj->SetError(CommonErrors::UnknownIdentif, "Параметр --memmode имеет неверное значение: " +
-					poVarMap_["memmode"].as<std::string>(),true);
+					poVarMap_["memmode"].as<string>(),true);
 				return false;
 			};
 			memModeCmdIsSet_ = true;

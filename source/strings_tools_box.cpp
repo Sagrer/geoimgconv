@@ -147,7 +147,7 @@ string StringsToolsBox::BoolToString(const bool &input)
 //нулей в начале.
 string StringsToolsBox::IntToString(const long long value, int width)
 {
-	stringstream sStream;
+	ostringstream sStream;
 	sStream << setw(width) << setfill('0') << value;
 	return sStream.str();
 }
@@ -167,7 +167,6 @@ void StringsToolsBox::Utf8ToUpper(const string &inputStr, string &outputStr)
 //Преобразовать количество байт в удобную для юзера строку с мегабайтами-гигабайтами.
 const string StringsToolsBox::BytesNumToInfoSizeStr(const unsigned long long &bytesNum)
 {
-	using namespace boost;
 	//Если число меньше килобайта - выводим байты, иначе если меньше мегабайта - выводим
 	//килобайты, и так далее до терабайтов.
 	//TODO: нужна будет какая-то i18n и l10n. Когда-нибудь. В отдалённом светлом будущем.
@@ -291,18 +290,18 @@ const bool StringsToolsBox::CheckInfoSizeStr(const string &inputStr)
 	else return true;
 }
 
-//Преобразует период времени std::chrono::microseconds в строку формата hh:mm:ss.ms (миллисекунды
+//Преобразует период времени chrono::microseconds в строку формата hh:mm:ss.ms (миллисекунды
 //опционально.
 const string StringsToolsBox::TimeDurationToString(const chrono::microseconds &duration, bool printMilliseconds)
 {
 	//Поток, в котором будем формировать строку.
-	stringstream s_stream;
+	ostringstream s_stream;
 	//Считаем часы, минуты, секунды, возможно миллисекунды.
-	chrono::hours durationHours = chrono::duration_cast<chrono::hours>(duration);
-	chrono::microseconds msLeft = duration - chrono::duration_cast<chrono::microseconds>(durationHours);
-	chrono::minutes durationMinutes = chrono::duration_cast<chrono::minutes>(msLeft);
+	auto durationHours = chrono::duration_cast<chrono::hours>(duration);
+	auto msLeft = duration - chrono::duration_cast<chrono::microseconds>(durationHours);
+	auto durationMinutes = chrono::duration_cast<chrono::minutes>(msLeft);
 	msLeft = msLeft - chrono::duration_cast<chrono::microseconds>(durationMinutes);
-	chrono::seconds durationSeconds = chrono::duration_cast<chrono::seconds>(msLeft);
+	auto durationSeconds = chrono::duration_cast<chrono::seconds>(msLeft);
 	//Выводим обязательную часть.
 	s_stream << setw(2) << setfill('0') << durationHours.count() << ":";
 	s_stream << setw(2) << durationMinutes.count() << ":";
@@ -311,21 +310,21 @@ const string StringsToolsBox::TimeDurationToString(const chrono::microseconds &d
 	if (printMilliseconds)
 	{
 		msLeft = msLeft - chrono::duration_cast<chrono::microseconds>(durationSeconds);
-		chrono::milliseconds durationMilliseconds = chrono::duration_cast<chrono::milliseconds>(msLeft);
+		auto durationMilliseconds = chrono::duration_cast<chrono::milliseconds>(msLeft);
 		s_stream << "." << durationMilliseconds.count();
 	}
 
 	return s_stream.str();
 }
 
-//Преобразует период времени std::chrono::milliseconds в строку формата hh:mm:ss.ms (миллисекунды
+//Преобразует период времени chrono::milliseconds в строку формата hh:mm:ss.ms (миллисекунды
 //опционально.
 const string StringsToolsBox::TimeDurationToString(const chrono::milliseconds &duration, bool printMilliseconds)
 {
 	return TimeDurationToString(chrono::duration_cast<chrono::microseconds>(duration), printMilliseconds);
 }
 
-//Преобразует период времени std::chrono::seconds в строку формата hh:mm:ss.
+//Преобразует период времени chrono::seconds в строку формата hh:mm:ss.
 const string StringsToolsBox::TimeDurationToString(const chrono::seconds & duration)
 {
 	return TimeDurationToString(chrono::duration_cast<chrono::microseconds>(duration), false);

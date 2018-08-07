@@ -23,10 +23,7 @@
 #include <fstream>
 #include "strings_tools_box.h"
 
-using std::string;
-using std::cout;
-using std::endl;
-using std::ios_base;
+using namespace std;
 
 namespace geoimgconv{
 
@@ -165,7 +162,7 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 
 	//Указатель на sourceMatrix нужно привести к своему типу, причём смысл в этом есть только при реальном
 	//совпадении типов.
-	AltMatrix<CellType> *realSourceMatrix = dynamic_cast<AltMatrix<CellType> *>(sourceMatrix);
+	auto realSourceMatrix = dynamic_cast<AltMatrix<CellType> *>(sourceMatrix);
 	if ((realSourceMatrix == nullptr) && (sourceMatrix != nullptr))
 	{
 		//По идее сюда мы зайдём если реальный тип не был AltMatrix<CellType>.
@@ -475,9 +472,9 @@ template <typename CellType> void AltMatrix<CellType>::PrintStupidVisToCout() co
 //программы. Это значит что каждый пиксел - это одна строка в файле.
 //Это "тупой" вариант вывода - метаданные нормально не сохраняются.
 template <typename CellType>
-bool AltMatrix<CellType>::SaveToCSVFile(const std::string &fileName, ErrorInfo *errObj) const
+bool AltMatrix<CellType>::SaveToCSVFile(const string &fileName, ErrorInfo *errObj) const
 {
-	std::fstream fileStream;
+	fstream fileStream;
 	fileStream.open(fileName.c_str(),ios_base::binary|ios_base::trunc|ios_base::out);
 	if (!fileStream.is_open())
 	{
@@ -509,7 +506,7 @@ double AltMatrix<CellType>::CompareWithAnother(AltMatrixBase *anotherMatr) const
 	}
 
 	//Во-вторых она должна быть приводима к типу текущей матрицы.
-	AltMatrix<CellType> *anotherMatrix = dynamic_cast<AltMatrix<CellType> *>(anotherMatr);
+	auto anotherMatrix = dynamic_cast<AltMatrix<CellType> *>(anotherMatr);
 	if (!anotherMatrix)
 	{
 		return 0.0;
@@ -522,8 +519,8 @@ double AltMatrix<CellType>::CompareWithAnother(AltMatrixBase *anotherMatr) const
 	}
 
 	//И только теперь посчитаем сколько пикселей совпадают, а сколько нет.
-	std::uint64_t pixelsNum = getXSize()*getYSize();
-	std::uint64_t samePixelsNum = 0;
+	uint64_t pixelsNum = getXSize()*getYSize();
+	uint64_t samePixelsNum = 0;
 	CellType *i;
 	CellType *j;
 	for (i = static_cast<CellType*>(data_), j = static_cast<CellType*>(anotherMatrix->data_);

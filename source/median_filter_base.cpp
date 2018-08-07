@@ -136,7 +136,7 @@ void MedianFilterBase::CalcMemSizes()
 
 //Выбрать исходный файл для дальнейшего чтения и обработки. Получает информацию о параметрах изображения,
 //запоминает её в полях объекта.
-bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *errObj)
+bool MedianFilterBase::OpenInputFile(const string &fileName, ErrorInfo *errObj)
 {
 	//TODO: когда избавлюсь от Load и Save - тут должны будут создаваться объекты GDAL, существующие до
 	//завершения работы с файлом. Чтобы не создавать их постоянно в процессе по-кусочечной обработки
@@ -195,7 +195,7 @@ bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *err
 	//тип байтов.
 	if (dataType_ == PixelType::Int8)
 	{
-		const char *tempStr = gdalSourceRaster_->GetMetadataItem("PIXELTYPE", "IMAGE_STRUCTURE");
+		auto tempStr = gdalSourceRaster_->GetMetadataItem("PIXELTYPE", "IMAGE_STRUCTURE");
 		if ((tempStr == NULL) || strcmp(tempStr, "SIGNEDBYTE"))
 		{
 			//Это явно не signed-байт
@@ -265,7 +265,7 @@ bool MedianFilterBase::OpenInputFile(const std::string &fileName, ErrorInfo *err
 
 //Подготовить целевой файл к записи в него результата. Если forceRewrite==true - перезапишет уже
 //существующий файл. Иначе вернёт ошибку (false и инфу в errObj). Input-файл уже должен быть открыт.
-bool MedianFilterBase::OpenOutputFile(const std::string &fileName, const bool &forceRewrite, ErrorInfo *errObj)
+bool MedianFilterBase::OpenOutputFile(const string &fileName, const bool &forceRewrite, ErrorInfo *errObj)
 {
 	//Этот метод можно вызывать только если исходный файл уже был открыт.
 	if (!sourceIsAttached_)
@@ -385,14 +385,14 @@ void MedianFilterBase::SourcePrintStupidVisToCout()
 //Вывод исходной матрицы в csv-файл, который должны понимать всякие картографические
 //программы. Это значит что каждый пиксел - это одна строка в файле.
 //Это "тупой" вариант вывода - метаданные нормально не сохраняются.
-bool MedianFilterBase::SourceSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
+bool MedianFilterBase::SourceSaveToCSVFile(const string &fileName, ErrorInfo *errObj)
 {
 	//Просто проброс вызова в объект матрицы.
 	return pFilterObj_->SourceSaveToCSVFile(fileName, errObj);
 }
 
 //Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
-bool MedianFilterBase::DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj)
+bool MedianFilterBase::DestSaveToCSVFile(const string &fileName, ErrorInfo *errObj)
 {
 	//Просто проброс вызова в объект матрицы.
 	return pFilterObj_->DestSaveToCSVFile(fileName, errObj);

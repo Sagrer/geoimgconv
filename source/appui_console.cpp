@@ -384,10 +384,10 @@ void AppUIConsole::DetectSysResInfo()
 }
 
 //Задать юзверю попрос на да\нет и вернуть true если было да и false если было нет.
-bool AppUIConsole::ConsoleAnsweredYes(const std::string &messageText)
+bool AppUIConsole::ConsoleAnsweredYes(const string &messageText)
 {
 	PrintToConsole(messageText + " да\\нет? (y\\д\\n\\н) > ");
-	std::string answer;
+	string answer;
 	cin >> answer;
 	StrTB::Utf8ToLower(StrTB::ConsoleCharsetToUtf8(answer), answer);
 	if ((answer == "y") || (answer == "д") || (answer == "yes") || (answer == "да"))
@@ -437,7 +437,7 @@ int AppUIConsole::RunApp()
 		PrintToConsole("файл с именем input.tif и попытается его обработать медианным фильтром,\n");
 		PrintToConsole("сохранив результат в output.tif (при необходимости пересоздав этот файл).\n");
 	}
-	std::cout << std::endl;
+	cout << endl;
 
 	//Реагируем на опции командной строки.
 	if (confObj_->getHelpAsked())
@@ -717,15 +717,15 @@ int AppUIConsole::RunTestMode()
 //--------------------------------//
 
 //Вывести сообщение в обычную (не curses) консоль в правильной кодировке.
-void AppUIConsole::PrintToConsole(const std::string &str)
+void AppUIConsole::PrintToConsole(const string &str)
 {
-	std::cout << StrTB::Utf8ToConsoleCharset(str) << std::flush;
+	cout << StrTB::Utf8ToConsoleCharset(str) << flush;
 }
 
 //Вывод справки.
 void AppUIConsole::PrintHelp()
 {
-	std::cout << confObj_->getHelpMsg();
+	cout << confObj_->getHelpMsg();
 }
 
 } //namespace geoimgconv

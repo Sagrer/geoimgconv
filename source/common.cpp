@@ -20,20 +20,22 @@
 #include <string>
 #include "strings_tools_box.h"
 
+using namespace std;
+
 namespace geoimgconv
 {
 
 //Константы со всякими разными значениями по умолчанию.
 
 //Временно версия будет вот так. Но нет ничего более постоянного, чем временное!
-const std::string APP_VERSION = "0.4.1.0a";
+const string APP_VERSION = "0.4.1.0a";
 //С какой периодичностью выводить прогресс в консоль во избежание тормозов от вывода. 
 //В секундах.
 const double DEFAULT_PROGRESS_UPDATE_PERIOD = 2.8;
 //Имя входящего файла
-const std::string DEFAULT_INPUT_FILE_NAME = "input.tif";
+const string DEFAULT_INPUT_FILE_NAME = "input.tif";
 //Имя исходящего файла
-const std::string DEFAULT_OUTPUT_FILE_NAME = "output.tif";
+const string DEFAULT_OUTPUT_FILE_NAME = "output.tif";
 //Апертура медианного фильтра
 const int DEFAULT_MEDFILTER_APERTURE = 101;
 //Порог медианного фильтра
@@ -54,7 +56,7 @@ const bool DEFAULT_MEDFILTER_FILL_PITS = false;
 const uint16_t HUANG_MAX_LEVELS_NUM = -1; //65535
 
 //Текстовое представление для AppMode
-const std::string AppModeTexts[] = {"median",	//0
+const string AppModeTexts[] = {"median",	//0
 			"mediancurses",		//1
 			"interactivecurses",	//2
 			"mediangui",	//3
@@ -63,20 +65,20 @@ const std::string AppModeTexts[] = {"median",	//0
 };
 
 //Текстовое представление для MedfilterAlgo
-const std::string MedfilterAlgoTexts[] = { "stub",	//0
+const string MedfilterAlgoTexts[] = { "stub",	//0
 			"stupid",		//1
 			"huang",		//2
 			"unknown"		//3
 };
 
 //Текстовое представление элементов MarginType
-const std::string MarginTypesTexts[] = {"simple",	//0
+const string MarginTypesTexts[] = {"simple",	//0
 			"mirror",	//1
 			"unknown"	//2
 };
 
 //Текстовое представление для MemoryMode (без цифр)
-const std::string MemoryModeTexts[] = { "auto",	//0
+const string MemoryModeTexts[] = { "auto",	//0
 			"limit",				//1
 			"limit_free_prc",		//2
 			"limit_full_prc",		//3
@@ -123,26 +125,26 @@ GDALDataType GICToGDAL_PixelType(const PixelType GICType)
 
 //Обработчик ошибок GDAL. Указатель на него должен быть подсунут из каждого
 //потока приложения через CPLPushErrorHandlerEx. Дополнительные данные
-//- указатель на std::string под текст сообщения об ошибке. Строка должна
+//- указатель на string под текст сообщения об ошибке. Строка должна
 //быть для каждого потока своя.
 void CPL_STDCALL GDALThreadErrorHandler(CPLErr eErrClass, int err_no, const char *msg)
 {
 	//Тупо кладём в настроенную для хендлера строку текст сообщения об ошибке.
-	*((std::string*)(CPLGetErrorHandlerUserData())) = msg;
+	*((string*)(CPLGetErrorHandlerUserData())) = msg;
 }
 
 //Вернуть строку с текстом последней ошибки GDAL для данного потока. Работает только
 //если был подключен обработчик GDALThreadErrorHandler
-std::string &GetLastGDALError()
+string &GetLastGDALError()
 {
-	return *((std::string*)(CPLGetErrorHandlerUserData()));
+	return *((string*)(CPLGetErrorHandlerUserData()));
 }
 
 //Получить AppMode из строки, совпадающей без учёта регистра с одним из
 //элементов AppModeTexts
-AppMode AppModeStrToEnum(const std::string &inputStr)
+AppMode AppModeStrToEnum(const string &inputStr)
 {
-	std::string inpStr;
+	string inpStr;
 	StrTB::Utf8ToLower(inputStr, inpStr);
 	for (unsigned char i = 0; i <= (unsigned char)AppMode::Unknown; i++)
 	{
@@ -154,9 +156,9 @@ AppMode AppModeStrToEnum(const std::string &inputStr)
 
 //Получить MarginType из строки, совпадающей без учёта регистра с одним из
 //элементов MarginTypeTexts
-MarginType MarginTypeStrToEnum(const std::string &inputStr)
+MarginType MarginTypeStrToEnum(const string &inputStr)
 {
-	std::string inpStr;
+	string inpStr;
 	StrTB::Utf8ToLower(inputStr, inpStr);
 	for (unsigned char i = 0; i <= (unsigned char)MarginType::UnknownFilling; i++)
 	{
@@ -168,9 +170,9 @@ MarginType MarginTypeStrToEnum(const std::string &inputStr)
 
 //Получить MedfilterAlgo из строки, совпадающей без учёта регистра с одним из
 //элементов MedfilterAlgoTexts
-MedfilterAlgo MedfilterAlgoStrToEnum(const std::string &inputStr)
+MedfilterAlgo MedfilterAlgoStrToEnum(const string &inputStr)
 {
-	std::string inpStr;
+	string inpStr;
 	StrTB::Utf8ToLower(inputStr, inpStr);
 	for (unsigned char i = 0; i <= (unsigned char)MedfilterAlgo::Unknown; i++)
 	{
