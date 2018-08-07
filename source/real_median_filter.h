@@ -47,7 +47,7 @@ public:
 	RealMedianFilter& operator=(RealMedianFilter&&) = delete;
 	//Cоздать объект можно только передав ссылку на MedianFilterBase
 	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterBase(ownerObj),
-		sourceMatrix_(true, ownerObj->getUseHuangAlgo()) {}
+		sourceMatrix_(true, ownerObj->getUseHuangAlgo()), destMatrix_(false, false) {}
 	//Виртуальный деструктор пущай его будет.
 
 	//Доступ к полям.
@@ -123,10 +123,11 @@ public:
 private:
 	//Приватные поля.
 
-	//Матрица для исходного изображения.
-	AltMatrix<CellType> sourceMatrix_;	//Инициализация в конструкторе.
-	//Матрица для результата.
-	AltMatrix<CellType> destMatrix_ = AltMatrix<CellType>(false, false);
+	//Матрица для исходного изображения. Инициализация в конструкторе.
+	AltMatrix<CellType> sourceMatrix_;
+	//Матрица для результата. Инициализация тоже в конструкторе т.к. иначе вызывается конструктор
+	//переноса, а для AltMatrix он deleted.
+	AltMatrix<CellType> destMatrix_;
 	//Вычислялись ли уже минимальное и максимальное значения высот для картинки.
 	bool minMaxCalculated_ = false;
 	//Значение высоты пикселя, для которого пиксель считается незначимым.

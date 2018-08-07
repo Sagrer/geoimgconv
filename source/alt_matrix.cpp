@@ -64,18 +64,6 @@ template <typename CellType> AltMatrix<CellType>::AltMatrix(const bool useSignDa
 	else setPixelType(PixelType::Unknown);
 }
 
-template <typename CellType> AltMatrix<CellType>::~AltMatrix()
-{
-	//new нет в конструкторе, но он мог быть в других методах.
-	//Если new не было то там NULL и ничего страшного не случится.
-	delete[] (CellType*)data_;
-	delete[] signData_;
-	delete[] quantedData_;
-	delete[] matrixArr_;
-	delete[] signMatrixArr_;
-	delete[] quantedMatrixArr_;
-}
-
 //--------------------------------//
 //         Методы всякие          //
 //--------------------------------//
@@ -114,14 +102,14 @@ bool AltMatrix<CellType>::SaveToGDALRaster(GDALRasterBand *gdalRaster, const int
 	//Собсно, запишем информацию в растер.
 	CPLErr gdalResult;
 	gdalResult = gdalRaster->RasterIO(GF_Write, 0, yPosition, getXSize(), yToWrite,
-		(void*)(data_), getXSize(), yToWrite, GICToGDAL_PixelType(getPixelType()),
+		(void*)(data_.get()), getXSize(), yToWrite, GICToGDAL_PixelType(getPixelType()),
 		0, 0, NULL);
 	if (gdalResult != CE_None)
 	{
 		if (errObj) errObj->SetError(CommonErrors::ReadError, ": " + GetLastGDALError());
 		return false;
 	}
-	
+
 	//Всё ок вроде.
 	return true;
 }
@@ -140,7 +128,7 @@ bool AltMatrix<CellType>::LoadFromFile(const string &fileName, ErrorInfo *errObj
 //Особое отношение к этим блокам т.к. первый из них - возможно был последним в прошлом проходе
 //фильтра а второй - был граничным. В новом проходе первый блок будет граничным, второй будет
 //обрабатываться, и его возможно нет смысла второй раз читать из файла.
-//Матрица уже должна иметь достаточный для загрузки размер. 
+//Матрица уже должна иметь достаточный для загрузки размер.
 //gdalRaster - указатель на объект GDALRasterBand исходного изображения.
 //yPosition - начальная строка в исходном изображении, начиная с которой надо читать.
 //yToRead - сколько строк читать.
@@ -170,7 +158,7 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 		if (errObj) errObj->SetError(CommonErrors::InternalError, ":  AltMatrix<>::LoadFromGDALRaster sourceMatrix has wrong real type.");
 		return false;
 	}
-	
+
 	//Первым делом надо или обнулить или скопировать начальную часть матрицы.
 	int yStart = 0;		//Строка матрицы на которую надо будет начинать читать из файла. Может измениться ниже.
 	switch (marginMode)
@@ -180,11 +168,11 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 		//Надо обнулить.
 		size_t blockSize = getXSize() * marginSize;
 		size_t blockSizeBytes = blockSize * sizeof(CellType);
-		memset(data_, 0, blockSizeBytes);
+		memset(data_.get(), 0, blockSizeBytes);
 		if (useSignData_)
-			memset(signData_, 0, blockSize);
+			memset(signData_.get(), 0, blockSize);
 		if (useQuantedData_)
-			memset(quantedData_, 0, blockSize * sizeof(uint16_t));
+			memset(quantedData_.get(), 0, blockSize * sizeof(uint16_t));
 		yStart = marginSize;
 	}
 		break;
@@ -206,16 +194,16 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 			blocksQuantedBytes = blocksSize * sizeof(uint16_t);
 		size_t sourceOffset = (getYSize() - yStart)*getXSize();
 		size_t sourceOffsetBytes = sourceOffset * sizeof(CellType);
-		memcpy(data_, (char*)realSourceMatrix->data_ + sourceOffsetBytes, blocksSizeBytes);
+		memcpy(data_.get(), (char*)realSourceMatrix->data_.get() + sourceOffsetBytes, blocksSizeBytes);
 		if (useSignData_ && realSourceMatrix->useSignData_)
-			memcpy(signData_, (char*)realSourceMatrix->signData_ + sourceOffset, blocksSize);
+			memcpy(signData_.get(), (char*)realSourceMatrix->signData_.get() + sourceOffset, blocksSize);
 		else if (useSignData_)
-			memset(signData_, 0, blocksSize);
+			memset(signData_.get(), 0, blocksSize);
 		if (useQuantedData_ && realSourceMatrix->useQuantedData_)
-			memcpy(quantedData_, (uint16_t*)realSourceMatrix->quantedData_ + sourceOffset,
+			memcpy(quantedData_.get(), (uint16_t*)realSourceMatrix->quantedData_.get() + sourceOffset,
 				blocksQuantedBytes);
 		else if (useQuantedData_)
-			memset(quantedData_, 0, blocksQuantedBytes);
+			memset(quantedData_.get(), 0, blocksQuantedBytes);
 	}
 
 	//В любом случае надо обнулить информацию в следующих блоках.
@@ -237,7 +225,7 @@ bool AltMatrix<CellType>::LoadFromGDALRaster(GDALRasterBand *gdalRaster, const i
 	int rasterXSize = gdalRaster->GetXSize();
 	int rasterYSize = gdalRaster->GetYSize();
 	gdalResult = gdalRaster->RasterIO(GF_Read, 0, yPosition, rasterXSize, yToRead,
-		(void*)((CellType*)(data_)+yStart * getXSize() + marginSize),
+		(void*)(data_.get()+yStart * getXSize() + marginSize),
 		rasterXSize, yToRead, GICToGDAL_PixelType(getPixelType()), 0,
 		(rasterXSize + (marginSize * 2)) * sizeof(CellType), NULL);
 	if (gdalResult != CE_None)
@@ -319,18 +307,12 @@ bool AltMatrix<CellType>::SaveChunkToFile(const string &fileName,
 //В соответствии с названием - очищает содержимое объекта чтобы он представлял пустую матрицу.
 template <typename CellType> void AltMatrix<CellType>::Clear()
 {
-	delete[] (CellType*)data_;
-	delete[] signData_;
-	delete[] quantedData_;
-	delete[] matrixArr_;
-	delete[] signMatrixArr_;
-	delete[] quantedMatrixArr_;
-	data_ = NULL;
-	signData_ = NULL;
-	quantedData_ = NULL;
-	matrixArr_ = NULL;
-	signMatrixArr_ = NULL;
-	quantedMatrixArr_ = NULL;
+	data_.reset(nullptr);
+	signData_.reset(nullptr);
+	quantedData_.reset(nullptr);
+	matrixArr_.reset(nullptr);
+	signMatrixArr_.reset(nullptr);
+	quantedMatrixArr_.reset(nullptr);
 	setXSize(0);
 	setYSize(0);
 	dataElemsNum_ = 0;
@@ -349,20 +331,20 @@ void AltMatrix<CellType>::CreateEmpty(const int &newX, const int &newY)
 	//Выделяю память под данные, в т.ч. опциональные, расставляю ссылки на строки для быстрого
 	//доступа по X и Y.
 	//Основные данные.
-	data_ = (void*) new CellType[dataElemsNum_]();	//явно инициализовано нулями!
-	matrixArr_ = new CellType*[getYSize()];
+	data_.reset(new CellType[dataElemsNum_]());	//явно инициализовано нулями!
+	matrixArr_.reset(new CellType*[getYSize()]);
 	int i, j;
 	for (i = 0; i < getYSize(); i++)
 	{
 		j = i * getXSize();
-		matrixArr_[i] = &((CellType*)data_)[j];
+		matrixArr_[i] = &data_[j];
 	}
 
 	//Матрица признаков значимости пикселей.
 	if (useSignData_)
 	{
-		signData_ = new char[dataElemsNum_]();
-		signMatrixArr_ = new char*[getYSize()];
+		signData_.reset(new char[dataElemsNum_]());
+		signMatrixArr_.reset(new char*[getYSize()]);
 		for (i = 0; i < getYSize(); i++)
 		{
 			j = i * getXSize();
@@ -373,8 +355,8 @@ void AltMatrix<CellType>::CreateEmpty(const int &newX, const int &newY)
 	//Матрица для алгоритма Хуанга.
 	if (useQuantedData_)
 	{
-		quantedData_ = new uint16_t[dataElemsNum_]();
-		quantedMatrixArr_ = new uint16_t*[getYSize()];
+		quantedData_.reset(new uint16_t[dataElemsNum_]());
+		quantedMatrixArr_.reset(new uint16_t*[getYSize()]);
 		for (i = 0; i < getYSize(); i++)
 		{
 			j = i * getXSize();
@@ -396,7 +378,7 @@ void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatr
 		if (!IsClear()) Clear();
 		return;
 	}
-	
+
 	//Если  размеры матриц не совпадают - перевыделим память.
 	int newXSize = sourceMatrix_.getXSize() - (marginSize * 2);
 	int newYSize = sourceMatrix_.getYSize() - (marginSize * 2);
@@ -411,24 +393,20 @@ void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatr
 	else
 	{
 		//Совпадает - значит просто обнулим.
-		memset(data_, 0, dataElemsNum_ * sizeof(CellType));
+		memset(data_.get(), 0, dataElemsNum_ * sizeof(CellType));
 		if (useSignData_)
 		{
 			//Скрипач не нужен
 			useSignData_ = false;
-			delete[] signData_;
-			signData_ = NULL;
-			delete[] signMatrixArr_;
-			signMatrixArr_ = NULL;
+			signData_.reset(nullptr);
+			signMatrixArr_.reset(nullptr);
 		}
 		if (useQuantedData_)
 		{
 			//Аналогично
 			useQuantedData_ = false;
-			delete[] quantedData_;
-			quantedData_ = NULL;
-			delete[] quantedMatrixArr_;
-			quantedMatrixArr_ = NULL;
+			quantedData_.reset(nullptr);
+			quantedMatrixArr_.reset(nullptr);
 		}
 	}
 }
@@ -436,8 +414,7 @@ void AltMatrix<CellType>::CreateDestMatrix(const AltMatrix<CellType> &sourceMatr
 //Очевидно вернёт true если матрица пуста, либо false если там есть значения.
 template <typename CellType> bool AltMatrix<CellType>::IsClear() const
 {
-	//!(data_==NULL)==true
-	return !data_;
+	return !(bool)data_;
 }
 
 //"Тупая" визуализация матрицы, отправляется прямо в cout.
@@ -521,10 +498,8 @@ double AltMatrix<CellType>::CompareWithAnother(AltMatrixBase *anotherMatr) const
 	//И только теперь посчитаем сколько пикселей совпадают, а сколько нет.
 	uint64_t pixelsNum = getXSize()*getYSize();
 	uint64_t samePixelsNum = 0;
-	CellType *i;
-	CellType *j;
-	for (i = static_cast<CellType*>(data_), j = static_cast<CellType*>(anotherMatrix->data_);
-		i < static_cast<CellType*>(data_)+pixelsNum; ++i, ++j)
+	for (auto i = data_.get(), j = anotherMatrix->data_.get();
+		i < data_.get()+pixelsNum; ++i, ++j)
 	{
 		if (*i == *j) ++samePixelsNum;
 	}

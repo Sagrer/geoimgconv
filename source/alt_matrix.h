@@ -21,6 +21,7 @@
 #include "errors.h"
 #include "common.h"
 #include "alt_matrix_base.h"
+#include <memory>
 
 namespace geoimgconv
 {
@@ -30,7 +31,11 @@ template <typename CellType> class AltMatrix : public AltMatrixBase
 public:
 	//Конструкторы-деструкторы.
 	AltMatrix(const bool useSignData = true, const bool useQuantedData = false);
-	~AltMatrix() override;
+	//А вот это надо запретить:
+	AltMatrix(const AltMatrix&) = delete;
+	AltMatrix(AltMatrix&&) = delete;
+	AltMatrix& operator=(const AltMatrix&) = delete;
+	AltMatrix& operator=(AltMatrix&&) = delete;
 
 	//Доступ к приватным полям.
 
@@ -145,20 +150,22 @@ public:
 private:
 	//Приватные поля
 	int dataElemsNum_ = 0;	//Количество пикселей (не байтов!) в data_
-	void *data_ = nullptr;	//Указатель на сырые данные. Обращаться лучше через matrixArr_ - это тот же кусок памяти.
-	char *signData_ = nullptr;	//Указатель на вспомогательный массив. Каждый байт соответствует пикселу в *data_ и
+	std::unique_ptr<CellType[]> data_ = nullptr;	//Указатель на сырые данные. Обращаться лучше через matrixArr_ - это тот же кусок памяти.
+	std::unique_ptr<char[]> signData_ = nullptr;	//Указатель на вспомогательный массив. Каждый байт соответствует пикселу в *data_ и
 						//содержит код типа пиксела. 0 - неизвестно, 1 - значимий пиксел, 2 - пиксел был
 						//заполнен значением для нормальной работы фильтра, но сам по себе незначим и после
 						//завершения фильтрации должен быть опустошён. За пустой незначимый пиксел принимаются
 						//пикселы с нулевым значением (в data_ а не в signData_!).
-	uint16_t *quantedData_ = nullptr;	//Ссылка на данные "квантованных" пикселей, нужных для работы алгоритма
+	std::unique_ptr<uint16_t[]> quantedData_ = nullptr;	//Ссылка на данные "квантованных" пикселей, нужных для работы алгоритма
 									//Хуанга. Для 1 и 2-байтных типов пикселя использование этого массива
 									//вероятно будет не оптимально, но преждевременная оптимизация тоже
 									//не есть хорошо, так что пока я не городил изврат с ещё бОльшим количеством
 									//шаблонов и этот массив создаётся в т.ч для матриц с однобайтовыми ячейками.
-	CellType **matrixArr_ = nullptr;	//Двумерный массив для произвольного доступа к элементам по X и Y.
-	char **signMatrixArr_ = nullptr;	//то же для произвольного доступа к signData_.
-	uint16_t **quantedMatrixArr_ = nullptr;  //то же для произвольного доступа к quantedData_.
+	//Ниже умные массивы голых указателей т.к. голые указатели расставляются поверх трёх буферов,
+	//объявленных выше и, таким образом, ничем не владеют.
+	std::unique_ptr<CellType*[]> matrixArr_ = nullptr;	//Двумерный массив для произвольного доступа к элементам по X и Y.
+	std::unique_ptr<char*[]> signMatrixArr_ = nullptr;	//то же для произвольного доступа к signData_.
+	std::unique_ptr<uint16_t*[]> quantedMatrixArr_ = nullptr;  //то же для произвольного доступа к quantedData_.
 	bool useSignData_ = true;	//Использовать ли вспомогательную матрицу. Если false - память под неё не выделяется.
 	bool useQuantedData_ = false;  //Аналогично использовать ли quantedData_.
 };
