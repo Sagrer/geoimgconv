@@ -93,9 +93,9 @@ add_library(geoimgconv_lib STATIC
 	median_filter_huang.h
 	median_filter_base.cpp
 	median_filter_base.h
-	real_median_filter_base.h
-	real_median_filter.cpp
-	real_median_filter.h
+	pixel_type_speciefic_filter_base.h
+	pixel_type_speciefic_filter.cpp
+	pixel_type_speciefic_filter.h
 	common.cpp
 	common.h
 	call_back_base.h

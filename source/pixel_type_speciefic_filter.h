@@ -16,8 +16,8 @@
 
 ////////////////////////////////////////////////////////////////////////
 
-//Шаблонный класс для произвольного типа ячейки. На базе этой версии создаются
-//специализации наследников
+//Шаблонный класс для произвольного типа пикселя. На базе этой версии создаются
+//специализации наследников с уже конкретными алгоритмами, тоже шаблонные.
 
 //TODO: модуль по-прежнему монструозен. В идеале нужно:
 //1) Абстрагировать код, читающий информацию из картинок, заполняющий граничные области
@@ -29,24 +29,24 @@
 #include <string>
 #include "call_back_base.h"
 #include "errors.h"
-#include "real_median_filter_base.h"
+#include "pixel_type_speciefic_filter_base.h"
 #include "alt_matrix.h"
 
 namespace geoimgconv
 {
 
-template <typename CellType> class RealMedianFilter : public RealMedianFilterBase
+template <typename CellType> class PixelTypeSpecieficFilter : public PixelTypeSpecieficFilterBase
 {
 public:
 	//Запретим конструктор по умолчанию, копирующий и переносящие конструкторы и аналогичные
 	//им операторы присваивания.
-	RealMedianFilter() = delete;
-	RealMedianFilter(const RealMedianFilter&) = delete;
-	RealMedianFilter(RealMedianFilter&&) = delete;
-	RealMedianFilter& operator=(const RealMedianFilter&) = delete;
-	RealMedianFilter& operator=(RealMedianFilter&&) = delete;
+	PixelTypeSpecieficFilter() = delete;
+	PixelTypeSpecieficFilter(const PixelTypeSpecieficFilter&) = delete;
+	PixelTypeSpecieficFilter(PixelTypeSpecieficFilter&&) = delete;
+	PixelTypeSpecieficFilter& operator=(const PixelTypeSpecieficFilter&) = delete;
+	PixelTypeSpecieficFilter& operator=(PixelTypeSpecieficFilter&&) = delete;
 	//Cоздать объект можно только передав ссылку на MedianFilterBase
-	RealMedianFilter(MedianFilterBase *ownerObj) : RealMedianFilterBase(ownerObj),
+	PixelTypeSpecieficFilter(MedianFilterBase *ownerObj) : PixelTypeSpecieficFilterBase(ownerObj),
 		sourceMatrix_(true, ownerObj->getUseHuangAlgo()), destMatrix_(false, false) {}
 	//Виртуальный деструктор пущай его будет.
 
@@ -142,12 +142,12 @@ private:
 	//Приватные типы
 
 	//Указатель на метод-заполнитель пикселей
-	using PixFillerMethod = void (RealMedianFilter<CellType>::*)(const int &x,
+	using PixFillerMethod = void (PixelTypeSpecieficFilter<CellType>::*)(const int &x,
 		const int &y, const PixelDirection direction, const int &marginSize,
 		const char &signMatrixValue);
 
 	//Указатель на метод-фильтр
-	using FilterMethod = void (RealMedianFilter<CellType>::*)(const int &currYToProcess,
+	using FilterMethod = void (PixelTypeSpecieficFilter<CellType>::*)(const int &currYToProcess,
 		CallBackBase *callBackObj);
 
 	//Приватные методы
@@ -297,67 +297,67 @@ private:
 	}
 };
 
-//Специализация методов RealMedianFilter (для тех типов где специализации могут
+//Специализация методов PixelTypeSpecieficFilter (для тех типов где специализации могут
 //работать быстрее).
 
 //Вернёт положительную разницу между двумя значениями пикселя. Версия для double.
-template <> inline double RealMedianFilter<double>::
+template <> inline double PixelTypeSpecieficFilter<double>::
 	GetDelta(const double &value1, const double &value2)
 {
 	return std::abs(value1-value2);
 }
 
 //Вернёт положительную разницу между двумя значениями пикселя. Версия для float.
-template <> inline float RealMedianFilter<float>::
+template <> inline float PixelTypeSpecieficFilter<float>::
 GetDelta(const float &value1, const float &value2)
 {
 	return std::abs(value1-value2);
 }
 
 //Вернёт положительную разницу между двумя значениями пикселя. Версия для boost::int8_t.
-template <> inline int8_t RealMedianFilter<int8_t>::
+template <> inline int8_t PixelTypeSpecieficFilter<int8_t>::
 GetDelta(const int8_t &value1, const int8_t &value2)
 {
 	return std::abs(value1-value2);
 }
 
 //Вернёт положительную разницу между двумя значениями пикселя. Версия для boost::int16_t.
-template <> inline int16_t RealMedianFilter<int16_t>::
+template <> inline int16_t PixelTypeSpecieficFilter<int16_t>::
 GetDelta(const int16_t &value1, const int16_t &value2)
 {
 	return std::abs(value1-value2);
 }
 
 //Вернёт положительную разницу между двумя значениями пикселя. Версия для boost::int32_t.
-template <> inline int32_t RealMedianFilter<int32_t>::
+template <> inline int32_t PixelTypeSpecieficFilter<int32_t>::
 GetDelta(const int32_t &value1, const int32_t &value2)
 {
 	return std::abs(value1-value2);
 }
 
 //Преобразовать QuantedValue в double.
-template <> inline double RealMedianFilter<double>::
+template <> inline double PixelTypeSpecieficFilter<double>::
  QuantedValueToPixelValue(const uint16_t &value)
 {
 	return ((double)value * levelsDelta_) + minPixelValue_;
 }
 
 //Преобразовать QuantedValue в float.
-template <> inline float RealMedianFilter<float>::
+template <> inline float PixelTypeSpecieficFilter<float>::
 QuantedValueToPixelValue(const uint16_t &value)
 {
 	return ((float)((double)value * levelsDelta_)) + minPixelValue_;
 }
 
 //Алиасы для классов, работающих с реально использующимися в GeoTIFF типами пикселей.
-using RealMedianFilterFloat64 = RealMedianFilter<double>;
-using RealMedianFilterFloat32 = RealMedianFilter<float>;
-using RealMedianFilterInt8 = RealMedianFilter<int8_t>;
-using RealMedianFilterUInt8 = RealMedianFilter<uint8_t>;
-using RealMedianFilterInt16 = RealMedianFilter<int16_t>;
-using RealMedianFilterUInt16 = RealMedianFilter<uint16_t>;
-using RealMedianFilterInt32 = RealMedianFilter<int32_t>;
-using RealMedianFilterUInt32 = RealMedianFilter<uint32_t>;
+using PixelTypeSpecieficFilterFloat64 = PixelTypeSpecieficFilter<double>;
+using PixelTypeSpecieficFilterFloat32 = PixelTypeSpecieficFilter<float>;
+using PixelTypeSpecieficFilterInt8 = PixelTypeSpecieficFilter<int8_t>;
+using PixelTypeSpecieficFilterUInt8 = PixelTypeSpecieficFilter<uint8_t>;
+using PixelTypeSpecieficFilterInt16 = PixelTypeSpecieficFilter<int16_t>;
+using PixelTypeSpecieficFilterUInt16 = PixelTypeSpecieficFilter<uint16_t>;
+using PixelTypeSpecieficFilterInt32 = PixelTypeSpecieficFilter<int32_t>;
+using PixelTypeSpecieficFilterUInt32 = PixelTypeSpecieficFilter<uint32_t>;
 
 }	//namespace geoimgconv
 

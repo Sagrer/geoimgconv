@@ -15,7 +15,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 //Обёртка с общей для всех типов пиксела функциональностью. Работать с фильтром надо именно через
-//этот класс! Не через RealMedianFilter*-ы! Это базовая абстрактная обёртка, которая не имеет метода
+//этот класс! Не через PixelTypeSpecieficFilter*-ы! Это базовая абстрактная обёртка, которая не имеет метода
 //для собственно применения фильтра.
 
 #include "median_filter_base.h"
@@ -25,7 +25,7 @@
 #pragma warning(pop)
 #include <boost/filesystem.hpp>
 #include "strings_tools_box.h"
-#include "real_median_filter.h"
+#include "pixel_type_speciefic_filter.h"
 
 namespace b_fs = boost::filesystem;
 using namespace std;
@@ -206,35 +206,35 @@ bool MedianFilterBase::OpenInputFile(const string &fileName, ErrorInfo *errObj)
 	switch (dataType_)
 	{
 		case PixelType::Int8:
-			pFilterObj_.reset(new RealMedianFilterInt8(this));
+			pFilterObj_.reset(new PixelTypeSpecieficFilterInt8(this));
 			dataTypeSize_ = sizeof(int8_t);
 			break;
 		case PixelType::UInt8:
-			pFilterObj_.reset(new RealMedianFilterUInt8(this));
+			pFilterObj_.reset(new PixelTypeSpecieficFilterUInt8(this));
 			dataTypeSize_ = sizeof(uint8_t);
 			break;
 		case PixelType::Int16:
-			pFilterObj_.reset(new RealMedianFilterInt16(this));
+			pFilterObj_.reset(new PixelTypeSpecieficFilterInt16(this));
 			dataTypeSize_ = sizeof(int16_t);
 			break;
 		case PixelType::UInt16:
-			pFilterObj_.reset(new RealMedianFilterUInt16(this));
+			pFilterObj_.reset(new PixelTypeSpecieficFilterUInt16(this));
 			dataTypeSize_ = sizeof(uint16_t);
 			break;
 		case PixelType::Int32:
-			pFilterObj_.reset(new RealMedianFilterInt32(this));
+			pFilterObj_.reset(new PixelTypeSpecieficFilterInt32(this));
 			dataTypeSize_ = sizeof(int32_t);
 			break;
 		case PixelType::UInt32:
-			pFilterObj_.reset(new RealMedianFilterUInt32(this));
+			pFilterObj_.reset(new PixelTypeSpecieficFilterUInt32(this));
 			dataTypeSize_ = sizeof(uint32_t);
 			break;
 		case PixelType::Float32:
-			pFilterObj_.reset(new RealMedianFilterFloat32(this));
+			pFilterObj_.reset(new PixelTypeSpecieficFilterFloat32(this));
 			dataTypeSize_ = sizeof(float);
 			break;
 		case PixelType::Float64:
-			pFilterObj_.reset(new RealMedianFilterFloat64(this));
+			pFilterObj_.reset(new PixelTypeSpecieficFilterFloat64(this));
 			dataTypeSize_ = sizeof(double);
 			break;
 		default:

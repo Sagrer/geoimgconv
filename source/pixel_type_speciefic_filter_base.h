@@ -16,7 +16,8 @@
 
 ////////////////////////////////////////////////////////////////////////
 
-//Базовый абстрактный класс для шаблонных классов.
+//Базовый абстрактный класс для шаблонных классов с пиксель-специфическим кодом
+//фильтров
 
 #include <string>
 #include "call_back_base.h"
@@ -27,7 +28,7 @@ namespace geoimgconv
 
 class MedianFilterBase;
 
-class RealMedianFilterBase
+class PixelTypeSpecieficFilterBase
 {
 public:
 	//Доступ к ссылке на объект-хозяин
@@ -35,14 +36,14 @@ public:
 
 	//Запретим конструктор по умолчанию, копирующий и переносящие конструкторы и аналогичные
 	//им операторы присваивания.
-	RealMedianFilterBase() = delete;
-	RealMedianFilterBase(const RealMedianFilterBase&) = delete;
-	RealMedianFilterBase(RealMedianFilterBase&&) = delete;
-	RealMedianFilterBase& operator=(const RealMedianFilterBase&) = delete;
-	RealMedianFilterBase& operator=(RealMedianFilterBase&&) = delete;
+	PixelTypeSpecieficFilterBase() = delete;
+	PixelTypeSpecieficFilterBase(const PixelTypeSpecieficFilterBase&) = delete;
+	PixelTypeSpecieficFilterBase(PixelTypeSpecieficFilterBase&&) = delete;
+	PixelTypeSpecieficFilterBase& operator=(const PixelTypeSpecieficFilterBase&) = delete;
+	PixelTypeSpecieficFilterBase& operator=(PixelTypeSpecieficFilterBase&&) = delete;
 	//Cоздать объект можно только передав ссылку на MedianFilterBase
-	RealMedianFilterBase(MedianFilterBase *ownerObj) : ownerObj_(ownerObj) {};
-	virtual ~RealMedianFilterBase() {};
+	PixelTypeSpecieficFilterBase(MedianFilterBase *ownerObj) : ownerObj_(ownerObj) {};
+	virtual ~PixelTypeSpecieficFilterBase() {};
 
 	//Абстрактные методы
 

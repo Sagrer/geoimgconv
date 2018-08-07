@@ -17,7 +17,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 //Обёртка с общей для всех типов пиксела функциональностью. Работать с фильтром надо именно через
-//этот класс! Не через RealMedianFilter*-ы! Это базовая абстрактная обёртка, которая не имеет метода
+//этот класс! Не через PixelTypeSpecieficFilter*-ы! Это базовая абстрактная обёртка, которая не имеет метода
 //для собственно применения фильтра.
 
 #include "common.h"
@@ -29,7 +29,7 @@
 namespace geoimgconv
 {
 
-class RealMedianFilterBase;
+class PixelTypeSpecieficFilterBase;
 
 class MedianFilterBase : public BaseFilter
 {
@@ -145,7 +145,7 @@ protected:
 	bool const& getDestIsAttached() const { return destIsAttached_; }
 	void setDestIsAttached(const bool &value) { destIsAttached_ = value; }
 	//pFilterObj
-	RealMedianFilterBase& getFilterObj() const { return *pFilterObj_; }
+	PixelTypeSpecieficFilterBase& getFilterObj() const { return *pFilterObj_; }
 
 private:
 	//Поля
@@ -165,7 +165,7 @@ private:
 	bool destIsAttached_ = false;	//Настроен ли файл с назначением
 	PixelType dataType_ = PixelType::Unknown;	//Тип пикселя в картинке.
 	size_t dataTypeSize_ = 0;	//Размер типа данных пикселя.
-	std::unique_ptr<RealMedianFilterBase> pFilterObj_ = nullptr;	//Сюда будет создаваться объект для нужного типа данных.
+	std::unique_ptr<PixelTypeSpecieficFilterBase> pFilterObj_ = nullptr;	//Сюда будет создаваться объект для нужного типа данных.
 	unsigned long long minBlockSize_ = 0;	//Размер минимального блока, которыми обрабатывается файл.
 	unsigned long long minBlockSizeHuang_ = 0;	//То же но для алгоритма Хуанга.
 	unsigned long long minMemSize_ = 0;  //Минимальное количество памяти, без которого фильтр вообще не сможет обработать данное изображение.
@@ -189,4 +189,4 @@ private:
 
 }	//namespace geoimgconv
 
-#include "real_median_filter_base.h"
+#include "pixel_type_speciefic_filter_base.h"
