@@ -38,11 +38,39 @@ namespace geoimgconv
 //Главный класс консольной версии приложения.
 class AppUIConsole
 {
+public:
+	//Конструкторы-деструкторы.
+	AppUIConsole() {}
+	~AppUIConsole();
+
+	//Геттеры-сеттеры
+	std::string const& getAppPath() {return confObj_->getAppPath();};
+	std::string const& getCurrPath() {return confObj_->getCurrPath();};
+
+	//Готовит приложение к запуску.
+	//Внутрь передаётся объект с конфигом, в который уже должны быть прочитаны параметры
+	//командной строки.
+	void InitApp(AppConfig &conf);
+
+	//По сути тут главный цикл.
+	int RunApp();
+
+	//Метод для запуска в тестовом режиме.
+	int RunTestMode();
+
+	//Прочий функционал.
+
+	//Вывести сообщение в обычную (не curses) консоль в правильной кодировке.
+	void PrintToConsole(const std::string &str);
+
+	//Вывод справки.
+	void PrintHelp();
+
 private:
 	//Приватные типы
 	enum class SwapMode : char
-	//Для DetectMaxMemoryCanBeUsed
 	{
+		//Для DetectMaxMemoryCanBeUsed
 		SilentNoswap = 0,		//Не использовать swap, не спрашивать
 		SilentUseswap = 1,	//При необходимости использовать swap, не спрашивать.
 		Ask = 2				//В случае непоняток - спросить у юзера.
@@ -81,33 +109,6 @@ private:
 
 	//Напечатать в консоль сообщение об ошибке.
 	void ConsolePrintError(ErrorInfo &errObj);
-public:
-	//Конструкторы-деструкторы.
-	AppUIConsole() {}
-	~AppUIConsole();
-
-	//Геттеры-сеттеры
-	std::string const& getAppPath() {return confObj_->getAppPath();};
-	std::string const& getCurrPath() {return confObj_->getCurrPath();};
-
-	//Готовит приложение к запуску.
-	//Внутрь передаётся объект с конфигом, в который уже должны быть прочитаны параметры
-	//командной строки.
-	void InitApp(AppConfig &conf);
-
-	//По сути тут главный цикл.
-	int RunApp();
-
-	//Метод для запуска в тестовом режиме.
-	int RunTestMode();
-
-	//Прочий функционал.
-
-	//Вывести сообщение в обычную (не curses) консоль в правильной кодировке.
-	void PrintToConsole(const std::string &str);
-
-	//Вывод справки.
-	void PrintHelp();
 };
 
 } //namespace geoimgconv

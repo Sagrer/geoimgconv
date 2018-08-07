@@ -47,10 +47,6 @@ extern const std::string CommonErrorsTexts[];
 class ErrorInfo
 //Объекты этого класса передаются в функции, которые могут завершиться с ошибкой.
 {
-private:
-	//Код и текст ошибки
-	CommonErrors errorCode_ = CommonErrors::NoError;
-	std::string errorText_;
 public:	
 	ErrorInfo() {};
 	virtual ~ErrorInfo() {};
@@ -68,6 +64,12 @@ public:
 	//аргумента если истинен третий. Если text пуст - стандартный текст
 	//сообщения берётся независимо от значения replaceText
 	void SetError(const CommonErrors &errCode, const std::string &text = "", const bool replaceText = false);
+
+private:
+	//Код и текст ошибки
+	CommonErrors errorCode_ = CommonErrors::NoError;
+	std::string errorText_;
+
 };
 
 }	//namespace geoimgconv

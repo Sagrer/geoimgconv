@@ -29,12 +29,6 @@ class MedianFilterBase;
 
 class RealMedianFilterBase
 {
-private:
-	//Нет смысла хранить тут поля типа aperture или threshold. Ибо этот класс нужен просто
-	//чтобы вынести сюда код, который должен генерироваться по шаблону для разных типов пиксела.
-	//Поэтому будем просто держать тут ссылку на основной объект класса и брать значения полей
-	//оттуда.
-	MedianFilterBase *ownerObj_;
 public:
 	//Доступ к ссылке на объект-хозяин
 	MedianFilterBase& getOwnerObj() const { return *ownerObj_; }
@@ -76,6 +70,13 @@ public:
 
 	//Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 	virtual bool DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL) = 0;
+
+private:
+	//Нет смысла хранить тут поля типа aperture или threshold. Ибо этот класс нужен просто
+	//чтобы вынести сюда код, который должен генерироваться по шаблону для разных типов пиксела.
+	//Поэтому будем просто держать тут ссылку на основной объект класса и брать значения полей
+	//оттуда.
+	MedianFilterBase *ownerObj_;
 };
 
 }	//namespace geoimgconv

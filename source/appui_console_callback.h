@@ -28,6 +28,27 @@ namespace geoimgconv
 
 class AppUIConsoleCallBack : public CallBackBase
 {
+public:
+
+	//Доступ к полям.
+
+	//updatePeriod
+	double const& getUpdatePeriod() const { return updatePeriod_; }
+	void setUpdatePeriod(const double &updatePeriod) { updatePeriod_ = updatePeriod; }
+
+	//Конструктор и деструктор.
+	AppUIConsoleCallBack() {}
+	~AppUIConsoleCallBack() override {}
+	//Возвращает объект в состояние как будто только после инициализации.
+	void Clear();
+	//CallBack-метод, который будет выводить в консоль количество и процент уже
+	//обработанных пикселей.
+	void CallBack(const unsigned long &progressPosition) override;
+	//Сообщить объекту о том что операция начинается
+	void OperationStart() override;
+	//Сообщить объекту о том что операция завершена.
+	void OperationEnd() override;
+
 private:
 	//Используемые в этом классе типы.
 	using MSecTimePoint = std::chrono::time_point<std::chrono::steady_clock, std::chrono::milliseconds>;
@@ -52,26 +73,6 @@ private:
 
 	//"Перерисовать" "прогрессбар".
 	void UpdateBar(const unsigned long &progressPosition);
-public:
-
-	//Доступ к полям.
-
-	//updatePeriod
-	double const& getUpdatePeriod() const { return updatePeriod_; }
-	void setUpdatePeriod(const double &updatePeriod) { updatePeriod_ = updatePeriod; }
-
-	//Конструктор и деструктор.
-	AppUIConsoleCallBack() {}
-	~AppUIConsoleCallBack() override {}
-	//Возвращает объект в состояние как будто только после инициализации.
-	void Clear();
-	//CallBack-метод, который будет выводить в консоль количество и процент уже
-	//обработанных пикселей.
-	void CallBack(const unsigned long &progressPosition) override;
-	//Сообщить объекту о том что операция начинается
-	void OperationStart() override;
-	//Сообщить объекту о том что операция завершена.
-	void OperationEnd() override;
 };
 
 } //namespace geoimgconv

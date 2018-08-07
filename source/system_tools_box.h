@@ -41,36 +41,36 @@ struct SysResInfo
 //Основной класс.
 class SystemToolsBox
 {
-	public:
-		//Экземпляр создавать запрещено.
-		SystemToolsBox() = delete;
-		~SystemToolsBox() = delete;
+public:
+	//Экземпляр создавать запрещено.
+	SystemToolsBox() = delete;
+	~SystemToolsBox() = delete;
 
-		//Возвращает число процессорных ядер или 0 если это количество получить не удалось.
-		static const unsigned int GetCpuCoresNumber();
+	//Возвращает число процессорных ядер или 0 если это количество получить не удалось.
+	static const unsigned int GetCpuCoresNumber();
 
-		//Возвращает общее количество оперативной памяти (без свопа) в системе или 0 при ошибке.
-		static const unsigned long long GetSystemMemoryFullSize();
+	//Возвращает общее количество оперативной памяти (без свопа) в системе или 0 при ошибке.
+	static const unsigned long long GetSystemMemoryFullSize();
 
-		//Возвращает количество свободной оперативной памяти (без свопа) в системе или 0 при ошибке.
-		static const unsigned long long GetSystemMemoryFreeSize();
+	//Возвращает количество свободной оперативной памяти (без свопа) в системе или 0 при ошибке.
+	static const unsigned long long GetSystemMemoryFreeSize();
 
-		//Возвращает максимальное количество памяти, которое вообще может потребить данный процесс.
-		static const unsigned long long GetMaxProcessMemorySize();
+	//Возвращает максимальное количество памяти, которое вообще может потребить данный процесс.
+	static const unsigned long long GetMaxProcessMemorySize();
 
-		//Вернуть информацию о ресурсах системы - то же, что и несколько методов выше, но должно
-		//работать быстрее чем последовательный вызов всех этих методов.
-		static void GetSysResInfo(SysResInfo &infoStruct);
+	//Вернуть информацию о ресурсах системы - то же, что и несколько методов выше, но должно
+	//работать быстрее чем последовательный вызов всех этих методов.
+	static void GetSysResInfo(SysResInfo &infoStruct);
 
-		//Узнать текущую ширину консоли. Вернёт 0 в случае ошибки.
-		static unsigned short GetConsoleWidth();
+	//Узнать текущую ширину консоли. Вернёт 0 в случае ошибки.
+	static unsigned short GetConsoleWidth();
 
-		//Возвращает используемый в данной системе разделитель путей к файлам, в виде обычной строки.
-		static const std::string& GetFilesystemSeparator();
-		
-	private:
-		//Поля
-		static std::string filesystemSeparator_;
+	//Возвращает используемый в данной системе разделитель путей к файлам, в виде обычной строки.
+	static const std::string& GetFilesystemSeparator();
+
+private:
+	//Поля
+	static std::string filesystemSeparator_;
 };
 
 //Сокращённое наименование.

@@ -32,52 +32,6 @@ class RealMedianFilterBase;
 
 class MedianFilterBase : public BaseFilter
 {
-private:
-	//Поля
-	int aperture_ = DEFAULT_MEDFILTER_APERTURE;		//Окно фильтра (длина стороны квадрата в пикселах). Должно быть нечётным.
-	double threshold_ = DEFAULT_MEDFILTER_THRESHOLD; //Порог фильтра. Если медиана отличается от значения пиксела меньше чем на порог - значение не будет изменено.
-	//bool useMultiThreading_;		//Включает многопоточную обработку. Пока не реализовано.
-	//unsigned int threadsNumber_;	//Количество потоков при многопоточной обработке. 0 - автоопределение. Пока не реализовано.
-	MarginType marginType_ = DEFAULT_MEDFILTER_MARGIN_TYPE;		//Тип заполнения краевых пикселей.
-	bool useMemChunks_ = false;		//Использовать ли режим обработки файла по кускам для экономии памяти.
-	int blocksInMem_ = 0;	//Количество блоков, которое можно загружать в память. Граничные верхний и нижний блоки сюда тоже входят.
-	std::string sourceFileName_ = "";	//Имя и путь файла с исходными данными.
-	std::string destFileName_ = "";	//Имя и путь файла назначения.
-	int imageSizeX_ = 0;	//Ширина картинки (0 если картинка не подсоединялась)
-	int imageSizeY_ = 0;	//Высота картинки (0 если картинка не подсоединялась)
-	bool imageIsLoaded_ = false;	//Загружена ли картинка целиком в матрицу
-	bool sourceIsAttached_ = false;	//Настроен ли файл с источником.
-	bool destIsAttached_ = false;	//Настроен ли файл с назначением
-	PixelType dataType_ = PixelType::Unknown;	//Тип пикселя в картинке.
-	size_t dataTypeSize_ = 0;	//Размер типа данных пикселя.
-	RealMedianFilterBase *pFilterObj_ = nullptr;	//Сюда будет создаваться объект для нужного типа данных.
-	unsigned long long minBlockSize_ = 0;	//Размер минимального блока, которыми обрабатывается файл.
-	unsigned long long minBlockSizeHuang_ = 0;	//То же но для алгоритма Хуанга.
-	unsigned long long minMemSize_ = 0;  //Минимальное количество памяти, без которого фильтр вообще не сможет обработать данное изображение.
-	unsigned long long maxMemSize_ = 0;  //Максимальное количество памяти, которое может потребоваться для обработки изображения.
-	GDALDataset *gdalSourceDataset_ = nullptr;	//GDAL-овский датасет с исходным файлом.
-	GDALDataset *gdalDestDataset_ = nullptr;	//GDAL-овский датасет с файлом назначения.
-	GDALRasterBand *gdalSourceRaster_ = nullptr;	//GDAL-овский объект для работы с пикселами исходного файла.
-	GDALRasterBand *gdalDestRaster_ = nullptr;		//GDAL-овский объект для работы с пикселами файла назначения.
-	int currPositionY_ = 0;	//Позиция "курсора" при чтении\записи очередных блоков из файла.
-	bool useHuangAlgo_ = false;	//Если true то размеры блоков памяти будут считаться для алгоритма Хуанга.
-	uint16_t huangLevelsNum_ = DEFAULT_HUANG_LEVELS_NUM;	//Количество уровней квантования для алгоритма Хуанга. Имеет значение для подсчёта размера требуемой памяти.
-	bool fillPits_ = false;	//Заполнять ли "ямы" т.е. точки, которые ниже медианы.
-
-	//Приватные методы
-
-	//Вычислить минимальные размеры блоков памяти, которые нужны для принятия решения о
-	//том сколько памяти разрешено использовать медианному фильтру в процессе своей работы.
-	void CalcMemSizes();
-protected:
-	//sourceIsAttached
-	bool const& getSourceIsAttached() const { return sourceIsAttached_; }
-	void setSourceIsAttached(const bool &value) { sourceIsAttached_ = value; }
-	//destIsAttached
-	bool const& getDestIsAttached() const { return destIsAttached_; }
-	void setDestIsAttached(const bool &value) { destIsAttached_ = value; }
-	//pFilterObj
-	RealMedianFilterBase& getFilterObj() const { return *pFilterObj_; }
 public:
 	//"События", к которым можно привязать обработчики.
 
@@ -182,6 +136,53 @@ public:
 	//Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 	bool DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
 
+protected:
+	//sourceIsAttached
+	bool const& getSourceIsAttached() const { return sourceIsAttached_; }
+	void setSourceIsAttached(const bool &value) { sourceIsAttached_ = value; }
+	//destIsAttached
+	bool const& getDestIsAttached() const { return destIsAttached_; }
+	void setDestIsAttached(const bool &value) { destIsAttached_ = value; }
+	//pFilterObj
+	RealMedianFilterBase& getFilterObj() const { return *pFilterObj_; }
+
+private:
+	//Поля
+	int aperture_ = DEFAULT_MEDFILTER_APERTURE;		//Окно фильтра (длина стороны квадрата в пикселах). Должно быть нечётным.
+	double threshold_ = DEFAULT_MEDFILTER_THRESHOLD; //Порог фильтра. Если медиана отличается от значения пиксела меньше чем на порог - значение не будет изменено.
+													 //bool useMultiThreading_;		//Включает многопоточную обработку. Пока не реализовано.
+													 //unsigned int threadsNumber_;	//Количество потоков при многопоточной обработке. 0 - автоопределение. Пока не реализовано.
+	MarginType marginType_ = DEFAULT_MEDFILTER_MARGIN_TYPE;		//Тип заполнения краевых пикселей.
+	bool useMemChunks_ = false;		//Использовать ли режим обработки файла по кускам для экономии памяти.
+	int blocksInMem_ = 0;	//Количество блоков, которое можно загружать в память. Граничные верхний и нижний блоки сюда тоже входят.
+	std::string sourceFileName_ = "";	//Имя и путь файла с исходными данными.
+	std::string destFileName_ = "";	//Имя и путь файла назначения.
+	int imageSizeX_ = 0;	//Ширина картинки (0 если картинка не подсоединялась)
+	int imageSizeY_ = 0;	//Высота картинки (0 если картинка не подсоединялась)
+	bool imageIsLoaded_ = false;	//Загружена ли картинка целиком в матрицу
+	bool sourceIsAttached_ = false;	//Настроен ли файл с источником.
+	bool destIsAttached_ = false;	//Настроен ли файл с назначением
+	PixelType dataType_ = PixelType::Unknown;	//Тип пикселя в картинке.
+	size_t dataTypeSize_ = 0;	//Размер типа данных пикселя.
+	RealMedianFilterBase *pFilterObj_ = nullptr;	//Сюда будет создаваться объект для нужного типа данных.
+	unsigned long long minBlockSize_ = 0;	//Размер минимального блока, которыми обрабатывается файл.
+	unsigned long long minBlockSizeHuang_ = 0;	//То же но для алгоритма Хуанга.
+	unsigned long long minMemSize_ = 0;  //Минимальное количество памяти, без которого фильтр вообще не сможет обработать данное изображение.
+	unsigned long long maxMemSize_ = 0;  //Максимальное количество памяти, которое может потребоваться для обработки изображения.
+	GDALDataset *gdalSourceDataset_ = nullptr;	//GDAL-овский датасет с исходным файлом.
+	GDALDataset *gdalDestDataset_ = nullptr;	//GDAL-овский датасет с файлом назначения.
+	GDALRasterBand *gdalSourceRaster_ = nullptr;	//GDAL-овский объект для работы с пикселами исходного файла.
+	GDALRasterBand *gdalDestRaster_ = nullptr;		//GDAL-овский объект для работы с пикселами файла назначения.
+	int currPositionY_ = 0;	//Позиция "курсора" при чтении\записи очередных блоков из файла.
+	bool useHuangAlgo_ = false;	//Если true то размеры блоков памяти будут считаться для алгоритма Хуанга.
+	uint16_t huangLevelsNum_ = DEFAULT_HUANG_LEVELS_NUM;	//Количество уровней квантования для алгоритма Хуанга. Имеет значение для подсчёта размера требуемой памяти.
+	bool fillPits_ = false;	//Заполнять ли "ямы" т.е. точки, которые ниже медианы.
+
+	//Приватные методы
+
+	//Вычислить минимальные размеры блоков памяти, которые нужны для принятия решения о
+	//том сколько памяти разрешено использовать медианному фильтру в процессе своей работы.
+	void CalcMemSizes();
 };
 
 }	//namespace geoimgconv

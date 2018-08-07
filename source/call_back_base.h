@@ -27,25 +27,25 @@ namespace geoimgconv
 {
 
 class CallBackBase
-{
-	private:
-		unsigned long maxProgress_ = 100;	//Значение при котором прогресс считается 100%
-	public:
-		
-		CallBackBase() {};
-		virtual ~CallBackBase() {};
+{	
+public:		
+	CallBackBase() {};
+	virtual ~CallBackBase() {};
 
-		//Доступ к полям
+	//Доступ к полям
 
-		unsigned long const& getMaxProgress() const { return maxProgress_; }
-		void setMaxProgress(const unsigned long &maxProgress) { maxProgress_ = maxProgress; }
+	unsigned long const& getMaxProgress() const { return maxProgress_; }
+	void setMaxProgress(const unsigned long &maxProgress) { maxProgress_ = maxProgress; }
 
-		//Собсно каллбек.
-		virtual void CallBack(const unsigned long &progressPosition)=0;
-		//Сообщить объекту о том что операция начинается
-		virtual void OperationStart()=0;
-		//Сообщить объекту о том что операция завершена.
-		virtual void OperationEnd()=0;
+	//Собсно каллбек.
+	virtual void CallBack(const unsigned long &progressPosition)=0;
+	//Сообщить объекту о том что операция начинается
+	virtual void OperationStart()=0;
+	//Сообщить объекту о том что операция завершена.
+	virtual void OperationEnd()=0;
+
+private:
+	unsigned long maxProgress_ = 100;	//Значение при котором прогресс считается 100%
 };
 
 }	//namespace geoimgconv
