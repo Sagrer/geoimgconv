@@ -19,6 +19,7 @@
 
 #include "real_median_filter.h"
 #include <algorithm>
+#include <memory>
 
 using namespace std;
 
@@ -948,11 +949,11 @@ void RealMedianFilter<CellType>::StupidFilter(const int &currYToProcess,
 	//Сразу вычислим индексы и указатели чтобы не считать в цикле.
 	//И выделим память под массив для пикселей окна, в котором ищем медиану.
 	int medianArrSize = getOwnerObj().getAperture() * getOwnerObj().getAperture();
-	CellType *medianArr = new CellType[medianArrSize];
+	unique_ptr<CellType[]> medianArr(new CellType[medianArrSize]);
 	//Целочисленное деление, неточностью пренебрегаем ибо ожидаем окно со
 	//стороной в десятки пикселей.
-	CellType *medianPos = medianArr + (medianArrSize / 2);
-	CellType *medianArrEnd = medianArr + medianArrSize;	//Элемент за последним в массиве.
+	CellType *medianPos = medianArr.get() + (medianArrSize / 2);
+	CellType *medianArrEnd = medianArr.get() + medianArrSize;	//Элемент за последним в массиве.
 	unsigned long progressPosition = getOwnerObj().getCurrPositionY()*destMatrix_.getXSize();
 
 	//Поехали.
@@ -979,7 +980,7 @@ void RealMedianFilter<CellType>::StupidFilter(const int &currYToProcess,
 			}
 			//Сортируем, берём медиану из середины. Точностью поиска середины не
 			//заморачиваемся т.к. окна будут большие, в десятки пикселов.
-			nth_element(medianArr, medianPos, medianArrEnd);
+			nth_element(medianArr.get(), medianPos, medianArrEnd);
 			//Записываем в матрицу назначения либо медиану либо исходный пиксель, смотря
 			//что там с порогом, с разницей между пикселем и медианой и включён ли режим
 			//заполнения ям.
@@ -998,8 +999,6 @@ void RealMedianFilter<CellType>::StupidFilter(const int &currYToProcess,
 			if (callBackObj) callBackObj->CallBack(progressPosition);
 		};
 	};
-	//Не забыть delete! ))
-	delete[] medianArr;
 }
 
 //Метод для обработки матрицы алгоритмом Хуанга. Теоретически на больших окнах это очень быстрый
@@ -1008,7 +1007,7 @@ template<typename CellType>
 void RealMedianFilter<CellType>::HuangFilter(const int &currYToProcess, CallBackBase *callBackObj)
 {
 	//Создаём массив-гистограмму.
-	auto gist = new unsigned long[getOwnerObj().getHuangLevelsNum()];
+	unique_ptr<unsigned long[]> gist(new unsigned long[getOwnerObj().getHuangLevelsNum()]);
 	//Текущее значение медианы
 	uint16_t median;
 	//Количество элементов в гистограмме, которые меньше медианы (т.е. левее её).
@@ -1039,7 +1038,7 @@ void RealMedianFilter<CellType>::HuangFilter(const int &currYToProcess, CallBack
 	{
 		//Тут первый подцикл.
 		HuangFilter_ProcessStringToRight(destX, destY, sourceX, sourceY, marginSize, progressPosition,
-			gistIsActual, gistIsEmpty, gist, median, elemsLeftMed, oldY, oldX, halfMedPos, callBackObj);
+			gistIsActual, gistIsEmpty, gist.get(), median, elemsLeftMed, oldY, oldX, halfMedPos, callBackObj);
 
 		//На следующую строку.
 		++destY;
@@ -1049,15 +1048,12 @@ void RealMedianFilter<CellType>::HuangFilter(const int &currYToProcess, CallBack
 
 		//Тут второй подцикл.
 		HuangFilter_ProcessStringToLeft(destX, destY, sourceX, sourceY, marginSize, progressPosition,
-			gistIsActual, gistIsEmpty, gist, median, elemsLeftMed, oldY, oldX, halfMedPos, callBackObj);
+			gistIsActual, gistIsEmpty, gist.get(), median, elemsLeftMed, oldY, oldX, halfMedPos, callBackObj);
 
 		//На следующую строку.
 		++destY;
 		++sourceY;
 	}
-
-	//Не забыть delete!
-	delete[] gist;
 }
 
 //Вспомогательный метод для алгоритма Хуанга. Цикл по строке вправо.

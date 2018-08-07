@@ -30,7 +30,7 @@ public:
 	//Конструктор по умолчанию. Другие использовать нельзя.
 	MedianFilterHuang(uint16_t levelsNum) : MedianFilterBase(true, levelsNum) {}
 	//Обработать изображение медианным фильтром по алгоритму Хуанга
-	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) override;
+	bool ApplyFilter(CallBackBase *callBackObj = nullptr, ErrorInfo *errObj = nullptr) override;
 };
 
 }	//namespace geoimgconv

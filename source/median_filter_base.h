@@ -24,6 +24,7 @@
 #include <string>
 #include "base_filter.h"
 #include <functional>
+#include <memory>
 
 namespace geoimgconv
 {
@@ -164,11 +165,12 @@ private:
 	bool destIsAttached_ = false;	//Настроен ли файл с назначением
 	PixelType dataType_ = PixelType::Unknown;	//Тип пикселя в картинке.
 	size_t dataTypeSize_ = 0;	//Размер типа данных пикселя.
-	RealMedianFilterBase *pFilterObj_ = nullptr;	//Сюда будет создаваться объект для нужного типа данных.
+	std::unique_ptr<RealMedianFilterBase> pFilterObj_ = nullptr;	//Сюда будет создаваться объект для нужного типа данных.
 	unsigned long long minBlockSize_ = 0;	//Размер минимального блока, которыми обрабатывается файл.
 	unsigned long long minBlockSizeHuang_ = 0;	//То же но для алгоритма Хуанга.
 	unsigned long long minMemSize_ = 0;  //Минимальное количество памяти, без которого фильтр вообще не сможет обработать данное изображение.
 	unsigned long long maxMemSize_ = 0;  //Максимальное количество памяти, которое может потребоваться для обработки изображения.
+	//Голые указатели на объекты GDAL. Ибо удаляются они тоже через API GDAL а не обычным delete.
 	GDALDataset *gdalSourceDataset_ = nullptr;	//GDAL-овский датасет с исходным файлом.
 	GDALDataset *gdalDestDataset_ = nullptr;	//GDAL-овский датасет с файлом назначения.
 	GDALRasterBand *gdalSourceRaster_ = nullptr;	//GDAL-овский объект для работы с пикселами исходного файла.

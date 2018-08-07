@@ -40,15 +40,6 @@ namespace geoimgconv
 //////////////////////////////
 
 //--------------------------------//
-//   Конструкторы-деструкторы     //
-//--------------------------------//
-
-AppUIConsole::~AppUIConsole()
-{
-	delete medFilter_;
-}
-
-//--------------------------------//
 //        Приватные методы        //
 //--------------------------------//
 
@@ -408,9 +399,9 @@ void AppUIConsole::ConsolePrintError(ErrorInfo &errObj)
 //Готовит приложение к запуску.
 //Внутрь передаётся объект с конфигом, в который уже должны быть прочитаны параметры
 //командной строки.
-void AppUIConsole::InitApp(AppConfig &conf)
+void AppUIConsole::InitApp(std::unique_ptr<AppConfig> conf)
 {
-	confObj_ = &conf;
+	confObj_ = move(conf);
 	GDALRegister_GTiff();	//Регистрация драйвера GDAL.
 	//Замена обработчика ошибок GDAL на свой, корректно работающий в данном потоке.
 	CPLPushErrorHandlerEx(GDALThreadErrorHandler,(void*)(&GDALErrorMsgBuffer));
@@ -467,17 +458,17 @@ int AppUIConsole::RunApp()
 	ErrorInfo errObj;
 	if (confObj_->getMedfilterAlgo() == MedfilterAlgo::Stub)
 	{
-		medFilter_ = new MedianFilterStub();
+		medFilter_.reset(new MedianFilterStub());
 		PrintToConsole("\nБудет применяться медианный фильтр: stub (имитация).\n");
 	}
 	else if (confObj_->getMedfilterAlgo() == MedfilterAlgo::Stupid)
 	{
-		medFilter_ = new MedianFilterStupid();
+		medFilter_.reset(new MedianFilterStupid());
 		PrintToConsole("\nБудет применяться медианный фильтр: stupid (реализация \"в лоб\").\n");
 	}
 	else if (confObj_->getMedfilterAlgo() == MedfilterAlgo::Huang)
 	{
-		medFilter_ = new MedianFilterHuang(confObj_->getMedfilterHuangLevelsNum());
+		medFilter_.reset(new MedianFilterHuang(confObj_->getMedfilterHuangLevelsNum()));
 		PrintToConsole("\nБудет применяться медианный фильтр: huang (быстрый алгоритм Хуанга).\n");
 	}
 	else
@@ -565,8 +556,7 @@ int AppUIConsole::RunApp()
 	//Закрываем файлы.
 	medFilter_->CloseAllFiles();
 	//Объект удалим сразу, не смотря на то что в крайнем случае об этом бы позаботился деструктор AppUIConsole
-	delete medFilter_;
-	medFilter_ = NULL;
+	medFilter_.reset(nullptr);
 
 	PrintToConsole("Готово.\n");
 

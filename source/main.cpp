@@ -22,6 +22,7 @@
 #include "system_tools_box.h"
 #include <string>
 #include <iostream>
+#include <memory>
 
 using namespace std;
 using namespace geoimgconv;
@@ -36,10 +37,10 @@ int main(int argc, char** argv)
 	//Мы не знаем заранее в каком режиме будем работать, поэтому сначала разбираем
 	//настройки и командную строку и только потом создаём и передаём управление объекту
 	//приложения нужного типа.
-	AppConfig confObj(SysTB::GetConsoleWidth());
+	unique_ptr<AppConfig> confObj(new AppConfig(SysTB::GetConsoleWidth()));
 	ErrorInfo errObj;
 	StrTB::InitEncodings();
-	if (!confObj.ParseCommandLine(argc,argv,&errObj))
+	if (!confObj->ParseCommandLine(argc,argv,&errObj))
 	{
 		//Что-то пошло не так
 		cout << StrTB::Utf8ToConsoleCharset("Ошибка: "+errObj.getErrorText()) << endl;
@@ -47,14 +48,14 @@ int main(int argc, char** argv)
 	}
 
 	//Пока реализовано лишь 2 режима работы.
-	if (confObj.getAppMode() == AppMode::Median)
+	if (confObj->getAppMode() == AppMode::Median)
 	{
 		//Медианная фильтрация в консоли.
 		AppUIConsole theApp;
-		theApp.InitApp(confObj);
+		theApp.InitApp(move(confObj));
 		return theApp.RunApp();
 	}
-	else if (confObj.getAppMode() == AppMode::DevTest)
+	else if (confObj->getAppMode() == AppMode::DevTest)
 	{
 		//Тестовый режим. Для разработки. Опция командной строки для такого запуска
 		//скрытая, в справке не описана, юзер про неё знать не должен.

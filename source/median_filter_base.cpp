@@ -41,9 +41,6 @@ namespace geoimgconv
 
 MedianFilterBase::~MedianFilterBase()
 {
-	//Возможно создавался объект реального фильтра. Надо удалить.
-	delete pFilterObj_;
-	pFilterObj_ = NULL;
 	//Возможно нужно закрыть подключённые файлы и уничтожить объекты GDAL
 	CloseAllFiles();
 }
@@ -205,43 +202,43 @@ bool MedianFilterBase::OpenInputFile(const string &fileName, ErrorInfo *errObj)
 
 	//Тип данных определён, надо создать вложенный объект нужного типа и дальше все вызовы транслировать
 	//уже в него.
-	delete pFilterObj_;
+	pFilterObj_.reset(nullptr);
 	switch (dataType_)
 	{
 		case PixelType::Int8:
-			pFilterObj_ = new RealMedianFilterInt8(this);
+			pFilterObj_.reset(new RealMedianFilterInt8(this));
 			dataTypeSize_ = sizeof(int8_t);
 			break;
 		case PixelType::UInt8:
-			pFilterObj_ = new RealMedianFilterUInt8(this);
+			pFilterObj_.reset(new RealMedianFilterUInt8(this));
 			dataTypeSize_ = sizeof(uint8_t);
 			break;
 		case PixelType::Int16:
-			pFilterObj_ = new RealMedianFilterInt16(this);
+			pFilterObj_.reset(new RealMedianFilterInt16(this));
 			dataTypeSize_ = sizeof(int16_t);
 			break;
 		case PixelType::UInt16:
-			pFilterObj_ = new RealMedianFilterUInt16(this);
+			pFilterObj_.reset(new RealMedianFilterUInt16(this));
 			dataTypeSize_ = sizeof(uint16_t);
 			break;
 		case PixelType::Int32:
-			pFilterObj_ = new RealMedianFilterInt32(this);
+			pFilterObj_.reset(new RealMedianFilterInt32(this));
 			dataTypeSize_ = sizeof(int32_t);
 			break;
 		case PixelType::UInt32:
-			pFilterObj_ = new RealMedianFilterUInt32(this);
+			pFilterObj_.reset(new RealMedianFilterUInt32(this));
 			dataTypeSize_ = sizeof(uint32_t);
 			break;
 		case PixelType::Float32:
-			pFilterObj_ = new RealMedianFilterFloat32(this);
+			pFilterObj_.reset(new RealMedianFilterFloat32(this));
 			dataTypeSize_ = sizeof(float);
 			break;
 		case PixelType::Float64:
-			pFilterObj_ = new RealMedianFilterFloat64(this);
+			pFilterObj_.reset(new RealMedianFilterFloat64(this));
 			dataTypeSize_ = sizeof(double);
 			break;
 		default:
-			pFilterObj_ = NULL;
+			pFilterObj_.reset(nullptr);
 			dataTypeSize_ = 0;
 			break;
 	}
@@ -334,8 +331,7 @@ void MedianFilterBase::CloseInputFile()
 	{
 		GDALClose(gdalSourceDataset_);
 		sourceIsAttached_ = false;
-		delete pFilterObj_;
-		pFilterObj_ = NULL;
+		pFilterObj_.reset(nullptr);
 	}
 	gdalSourceDataset_ = NULL;
 	gdalSourceRaster_ = NULL;

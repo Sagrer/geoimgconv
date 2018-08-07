@@ -31,6 +31,7 @@
 #include "median_filter.h"
 #include "appui_console_callback.h"
 #include "system_tools_box.h"
+#include <memory>
 
 namespace geoimgconv
 {
@@ -41,7 +42,7 @@ class AppUIConsole
 public:
 	//Конструкторы-деструкторы.
 	AppUIConsole() {}
-	~AppUIConsole();
+	~AppUIConsole() {}
 
 	//Геттеры-сеттеры
 	std::string const& getAppPath() {return confObj_->getAppPath();};
@@ -50,7 +51,7 @@ public:
 	//Готовит приложение к запуску.
 	//Внутрь передаётся объект с конфигом, в который уже должны быть прочитаны параметры
 	//командной строки.
-	void InitApp(AppConfig &conf);
+	void InitApp(std::unique_ptr<AppConfig> conf);
 
 	//По сути тут главный цикл.
 	int RunApp();
@@ -78,11 +79,11 @@ private:
 
 	//Приватные поля
 	std::string GDALErrorMsgBuffer;
-	AppConfig *confObj_ = nullptr;
+	std::unique_ptr<AppConfig> confObj_ = nullptr;
 	unsigned long long maxMemCanBeUsed_ = 0;	//сюда детектится количество памяти которое можно занимать
 	int maxBlocksCanBeUsed_ = 0;	//Сюда детектится максимальное количество блоков, которое можно загружать в память для применяемого сейчас фильтра.
 	SysResInfo sysResInfo_;		//Характеристики компа.
-	MedianFilterBase *medFilter_ = nullptr;	//Ссылка на текущий объект фильтра. Хранить как поле - удобно чтобы деструктор уничтожил потом объект по этой ссылке.
+	std::unique_ptr<MedianFilterBase> medFilter_ = nullptr;	//Указатель на текущий объект фильтра. Для полиморфизма.
 
 	//Приватные методы
 

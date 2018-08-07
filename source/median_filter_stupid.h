@@ -30,7 +30,7 @@ public:
 	//Конструктор по умолчанию. Другие использовать нельзя.
 	MedianFilterStupid() : MedianFilterBase() {}
 	//Применить "тупой" медианный фильтр.
-	bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) override;
+	bool ApplyFilter(CallBackBase *callBackObj = nullptr, ErrorInfo *errObj = nullptr) override;
 };
 
 }	//namespace geoimgconv
