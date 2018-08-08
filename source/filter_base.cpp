@@ -18,7 +18,7 @@
 //этот класс! Не через PixelTypeSpecieficFilter*-ы! Это базовая абстрактная обёртка, которая не имеет метода
 //для собственно применения фильтра.
 
-#include "median_filter_base.h"
+#include "filter_base.h"
 #pragma warning(push)
 #pragma warning(disable:4251)
 #include <gdal_priv.h>
@@ -36,10 +36,10 @@ namespace geoimgconv
 //Константы со значениями по умолчанию см. в common.cpp
 
 ////////////////////////////////////////
-//          MedianFilterBase          //
+//          FilterBase          //
 ////////////////////////////////////////
 
-MedianFilterBase::~MedianFilterBase()
+FilterBase::~FilterBase()
 {
 	//Возможно нужно закрыть подключённые файлы и уничтожить объекты GDAL
 	CloseAllFiles();
@@ -51,7 +51,7 @@ MedianFilterBase::~MedianFilterBase()
 
 //Вычислить минимальные размеры блоков памяти, которые нужны для принятия решения о
 //том сколько памяти разрешено использовать медианному фильтру в процессе своей работы.
-void MedianFilterBase::CalcMemSizes()
+void FilterBase::CalcMemSizes()
 {
 	//Смысл в том, что фильтр обрабатывает картинку, в которой помимо самой картинки содержатся
 	//граничные пиксели - сверху, снизу, слева, справа. Они либо генерируются одним из алгоритмов,
@@ -133,7 +133,7 @@ void MedianFilterBase::CalcMemSizes()
 
 //Выбрать исходный файл для дальнейшего чтения и обработки. Получает информацию о параметрах изображения,
 //запоминает её в полях объекта.
-bool MedianFilterBase::OpenInputFile(const string &fileName, ErrorInfo *errObj)
+bool FilterBase::OpenInputFile(const string &fileName, ErrorInfo *errObj)
 {
 	//TODO: когда избавлюсь от Load и Save - тут должны будут создаваться объекты GDAL, существующие до
 	//завершения работы с файлом. Чтобы не создавать их постоянно в процессе по-кусочечной обработки
@@ -146,7 +146,7 @@ bool MedianFilterBase::OpenInputFile(const string &fileName, ErrorInfo *errObj)
 	if (sourceIsAttached_)
 	{
 		//Нельзя открывать файл если старый не был закрыт.
-		if (errObj) errObj->SetError(CommonErrors::InternalError, ": MedianFilterBase::OpenInputFile() попытка открыть файл при не закрытом старом." );
+		if (errObj) errObj->SetError(CommonErrors::InternalError, ": FilterBase::OpenInputFile() попытка открыть файл при не закрытом старом." );
 		return false;
 	}
 
@@ -201,47 +201,8 @@ bool MedianFilterBase::OpenInputFile(const string &fileName, ErrorInfo *errObj)
 	}
 
 	//Тип данных определён, надо создать вложенный объект нужного типа и дальше все вызовы транслировать
-	//уже в него.
-	pFilterObj_.reset(nullptr);
-	switch (dataType_)
-	{
-		case PixelType::Int8:
-			pFilterObj_.reset(new PixelTypeSpecieficFilterInt8(this));
-			dataTypeSize_ = sizeof(int8_t);
-			break;
-		case PixelType::UInt8:
-			pFilterObj_.reset(new PixelTypeSpecieficFilterUInt8(this));
-			dataTypeSize_ = sizeof(uint8_t);
-			break;
-		case PixelType::Int16:
-			pFilterObj_.reset(new PixelTypeSpecieficFilterInt16(this));
-			dataTypeSize_ = sizeof(int16_t);
-			break;
-		case PixelType::UInt16:
-			pFilterObj_.reset(new PixelTypeSpecieficFilterUInt16(this));
-			dataTypeSize_ = sizeof(uint16_t);
-			break;
-		case PixelType::Int32:
-			pFilterObj_.reset(new PixelTypeSpecieficFilterInt32(this));
-			dataTypeSize_ = sizeof(int32_t);
-			break;
-		case PixelType::UInt32:
-			pFilterObj_.reset(new PixelTypeSpecieficFilterUInt32(this));
-			dataTypeSize_ = sizeof(uint32_t);
-			break;
-		case PixelType::Float32:
-			pFilterObj_.reset(new PixelTypeSpecieficFilterFloat32(this));
-			dataTypeSize_ = sizeof(float);
-			break;
-		case PixelType::Float64:
-			pFilterObj_.reset(new PixelTypeSpecieficFilterFloat64(this));
-			dataTypeSize_ = sizeof(double);
-			break;
-		default:
-			pFilterObj_.reset(nullptr);
-			dataTypeSize_ = 0;
-			break;
-	}
+	//уже в него. NewFilterObj() создаст объект и запишет указатель на него в pFilterObj_
+	NewFilterObj();
 	if (pFilterObj_)
 	{
 		sourceIsAttached_ = true;
@@ -252,7 +213,7 @@ bool MedianFilterBase::OpenInputFile(const string &fileName, ErrorInfo *errObj)
 	}
 	else
 	{
-		if (errObj) errObj->SetError(CommonErrors::UnknownError, "MedianFilterBase::OpenInputFile() error creating pFilterObj_!",true);
+		if (errObj) errObj->SetError(CommonErrors::UnknownError, "FilterBase::OpenInputFile() error creating pFilterObj_!",true);
 		GDALClose(gdalSourceDataset_);
 		gdalSourceDataset_ = NULL;
 		gdalSourceRaster_ = NULL;
@@ -262,18 +223,18 @@ bool MedianFilterBase::OpenInputFile(const string &fileName, ErrorInfo *errObj)
 
 //Подготовить целевой файл к записи в него результата. Если forceRewrite==true - перезапишет уже
 //существующий файл. Иначе вернёт ошибку (false и инфу в errObj). Input-файл уже должен быть открыт.
-bool MedianFilterBase::OpenOutputFile(const string &fileName, const bool &forceRewrite, ErrorInfo *errObj)
+bool FilterBase::OpenOutputFile(const string &fileName, const bool &forceRewrite, ErrorInfo *errObj)
 {
 	//Этот метод можно вызывать только если исходный файл уже был открыт.
 	if (!sourceIsAttached_)
 	{
-		if (errObj) errObj->SetError(CommonErrors::InternalError, ":  MedianFilterBase::OpenOutputFile исходный файл не был открыт.");
+		if (errObj) errObj->SetError(CommonErrors::InternalError, ":  FilterBase::OpenOutputFile исходный файл не был открыт.");
 		return false;
 	}
 	//И только если файл назначение открыт наоборот ещё не был.
 	if (destIsAttached_)
 	{
-		if (errObj) errObj->SetError(CommonErrors::InternalError, ":  MedianFilterBase::OpenOutputFile попытка открыть файл назначения при уже открытом файле назначения.");
+		if (errObj) errObj->SetError(CommonErrors::InternalError, ":  FilterBase::OpenOutputFile попытка открыть файл назначения при уже открытом файле назначения.");
 		return false;
 	}
 
@@ -325,7 +286,7 @@ bool MedianFilterBase::OpenOutputFile(const string &fileName, const bool &forceR
 }
 
 //Закрыть исходный файл.
-void MedianFilterBase::CloseInputFile()
+void FilterBase::CloseInputFile()
 {
 	if (sourceIsAttached_)
 	{
@@ -338,7 +299,7 @@ void MedianFilterBase::CloseInputFile()
 }
 
 //Закрыть файл назначения.
-void MedianFilterBase::CloseOutputFile()
+void FilterBase::CloseOutputFile()
 {
 	if (destIsAttached_)
 	{
@@ -350,14 +311,14 @@ void MedianFilterBase::CloseOutputFile()
 }
 
 //Закрыть все файлы.
-void MedianFilterBase::CloseAllFiles()
+void FilterBase::CloseAllFiles()
 {
 	CloseInputFile();
 	CloseOutputFile();
 }
 
 //Приводит апертуру (длина стороны окна фильтра) к имеющему смысл значению.
-void MedianFilterBase::FixAperture()
+void FilterBase::FixAperture()
 {
 	//Апертура меньше трёх невозможна и не имеет смысла.
 	//Апертура больше трёх должна быть нечётной чтобы в любую сторону от текущего пикселя было
@@ -372,7 +333,7 @@ void MedianFilterBase::FixAperture()
 }
 
 //"Тупая" визуализация матрицы, отправляется прямо в cout.
-void MedianFilterBase::SourcePrintStupidVisToCout()
+void FilterBase::SourcePrintStupidVisToCout()
 {
 	//Просто проброс вызова в объект матрицы.
 	pFilterObj_->SourcePrintStupidVisToCout();
@@ -381,17 +342,34 @@ void MedianFilterBase::SourcePrintStupidVisToCout()
 //Вывод исходной матрицы в csv-файл, который должны понимать всякие картографические
 //программы. Это значит что каждый пиксел - это одна строка в файле.
 //Это "тупой" вариант вывода - метаданные нормально не сохраняются.
-bool MedianFilterBase::SourceSaveToCSVFile(const string &fileName, ErrorInfo *errObj)
+bool FilterBase::SourceSaveToCSVFile(const string &fileName, ErrorInfo *errObj)
 {
 	//Просто проброс вызова в объект матрицы.
 	return pFilterObj_->SourceSaveToCSVFile(fileName, errObj);
 }
 
 //Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
-bool MedianFilterBase::DestSaveToCSVFile(const string &fileName, ErrorInfo *errObj)
+bool FilterBase::DestSaveToCSVFile(const string &fileName, ErrorInfo *errObj)
 {
 	//Просто проброс вызова в объект матрицы.
 	return pFilterObj_->DestSaveToCSVFile(fileName, errObj);
+}
+
+//Метод для применения фильтра. Работает одинаково во всех потомках, главное чтобы
+//объект имел правильный экземпляр в pFilterObj_.
+bool FilterBase::ApplyFilter(CallBackBase * callBackObj, ErrorInfo * errObj)
+{
+	//Проброс вызова.
+	if (getSourceIsAttached() && getDestIsAttached())
+	{
+		return getFilterObj().ApplyFilter(callBackObj, errObj);
+	}
+	else
+	{
+		if (errObj) errObj->SetError(CommonErrors::InternalError, ": FilterBase::ApplyStubFilter no source and\\or dest \
+file(s) were attached.");
+		return false;
+	}
 }
 
 } //namespace geoimgconv

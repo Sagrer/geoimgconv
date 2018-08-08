@@ -61,7 +61,7 @@ double ImageComparer::CompareGeoTIFF(const string & fileOne, const string & file
 //Если была ошибка - вернёт указатель на nullptr.
 unique_ptr<AltMatrixBase> ImageComparer::LoadMatrFromGeoTIFF(const string &fileName, ErrorInfo *errObj)
 {
-	//TODO: метод во многом копипаста из MedianFilterBase::OpenInputFile. Надо придумать как лучше сделать
+	//TODO: метод во многом копипаста из FilterBase::OpenInputFile. Надо придумать как лучше сделать
 	//так, чтобы и там и там использовать один и тот же код. Возможно, через базовый класс матрицы.
 	//Возможно как-то ещё. Проблема в том что тут надо именно загрузить готовую матрицу а там - матрица
 	//грузится в процессе работы медианного фильтра и метод только готовится к её загрузке, собирая

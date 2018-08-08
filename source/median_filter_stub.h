@@ -16,21 +16,25 @@
 
 ////////////////////////////////////////////////////////////////////////
 
-//Наследник MedianFilterBase, реализующий "никакой" фильтр. По сути это просто копирование.
+//Наследник FilterBase, реализующий "никакой" фильтр. По сути это просто копирование.
 //Может быть полезно для отладки. Результат записывается в выбранный destFile
 
-#include "median_filter_base.h"
+#include "filter_base.h"
 
 namespace geoimgconv
 {
 
-class MedianFilterStub : public MedianFilterBase
+class MedianFilterStub : public FilterBase
 {
 public:
 	//Конструктор по умолчанию. Другие использовать нельзя.
-	MedianFilterStub() : MedianFilterBase() {}
-	//Применить "никакой" медианный фильтр.
-	bool ApplyFilter(CallBackBase *callBackObj = nullptr, ErrorInfo *errObj = nullptr) override;
+	MedianFilterStub() : FilterBase() {}
+protected:
+	//Создать объект класса, который работает с изображениями с типом пикселей dataType_
+	//и соответствующим алгоритмом фильтрации и поместить указатель на него в pFilterObj_.
+	//Если в dataType_ лежит что-то неправильное то туда попадёт nullptr. Кроме того, метод
+	//должен установить правильный dataTypeSize_.
+	void NewFilterObj() override;
 };
 
 }	//namespace geoimgconv

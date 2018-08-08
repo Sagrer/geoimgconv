@@ -27,7 +27,6 @@
 #include <string>
 #include "common.h"
 #include "app_config.h"
-#include "base_filter.h"
 #include "median_filter.h"
 #include "appui_console_callback.h"
 #include "system_tools_box.h"
@@ -83,7 +82,7 @@ private:
 	unsigned long long maxMemCanBeUsed_ = 0;	//сюда детектится количество памяти которое можно занимать
 	int maxBlocksCanBeUsed_ = 0;	//Сюда детектится максимальное количество блоков, которое можно загружать в память для применяемого сейчас фильтра.
 	SysResInfo sysResInfo_;		//Характеристики компа.
-	std::unique_ptr<MedianFilterBase> medFilter_ = nullptr;	//Указатель на текущий объект фильтра. Для полиморфизма.
+	std::unique_ptr<FilterBase> medFilter_ = nullptr;	//Указатель на текущий объект фильтра. Для полиморфизма.
 
 	//Приватные методы
 
@@ -99,7 +98,7 @@ private:
 	//swapMode - задаёт либо интерактивный режим либо тихий режим работы, в тихом режиме swap может
 	//либо использоваться либо не использоваться в зависимости от выбранного режима.
 	//Перед запуском метода _должен_ был быть выполнен метод DetectSysResInfo()!
-	bool DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const SwapMode swapMode = SwapMode::Ask,
+	bool DetectMaxMemoryCanBeUsed(const FilterBase &filterObj, const SwapMode swapMode = SwapMode::Ask,
 		ErrorInfo *errObj = NULL);
 
 	//Задетектить инфу для sysResInfo_

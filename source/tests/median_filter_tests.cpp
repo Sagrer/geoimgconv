@@ -73,7 +73,7 @@ struct MedfilterTestsFixture
 		}
 	}
 
-	static void MedFilterPrepare(MedianFilterBase &medFilter, const int &aperture = DEFAULT_MEDFILTER_APERTURE)
+	static void MedFilterPrepare(FilterBase &medFilter, const int &aperture = DEFAULT_MEDFILTER_APERTURE)
 	{
 		medFilter.setFillPits(DEFAULT_MEDFILTER_FILL_PITS);
 		medFilter.setAperture(aperture);

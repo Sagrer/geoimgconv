@@ -55,7 +55,7 @@ namespace geoimgconv
 //swapMode - задаёт либо интерактивный режим либо тихий режим работы, в тихом режиме swap может
 //либо использоваться либо не использоваться в зависимости от выбранного режима.
 //Перед запуском метода _должен_ был быть выполнен метод DetectSysResInfo()!
-bool AppUIConsole::DetectMaxMemoryCanBeUsed(const BaseFilter &filterObj, const SwapMode swapMode,
+bool AppUIConsole::DetectMaxMemoryCanBeUsed(const FilterBase &filterObj, const SwapMode swapMode,
 	ErrorInfo *errObj)
 {
 

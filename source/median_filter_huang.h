@@ -16,21 +16,25 @@
 
 ////////////////////////////////////////////////////////////////////////
 
-//Наследник MedianFilterBase, реализующий "тупой" медианную фильтрацию
+//Наследник FilterBase, реализующий "тупой" медианную фильтрацию
 //алгоритмом Хуанга. Результат записывается в выбранный destFile
 
-#include "median_filter_base.h"
+#include "filter_base.h"
 
 namespace geoimgconv
 {
 
-class MedianFilterHuang : public MedianFilterBase
+class MedianFilterHuang : public FilterBase
 {
 public:
 	//Конструктор по умолчанию. Другие использовать нельзя.
-	MedianFilterHuang(uint16_t levelsNum) : MedianFilterBase(true, levelsNum) {}
-	//Обработать изображение медианным фильтром по алгоритму Хуанга
-	bool ApplyFilter(CallBackBase *callBackObj = nullptr, ErrorInfo *errObj = nullptr) override;
+	MedianFilterHuang(uint16_t levelsNum) : FilterBase(true, levelsNum) {}
+protected:
+	//Создать объект класса, который работает с изображениями с типом пикселей dataType_
+	//и соответствующим алгоритмом фильтрации и поместить указатель на него в pFilterObj_.
+	//Если в dataType_ лежит что-то неправильное то туда попадёт nullptr. Кроме того, метод
+	//должен установить правильный dataTypeSize_.
+	void NewFilterObj() override;
 };
 
 }	//namespace geoimgconv

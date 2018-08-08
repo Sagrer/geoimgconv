@@ -22,16 +22,17 @@
 
 #include "common.h"
 #include <string>
-#include "base_filter.h"
 #include <functional>
 #include <memory>
+#include "call_back_base.h"
+#include "errors.h"
 
 namespace geoimgconv
 {
 
 class PixelTypeSpecieficFilterBase;
 
-class MedianFilterBase : public BaseFilter
+class FilterBase
 {
 public:
 	//"События", к которым можно привязать обработчики.
@@ -71,19 +72,19 @@ public:
 	//destFileName
 	std::string const& getDestFileName() const { return destFileName_; }
 	//imageSizeX
-	int const& getImageSizeX() const override { return imageSizeX_; }
+	int const& getImageSizeX() const { return imageSizeX_; }
 	//void setImageSizeX(const int &imageSizeX) { imageSizeX_ = imageSizeX; }
 	//imageSizeY
-	int const& getImageSizeY() const override { return imageSizeY_; }
+	int const& getImageSizeY() const { return imageSizeY_; }
 	//void setImageSizeY(const int &imageSizeY) { imageSizeY_ = imageSizeY; }
 	//minBlockSize
-	unsigned long long const& getMinBlockSize() const override { return minBlockSize_; }
+	unsigned long long const& getMinBlockSize() const { return minBlockSize_; }
 	//void setMinBlockSize(const unsigned long long &value) { minBlockSize_ = value; }
 	//minMemSize
-	unsigned long long const& getMinMemSize() const override { return minMemSize_; }
+	unsigned long long const& getMinMemSize() const { return minMemSize_; }
 	//void setMinMemSize(const unsigned long long &value) { minMemSize_ = value; }
 	//maxMemSize
-	unsigned long long const& getMaxMemSize() const override { return maxMemSize_; }
+	unsigned long long const& getMaxMemSize() const { return maxMemSize_; }
 	//gdalSourceRaster_
 	GDALRasterBand* getGdalSourceRaster() { return gdalSourceRaster_; }
 	//gdalDestRaster_
@@ -98,11 +99,16 @@ public:
 	//fillPits
 	const bool& getFillPits() const { return fillPits_; }
 	void setFillPits(const bool &value) { fillPits_ = value; }
+	//dataType
+	const PixelType& getDataType() const { return dataType_; }
+	//dateTypeSize
+	const size_t& getDataTypeSize() const { return dataTypeSize_; }
+	void setDataTypeSize(const size_t &dataTypeSize) { dataTypeSize_ = dataTypeSize; }
 
 	//Конструкторы-деструкторы
-	MedianFilterBase(bool useHuangAlgo = false, uint16_t huangLevelsNum = DEFAULT_HUANG_LEVELS_NUM) :
+	FilterBase(bool useHuangAlgo = false, uint16_t huangLevelsNum = DEFAULT_HUANG_LEVELS_NUM) :
 		useHuangAlgo_(useHuangAlgo), huangLevelsNum_(huangLevelsNum) {}
-	~MedianFilterBase();
+	~FilterBase();
 
 	//Прочий функционал
 
@@ -137,7 +143,13 @@ public:
 	//Аналогично SourceSaveToCSVFile, но для матрицы с результатом.
 	bool DestSaveToCSVFile(const std::string &fileName, ErrorInfo *errObj = NULL);
 
+	//Метод для применения фильтра. Работает одинаково во всех потомках, главное чтобы
+	//объект имел правильный экземпляр в pFilterObj_.
+	bool ApplyFilter(CallBackBase *callBackObj = nullptr, ErrorInfo *errObj = nullptr);
+
 protected:
+	//Доступные потомкам поля.
+	
 	//sourceIsAttached
 	bool const& getSourceIsAttached() const { return sourceIsAttached_; }
 	void setSourceIsAttached(const bool &value) { sourceIsAttached_ = value; }
@@ -146,6 +158,16 @@ protected:
 	void setDestIsAttached(const bool &value) { destIsAttached_ = value; }
 	//pFilterObj
 	PixelTypeSpecieficFilterBase& getFilterObj() const { return *pFilterObj_; }
+	void setFilterObj(PixelTypeSpecieficFilterBase* pFilterObj) { pFilterObj_.reset(pFilterObj); }
+
+	//Доступные потомкам методы.
+
+	//Создать объект класса, который работает с изображениями с типом пикселей dataType_
+	//и соответствующим алгоритмом фильтрации и поместить указатель на него в pFilterObj_.
+	//Если в dataType_ лежит что-то неправильное то туда попадёт nullptr. Кроме того, метод
+	//должен установить правильный dataTypeSize_.
+	//Метод _должен_ быть override в реально используемом потомке.
+	virtual void NewFilterObj() = 0;
 
 private:
 	//Поля

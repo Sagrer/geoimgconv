@@ -70,6 +70,10 @@ public:
 	{
 		quantedMatrixArr_[yCoord][xCoord] = value;
 	}
+	//useSignData
+	const bool& getUseSignData() const { return useSignData_; }
+	//useQuantedData
+	const bool& getUseQuantedData() const { return useQuantedData_; }
 
 	//Методы всякие.
 

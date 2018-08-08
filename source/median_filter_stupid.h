@@ -16,21 +16,25 @@
 
 ////////////////////////////////////////////////////////////////////////
 
-//Наследник MedianFilterBase, реализующий "тупой" фильтр. Алгоритм медианной
+//Наследник FilterBase, реализующий "тупой" фильтр. Алгоритм медианной
 //фильтрации работает "в лоб". Результат записывается в выбранный destFile
 
-#include "median_filter_base.h"
+#include "filter_base.h"
 
 namespace geoimgconv
 {
 
-class MedianFilterStupid : public MedianFilterBase
+class MedianFilterStupid : public FilterBase
 {
 public:
 	//Конструктор по умолчанию. Другие использовать нельзя.
-	MedianFilterStupid() : MedianFilterBase() {}
-	//Применить "тупой" медианный фильтр.
-	bool ApplyFilter(CallBackBase *callBackObj = nullptr, ErrorInfo *errObj = nullptr) override;
+	MedianFilterStupid() : FilterBase() {}
+protected:
+	//Создать объект класса, который работает с изображениями с типом пикселей dataType_
+	//и соответствующим алгоритмом фильтрации и поместить указатель на него в pFilterObj_.
+	//Если в dataType_ лежит что-то неправильное то туда попадёт nullptr. Кроме того, метод
+	//должен установить правильный dataTypeSize_.
+	void NewFilterObj() override;
 };
 
 }	//namespace geoimgconv

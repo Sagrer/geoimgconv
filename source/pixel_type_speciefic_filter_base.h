@@ -26,13 +26,13 @@
 namespace geoimgconv
 {
 
-class MedianFilterBase;
+class FilterBase;
 
 class PixelTypeSpecieficFilterBase
 {
 public:
 	//Доступ к ссылке на объект-хозяин
-	MedianFilterBase& getOwnerObj() const { return *ownerObj_; }
+	FilterBase& getOwnerObj() const { return *ownerObj_; }
 
 	//Запретим конструктор по умолчанию, копирующий и переносящие конструкторы и аналогичные
 	//им операторы присваивания.
@@ -41,8 +41,8 @@ public:
 	PixelTypeSpecieficFilterBase(PixelTypeSpecieficFilterBase&&) = delete;
 	PixelTypeSpecieficFilterBase& operator=(const PixelTypeSpecieficFilterBase&) = delete;
 	PixelTypeSpecieficFilterBase& operator=(PixelTypeSpecieficFilterBase&&) = delete;
-	//Cоздать объект можно только передав ссылку на MedianFilterBase
-	PixelTypeSpecieficFilterBase(MedianFilterBase *ownerObj) : ownerObj_(ownerObj) {};
+	//Cоздать объект можно только передав ссылку на FilterBase
+	PixelTypeSpecieficFilterBase(FilterBase *ownerObj) : ownerObj_(ownerObj) {};
 	virtual ~PixelTypeSpecieficFilterBase() {};
 
 	//Абстрактные методы
@@ -51,15 +51,15 @@ public:
 	//выбранным алгоритмом.
 	virtual void FillMargins(const int yStart, const int yToProcess, CallBackBase *callBackObj = NULL) = 0;
 
-	//Обрабатывает выбранный исходный файл "тупым" фильтром. Результат записывается в выбранный destFile.
-	virtual bool ApplyStupidFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) = 0;
+	//Этот полиморфный метод вызывается ApplyFilter-ом и обрабатывает изображение правильным алгоритмом.
+	//Первый аргумент указывает количество строк матрицы для реальной обработки.
+	//ДОЛЖЕН быть override в реальном наследнике.
+	virtual void FilterMethod(const int &currYToProcess, CallBackBase *callBackObj) = 0;
 
-	//Обрабатывает выбранный исходный файл алгоритмом Хуанга.
-	virtual bool ApplyHuangFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) = 0;
-
-	//Обрабатывает выбранный исходный файл "никаким" фильтром. По сути это просто копирование.
-	//Для отладки. Результат записывается в выбранный destFile
-	virtual bool ApplyStubFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) = 0;
+	//Применит свой фильтр (переопределённый для наследника метод FilterMethod) к изображению.
+	//Входящий и исходящий файлы уже должны быть подключены. Вернёт false и инфу об ошибке если
+	//что-то пойдёт не так.
+	virtual bool ApplyFilter(CallBackBase *callBackObj = NULL, ErrorInfo *errObj = NULL) = 0;
 
 	//"Тупая" визуализация матрицы, отправляется прямо в cout.
 	virtual void SourcePrintStupidVisToCout() = 0;
@@ -77,9 +77,9 @@ private:
 	//чтобы вынести сюда код, который должен генерироваться по шаблону для разных типов пиксела.
 	//Поэтому будем просто держать тут указатель на основной объект класса и брать значения полей
 	//оттуда.
-	MedianFilterBase *ownerObj_;
+	FilterBase *ownerObj_;
 };
 
 }	//namespace geoimgconv
 
-#include "median_filter_base.h"
+#include "filter_base.h"
